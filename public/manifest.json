@@ -1,0 +1,21 @@
+{
+  "name": "Hive · BeeFrequency",
+  "short_name": "Hive",
+  "description": "Espace de pilotage — From poison to nectar",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#B8821E",
+  "background_color": "#FDFAF4",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
