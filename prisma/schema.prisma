@@ -88,6 +88,8 @@ model Client {
   analysis              ClientAnalysis?
   journeyMessageLogs    JourneyMessageLog[]
   clientPractices       ClientPractice[]
+  clientPhases          ClientPhase[]
+  dailyCheckins         DailyCheckin[]
 }
 
 model JournalEntry {
@@ -460,4 +462,164 @@ model ClientPractice {
   isActive        Boolean   @default(true)
 
   @@unique([clientId, practiceId])
+}
+
+// ═══════════════════════════════════════
+// MODULE — PARCOURS 3 MOIS
+// ═══════════════════════════════════════
+
+enum ElixirCategory {
+  ACTIVATION
+  INTEGRATION
+  SUPPORT
+}
+
+enum ElixirTiming {
+  MATIN
+  SOIR
+  JOURNEE
+  FLEXIBLE
+}
+
+enum ElixirUnit {
+  GOUTTES
+  GELULES
+  CAPUCHONS
+}
+
+model ElixirLibrary {
+  id          String         @id @default(uuid())
+  name        String
+  description String
+  dosage      String         // ex: "20 gouttes"
+  unit        ElixirUnit
+  category    ElixirCategory
+  timing      ElixirTiming   @default(FLEXIBLE)
+  notes       String?
+
+  createdAt DateTime @default(now())
+
+  phaseElixirs PhaseElixir[]
+}
+
+enum PhaseType {
+  CYCLE
+  BREAK
+}
+
+enum PhaseStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+}
+
+model ClientPhase {
+  id          String      @id @default(uuid())
+  clientId    String
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  phaseType   PhaseType
+  phaseNumber Int         // 1, 2 ou 3
+  startDate   DateTime
+  endDate     DateTime
+  status      PhaseStatus @default(UPCOMING)
+
+  createdAt DateTime @default(now())
+
+  phaseElixirs   PhaseElixir[]
+  phasePractices PhasePractice[]
+
+  @@unique([clientId, phaseType, phaseNumber])
+}
+
+enum PhaseFrequency {
+  DAILY
+  MON_JEU
+  MAR_VEN
+  LUNDI
+  MARDI
+  MERCREDI
+  JEUDI
+  VENDREDI
+  SAMEDI
+  DIMANCHE
+}
+
+model PhaseElixir {
+  id              String         @id @default(uuid())
+  clientPhaseId   String
+  clientPhase     ClientPhase    @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
+  elixirLibraryId String
+  elixirLibrary   ElixirLibrary  @relation(fields: [elixirLibraryId], references: [id], onDelete: Cascade)
+  dose            String?        // Override du dosage par defaut
+  frequency       PhaseFrequency @default(DAILY)
+  timing          ElixirTiming   @default(FLEXIBLE)
+  notes           String?
+
+  createdAt DateTime @default(now())
+}
+
+enum PhasePracticeType {
+  BREATHING
+  MEDITATION
+  WRITING
+  MOVEMENT
+}
+
+enum PhasePracticeFrequency {
+  DAILY
+  SPECIFIC_DAYS
+}
+
+model PhasePractice {
+  id          String                @id @default(uuid())
+  clientPhaseId String
+  clientPhase ClientPhase           @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
+  type        PhasePracticeType
+  title       String
+  description String?
+  duration    Int?                  // en minutes
+  frequency   PhasePracticeFrequency @default(DAILY)
+
+  createdAt DateTime @default(now())
+}
+
+enum DreamAnswer {
+  OUI
+  NON
+  SAIS_PAS
+}
+
+model DailyCheckin {
+  id        String    @id @default(uuid())
+  clientId  String
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  date      DateTime  @db.Date
+  phase     PhaseType
+
+  // --- MATIN ---
+  energyLevel       Int?      // 1-10
+  sleepQuality      Int?      // 1-10
+  sleepType         String?   // JSON array: ["leger","profond","reves","reveils","endormissement_long","nuit_continue"]
+  dreamed           DreamAnswer?
+  dreamNotes        String?
+  morningGratitude  String?
+
+  // --- SOIR ---
+  freeFeeling       String?
+  pride1            String?
+  pride2            String?
+  pride3            String?
+  gratitudeMoment   String?
+  gratitudeSensation String?
+  gratitudeRecu     String?
+  gratitudeSoi      String?
+  selfQuality       String?
+  closingSentence   String?
+
+  elixirTaken       Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, date])
 }

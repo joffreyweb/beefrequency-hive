@@ -12,6 +12,7 @@ import AnalysisSection from "@/components/admin/AnalysisSection";
 import HdTypeSelector from "@/components/admin/HdTypeSelector";
 import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
 import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
+import ParcoursSection from "@/components/admin/ParcoursSection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -34,6 +35,7 @@ type TabKey =
   | "overview"
   | "journal"
   | "program"
+  | "parcours"
   | "sessions"
   | "analysis"
   | "documents"
@@ -69,6 +71,7 @@ export default function ClientProfileTabs({
     { key: "overview", label: "Vue generale", badge: 0 },
     { key: "journal", label: "Journal", badge: 0 },
     { key: "program", label: "Programme", badge: 0 },
+    { key: "parcours", label: "Parcours", badge: 0 },
     { key: "sessions", label: "Sessions", badge: 0 },
     { key: "analysis", label: "Analyse", badge: 0 },
     { key: "documents", label: "Documents", badge: unreadDocCount },
@@ -114,6 +117,7 @@ export default function ClientProfileTabs({
           setSubTab={setProgramSubTab}
         />
       )}
+      {activeTab === "parcours" && <ParcoursTab client={client} />}
       {activeTab === "sessions" && <SessionsTab client={client} />}
       {activeTab === "analysis" && <AnalysisTab client={client} />}
       {activeTab === "documents" && (
@@ -536,6 +540,20 @@ function ProtocolsSubTab({ client }: { client: any }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   TAB — Parcours
+   ───────────────────────────────────────────── */
+function ParcoursTab({ client }: { client: any }) {
+  return (
+    <div>
+      <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+        Parcours 3 mois
+      </h2>
+      <ParcoursSection clientId={client.id} />
     </div>
   );
 }

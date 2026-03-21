@@ -1,0 +1,51 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
+
+// POST — assigner un élixir à une phase
+export async function POST(req: Request, ctx: RouteContext) {
+  const result = await requireAdmin();
+  if (isErrorResponse(result)) return result;
+
+  const { id: clientPhaseId } = await ctx.params;
+  const body = await req.json();
+  const { elixirLibraryId, dose, frequency, timing, notes } = body;
+
+  if (!elixirLibraryId) {
+    return NextResponse.json({ error: "elixirLibraryId requis" }, { status: 400 });
+  }
+
+  const phaseElixir = await prisma.phaseElixir.create({
+    data: {
+      clientPhaseId,
+      elixirLibraryId,
+      dose,
+      frequency: frequency || "DAILY",
+      timing: timing || "FLEXIBLE",
+      notes,
+    },
+    include: { elixirLibrary: true },
+  });
+
+  return NextResponse.json({ phaseElixir }, { status: 201 });
+}
+
+// DELETE — retirer un élixir assigné (query: phaseElixirId)
+export async function DELETE(req: Request) {
+  const result = await requireAdmin();
+  if (isErrorResponse(result)) return result;
+
+  const { searchParams } = new URL(req.url);
+  const phaseElixirId = searchParams.get("phaseElixirId");
+  if (!phaseElixirId) {
+    return NextResponse.json({ error: "phaseElixirId requis" }, { status: 400 });
+  }
+
+  await prisma.phaseElixir.delete({ where: { id: phaseElixirId } });
+
+  return NextResponse.json({ ok: true });
+}

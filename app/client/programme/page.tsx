@@ -1,848 +1,894 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import BreathingPlayer from "@/components/client/BreathingPlayer";
-import VideoPlayer from "@/components/client/VideoPlayer";
-import {
-  computeStockInfo,
-  stockColor,
-  stockTextColor,
-  type StockInfo,
-} from "@/lib/stock-utils";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════
 // Types
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════
 
-type TabKey = "pratiques" | "elixirs" | "protocoles" | "recommandations";
-
-interface TabDef {
-  key: TabKey;
+interface PhaseInfo {
+  phaseType: "CYCLE" | "BREAK";
+  phaseNumber: number;
+  durationDays: number;
+  startDay: number;
   label: string;
+  startDate: string;
+  endDate: string;
+  status: "UPCOMING" | "ACTIVE" | "COMPLETED";
 }
 
-const TABS: TabDef[] = [
-  { key: "pratiques", label: "Pratiques" },
-  { key: "elixirs", label: "\u00c9lixirs" },
-  { key: "protocoles", label: "Protocoles" },
-  { key: "recommandations", label: "Recommandations" },
+interface ActiveInfo {
+  phase: PhaseInfo;
+  dayInPhase: number;
+  dayInProgram: number;
+  totalDays: number;
+}
+
+interface TodayElixir {
+  id: string;
+  name: string;
+  description: string;
+  dose: string;
+  unit: string;
+  timing: string;
+  notes: string | null;
+}
+
+interface TodayPractice {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  duration: number | null;
+}
+
+interface CheckinData {
+  id?: string;
+  phase: string;
+  energyLevel: number | null;
+  sleepQuality: number | null;
+  sleepType: string | null;
+  dreamed: string | null;
+  dreamNotes: string | null;
+  morningGratitude: string | null;
+  freeFeeling: string | null;
+  pride1: string | null;
+  pride2: string | null;
+  pride3: string | null;
+  gratitudeMoment: string | null;
+  gratitudeSensation: string | null;
+  gratitudeRecu: string | null;
+  gratitudeSoi: string | null;
+  selfQuality: string | null;
+  closingSentence: string | null;
+  elixirTaken: boolean;
+}
+
+type ViewTab = "aujourdhui" | "calendrier";
+
+// ═══════════════════════════════════════
+// Labels
+// ═══════════════════════════════════════
+
+const TIMING_LABELS: Record<string, string> = {
+  MATIN: "Matin",
+  SOIR: "Soir",
+  JOURNEE: "Journée",
+  FLEXIBLE: "Flexible",
+};
+
+const TIMING_ORDER: Record<string, number> = {
+  MATIN: 0,
+  JOURNEE: 1,
+  SOIR: 2,
+  FLEXIBLE: 3,
+};
+
+const SLEEP_OPTIONS = [
+  { key: "leger", label: "Léger" },
+  { key: "profond", label: "Profond" },
+  { key: "reves", label: "Rêves" },
+  { key: "reveils", label: "Réveils" },
+  { key: "endormissement_long", label: "Long endormissement" },
+  { key: "nuit_continue", label: "Nuit continue" },
 ];
 
-// --- Pratiques ---
+const DREAM_OPTIONS = [
+  { key: "OUI", label: "Oui" },
+  { key: "NON", label: "Non" },
+  { key: "SAIS_PAS", label: "Je ne sais pas" },
+];
 
-interface Practice {
-  id: string;
-  title: string;
-  description: string;
-  type: "BREATHING" | "VIDEO" | "MEDITATION";
-  content: string;
-  category: string;
-  dayTrigger: number | null;
-}
-
-interface ClientPractice {
-  id: string;
-  practiceId: string;
-  practice: Practice;
-  assignedAt: string;
-  completedCount: number;
-  lastCompletedAt: string | null;
-  isActive: boolean;
-  note: string | null;
-}
-
-// --- Elixirs ---
-
-interface Prescription {
-  id: string;
-  dosage: string | null;
-  quantity: number | null;
-  dailyDose: number | null;
-  startDate: string;
-  endDate: string | null;
-  reorderUrl: string | null;
-  stockAlertDays: number;
-  notes: string | null;
-  createdAt: string;
-  elixir: {
-    name: string;
-    description: string;
-    dosage: string;
-    duration: string;
-  };
-}
-
-// --- Protocoles ---
-
-interface Protocol {
-  id: string;
-  title: string;
-  description: string | null;
-  frequency: string | null;
-  duration: string | null;
-  status: "ACTIVE" | "COMPLETED" | "PAUSED";
-  createdAt: string;
-}
-
-// --- Recommandations ---
-
-interface Recommendation {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  url: string | null;
-  isGlobal: boolean;
-}
-
-interface ClientRecommendation {
-  id: string;
-  recommendationId: string;
-  recommendation: Recommendation;
-  note: string | null;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const TYPE_BADGES: Record<string, { emoji: string; label: string }> = {
-  BREATHING: { emoji: "\ud83e\udec1", label: "Respiration" },
-  VIDEO: { emoji: "\ud83c\udfac", label: "Vid\u00e9o" },
-  MEDITATION: { emoji: "\ud83e\uddd8", label: "M\u00e9ditation" },
-};
-
-function isToday(dateStr: string | null): boolean {
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  const today = new Date();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "Actif",
-  COMPLETED: "Termin\u00e9",
-  PAUSED: "En pause",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "bg-foret/10 text-foret",
-  COMPLETED: "bg-brun-mid/10 text-brun-mid",
-  PAUSED: "bg-ambre-vif/10 text-ambre-vif",
-};
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════
+// Main Component
+// ═══════════════════════════════════════
 
 export default function ProgrammePage() {
-  const [activeTab, setActiveTab] = useState<TabKey>("pratiques");
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Mon programme
-        </h1>
-        <p className="text-brun-mid font-ui text-sm mt-1">
-          Pratiques, \u00e9lixirs, protocoles et recommandations
-        </p>
-      </div>
-
-      {/* Tab switcher */}
-      <div className="flex border-b border-or-pale mb-6">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2.5 text-sm font-ui transition-colors border-b-2 -mb-px ${
-              activeTab === tab.key
-                ? "text-or-sacre border-b-2 border-or-sacre"
-                : "text-brun-mid border-transparent hover:text-brun-chaud"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "pratiques" && <PratiquesTab />}
-      {activeTab === "elixirs" && <ElixirsTab />}
-      {activeTab === "protocoles" && <ProtocolesTab />}
-      {activeTab === "recommandations" && <RecommandationsTab />}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tab 1 — Pratiques
-// ---------------------------------------------------------------------------
-
-function PratiquesTab() {
-  const [practices, setPractices] = useState<ClientPractice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activePractice, setActivePractice] = useState<ClientPractice | null>(
-    null
-  );
+  const [phases, setPhases] = useState<PhaseInfo[]>([]);
+  const [activeInfo, setActiveInfo] = useState<ActiveInfo | null>(null);
+  const [todayElixirs, setTodayElixirs] = useState<TodayElixir[]>([]);
+  const [todayPractices, setTodayPractices] = useState<TodayPractice[]>([]);
+  const [checkin, setCheckin] = useState<CheckinData>(emptyCheckin("CYCLE"));
+  const [viewTab, setViewTab] = useState<ViewTab>("aujourdhui");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [calendarCheckins, setCalendarCheckins] = useState<Record<string, boolean>>({});
+  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadPractices = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch("/api/client-practices");
-      if (!res.ok) throw new Error("Impossible de charger les pratiques");
+      const res = await fetch("/api/parcours");
+      if (!res.ok) throw new Error();
       const data = await res.json();
-      setPractices(data.clientPractices ?? data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    loadPractices();
-  }, [loadPractices]);
+      setPhases(data.phases ?? []);
+      setActiveInfo(data.activeInfo ?? null);
+      setTodayElixirs(data.todayElixirs ?? []);
+      setTodayPractices(data.todayPractices ?? []);
 
-  const handleComplete = useCallback(
-    async (clientPracticeId: string) => {
-      try {
-        const res = await fetch(
-          `/api/client-practices/${clientPracticeId}/complete`,
-          { method: "POST" }
-        );
-        if (res.ok) await loadPractices();
-      } catch {
-        // Erreur silencieuse
+      if (data.todayCheckin) {
+        setCheckin({
+          ...data.todayCheckin,
+          sleepType: data.todayCheckin.sleepType ?? "[]",
+        });
+      } else if (data.activeInfo) {
+        setCheckin(emptyCheckin(data.activeInfo.phase.phaseType));
       }
-    },
-    [loadPractices]
-  );
 
-  const handleClosePlayer = useCallback(() => {
-    setActivePractice(null);
-  }, []);
-
-  if (loading) {
-    return (
-      <p className="text-sm font-ui text-brun-mid/60 py-8">
-        Chargement de vos pratiques...
-      </p>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center py-8 gap-3">
-        <p className="text-sm font-ui text-brun-mid">{error}</p>
-        <button
-          onClick={loadPractices}
-          className="px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:bg-ambre-vif transition-colors"
-        >
-          R\u00e9essayer
-        </button>
-      </div>
-    );
-  }
-
-  const activePractices = practices.filter((cp) => cp.isActive);
-
-  const sortedPractices = [...activePractices].sort((a, b) => {
-    const aCompleted = isToday(a.lastCompletedAt);
-    const bCompleted = isToday(b.lastCompletedAt);
-    if (aCompleted && !bCompleted) return 1;
-    if (!aCompleted && bCompleted) return -1;
-    return 0;
-  });
-
-  return (
-    <>
-      {/* Players */}
-      {activePractice &&
-        (activePractice.practice.type === "BREATHING" ||
-          activePractice.practice.type === "MEDITATION") && (
-          <BreathingPlayer
-            practice={activePractice.practice}
-            onComplete={() => handleComplete(activePractice.id)}
-            onClose={handleClosePlayer}
-          />
-        )}
-      {activePractice && activePractice.practice.type === "VIDEO" && (
-        <VideoPlayer
-          practice={activePractice.practice}
-          onComplete={() => handleComplete(activePractice.id)}
-          onClose={handleClosePlayer}
-        />
-      )}
-
-      {sortedPractices.length === 0 ? (
-        <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
-          <p className="text-sm font-ui text-brun-mid/60">
-            Aucune pratique assign\u00e9e pour le moment
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedPractices.map((cp) => {
-            const { practice, completedCount, lastCompletedAt } = cp;
-            const badge = TYPE_BADGES[practice.type] ?? {
-              emoji: "\ud83d\udccb",
-              label: practice.type,
-            };
-            const completedToday = isToday(lastCompletedAt);
-
-            return (
-              <div
-                key={cp.id}
-                className="bg-cire-chaude border border-or-pale rounded-sm p-5 flex flex-col gap-3"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-caps text-xs text-or-sacre tracking-wider uppercase">
-                    {badge.emoji} {badge.label}
-                  </span>
-                  {completedToday && (
-                    <span className="text-foret font-ui text-sm font-semibold">
-                      \u2713
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="font-display text-lg text-brun-chaud leading-snug">
-                  {practice.title}
-                </h3>
-
-                <p className="font-ui text-sm text-brun-mid line-clamp-2">
-                  {practice.description}
-                </p>
-
-                <div className="font-ui text-xs text-brun-mid/70 flex items-center gap-2 flex-wrap">
-                  <span>Compl\u00e9t\u00e9 {completedCount} fois</span>
-                  {lastCompletedAt && (
-                    <>
-                      <span>\u00b7</span>
-                      <span>Derni\u00e8re : {formatDate(lastCompletedAt)}</span>
-                    </>
-                  )}
-                </div>
-
-                {cp.note && (
-                  <p className="font-ui text-xs text-or-sacre/80 italic border-l-2 border-or-pale pl-3">
-                    {cp.note}
-                  </p>
-                )}
-
-                <button
-                  onClick={() => setActivePractice(cp)}
-                  className="mt-auto px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:bg-ambre-vif transition-colors self-start"
-                >
-                  {completedToday ? "Recommencer" : "Commencer"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tab 2 — Elixirs
-// ---------------------------------------------------------------------------
-
-function ElixirsTab() {
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [ordering, setOrdering] = useState<string | null>(null);
-  const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
-
-  const loadPrescriptions = useCallback(async () => {
-    try {
-      const res = await fetch("/api/prescriptions");
-      if (res.ok) {
-        const data = await res.json();
-        setPrescriptions(data.prescriptions);
+      // Build calendar map
+      if (data.activeInfo) {
+        const checkins = await fetch("/api/daily-checkin").then((r) => r.json());
+        const map: Record<string, boolean> = {};
+        for (const c of checkins.checkins ?? []) {
+          map[c.date.split("T")[0]] = true;
+        }
+        setCalendarCheckins(map);
       }
     } catch {
-      // Erreur silencieuse
+      // silent
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadPrescriptions();
-  }, [loadPrescriptions]);
+    loadData();
+  }, [loadData]);
 
-  async function handleOrder(prescription: Prescription) {
-    setOrdering(prescription.id);
-    setOrderSuccess(null);
+  // Auto-save to localStorage
+  useEffect(() => {
+    if (loading) return;
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    autoSaveRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem("hive_checkin_draft", JSON.stringify(checkin));
+      } catch {
+        // silent
+      }
+    }, 1000);
+  }, [checkin, loading]);
+
+  // Restore from localStorage on mount
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem("hive_checkin_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        // Only use draft if there's no server data
+        if (!checkin.id && parsed.phase) {
+          setCheckin((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {
+      // silent
+    }
+  }, []);
+
+  async function handleSave() {
+    if (!activeInfo) return;
+    setSaving(true);
+    setSaved(false);
 
     try {
-      const res = await fetch("/api/messages", {
+      const res = await fetch("/api/daily-checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: `Bonjour Joffrey, je souhaite commander \u00e0 nouveau l\u2019\u00e9lixir "${prescription.elixir.name}". Merci !`,
+          ...checkin,
+          phase: activeInfo.phase.phaseType,
         }),
       });
 
       if (res.ok) {
-        setOrderSuccess(prescription.id);
-        setTimeout(() => setOrderSuccess(null), 3000);
+        setSaved(true);
+        localStorage.removeItem("hive_checkin_draft");
+        setTimeout(() => setSaved(false), 3000);
+        await loadData();
       }
     } catch {
-      // Erreur silencieuse
+      // silent
     } finally {
-      setOrdering(null);
+      setSaving(false);
     }
   }
-
-  function isActive(prescription: Prescription): boolean {
-    if (!prescription.endDate) return true;
-    return new Date(prescription.endDate) > new Date();
-  }
-
-  const stockMap = useMemo(() => {
-    const map = new Map<string, StockInfo>();
-    for (const rx of prescriptions) {
-      map.set(
-        rx.id,
-        computeStockInfo({
-          quantity: rx.quantity,
-          dailyDose: rx.dailyDose,
-          startDate: rx.startDate,
-          endDate: rx.endDate,
-          stockAlertDays: rx.stockAlertDays,
-        })
-      );
-    }
-    return map;
-  }, [prescriptions]);
 
   if (loading) {
     return (
-      <p className="text-sm font-ui text-brun-mid/60 py-8">
-        Chargement de vos \u00e9lixirs...
-      </p>
-    );
-  }
-
-  if (prescriptions.length === 0) {
-    return (
-      <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
-        <p className="text-sm font-ui text-brun-mid/60">
-          Aucun \u00e9lixir prescrit pour le moment
-        </p>
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm font-ui text-brun-mid/60">Chargement de votre parcours...</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {prescriptions.map((prescription) => {
-        const active = isActive(prescription);
-        const stockInfo = stockMap.get(prescription.id)!;
-
-        return (
-          <div
-            key={prescription.id}
-            className={`bg-cire-chaude border border-or-pale rounded-sm p-5 ${
-              active ? "" : "opacity-70"
-            }`}
-          >
-            {/* En-tete */}
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-display text-lg text-brun-chaud">
-                  {prescription.elixir.name}
-                </h3>
-                <p className="text-xs font-ui text-brun-mid/70 mt-0.5">
-                  {prescription.elixir.description}
-                </p>
-              </div>
-              <span
-                className={`text-xs font-ui px-2 py-0.5 rounded-sharp shrink-0 ${
-                  active
-                    ? "bg-foret/10 text-foret"
-                    : "bg-brun-mid/10 text-brun-mid"
-                }`}
-              >
-                {active ? "Actif" : "Termin\u00e9"}
-              </span>
-            </div>
-
-            {/* Barre de stock */}
-            {stockInfo.percentRemaining !== null && (
-              <div className="mb-3">
-                <div className="h-3 bg-or-pale/30 rounded-full w-full">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${stockColor(stockInfo.percentRemaining)}`}
-                    style={{
-                      width: `${stockInfo.percentRemaining}%`,
-                    }}
-                  />
-                </div>
-                <p
-                  className={`font-ui text-sm mt-1 ${stockTextColor(stockInfo.percentRemaining)}`}
-                >
-                  {stockInfo.daysRemaining} jour
-                  {stockInfo.daysRemaining !== 1 ? "s" : ""} restant
-                  {stockInfo.daysRemaining !== 1 ? "s" : ""}
-                </p>
-              </div>
-            )}
-
-            {/* Alerte stock bas */}
-            {stockInfo.isLow && active && (
-              <div className="bg-red-50 border border-red-200 rounded-sharp p-3 mt-3 mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm text-red-600">
-                  Il te reste {stockInfo.daysRemaining} jour
-                  {stockInfo.daysRemaining !== 1 ? "s" : ""} \u2014 penser \u00e0
-                  commander
-                </p>
-                {prescription.reorderUrl && (
-                  <a
-                    href={prescription.reorderUrl}
-                    target="_blank"
-                    rel="noopener"
-                    className="shrink-0 px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
-                  >
-                    Commander
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Details */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-              <div>
-                <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  Dosage
-                </p>
-                <p className="text-sm font-ui text-brun-chaud mt-0.5">
-                  {prescription.dosage || prescription.elixir.dosage}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  Quantit\u00e9
-                </p>
-                <p className="text-sm font-ui text-brun-chaud mt-0.5">
-                  {prescription.quantity ?? "\u2014"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  Dose / jour
-                </p>
-                <p className="text-sm font-ui text-brun-chaud mt-0.5">
-                  {prescription.dailyDose ?? "\u2014"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  D\u00e9but
-                </p>
-                <p className="text-sm font-ui text-brun-chaud mt-0.5">
-                  {new Date(prescription.startDate).toLocaleDateString("fr-FR")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  Fin estim\u00e9e
-                </p>
-                <p className="text-sm font-ui text-brun-chaud mt-0.5">
-                  {stockInfo.endDate
-                    ? stockInfo.endDate.toLocaleDateString("fr-FR")
-                    : "Non d\u00e9finie"}
-                </p>
-              </div>
-            </div>
-
-            {/* Notes */}
-            {prescription.notes && (
-              <p className="text-xs font-ui text-brun-mid/60 italic mb-3">
-                {prescription.notes}
-              </p>
-            )}
-
-            {/* Bouton commander */}
-            <div className="flex items-center justify-end gap-2">
-              {orderSuccess === prescription.id && (
-                <span className="text-xs font-ui text-foret">
-                  Message envoy\u00e9 !
-                </span>
-              )}
-              {prescription.reorderUrl ? (
-                <a
-                  href={prescription.reorderUrl}
-                  target="_blank"
-                  rel="noopener"
-                  className="px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
-                >
-                  Commander
-                </a>
-              ) : (
-                <button
-                  onClick={() => handleOrder(prescription)}
-                  disabled={ordering === prescription.id}
-                  className="px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50"
-                >
-                  {ordering === prescription.id ? "Envoi..." : "Commander"}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tab 3 — Protocoles
-// ---------------------------------------------------------------------------
-
-function ProtocolesTab() {
-  const [protocols, setProtocols] = useState<Protocol[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadProtocols() {
-      try {
-        const res = await fetch("/api/protocols");
-        if (res.ok) {
-          const data = await res.json();
-          setProtocols(data.protocols);
-        }
-      } catch {
-        // Erreur silencieuse
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProtocols();
-  }, []);
-
-  if (loading) {
+  if (!activeInfo) {
     return (
-      <p className="text-sm font-ui text-brun-mid/60 py-8">
-        Chargement de vos protocoles...
-      </p>
-    );
-  }
-
-  if (protocols.length === 0) {
-    return (
-      <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
-        <p className="text-sm font-ui text-brun-mid/60">
-          Aucun protocole pour le moment
-        </p>
+      <div className="space-y-6">
+        <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">Mon programme</h1>
+        <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
+          <p className="text-sm text-brun-mid/60 font-ui">
+            Votre parcours n&apos;a pas encore été configuré. Contactez votre accompagnant.
+          </p>
+        </div>
       </div>
     );
   }
 
+  const isCycle = activeInfo.phase.phaseType === "CYCLE";
+
   return (
-    <div className="space-y-4">
-      {protocols.map((protocol) => (
-        <div
-          key={protocol.id}
-          className="bg-cire-chaude border border-or-pale rounded-sm p-5"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-display text-lg text-brun-chaud">
-              {protocol.title}
-            </h3>
-            <span
-              className={`text-xs font-ui px-2 py-0.5 rounded-sharp shrink-0 ${
-                STATUS_COLORS[protocol.status] ?? "bg-brun-mid/10 text-brun-mid"
-              }`}
-            >
-              {STATUS_LABELS[protocol.status] ?? protocol.status}
+    <div className="space-y-5 pb-24">
+      {/* Header — Où suis-je ? */}
+      <div>
+        <h1 className="font-display text-2xl text-brun-chaud">Mon programme</h1>
+
+        {/* Badge phase active */}
+        <div className="flex items-center gap-3 mt-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-or-sacre/10 text-or-sacre text-sm font-ui">
+            <span className="w-2 h-2 rounded-full bg-or-sacre" />
+            {activeInfo.phase.label} · J.{activeInfo.dayInPhase}
+          </span>
+        </div>
+
+        {/* Barre de progression globale */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-ui text-brun-mid/50">Progression globale</span>
+            <span className="text-xs font-ui text-brun-mid/50">
+              J.{activeInfo.dayInProgram} / {activeInfo.totalDays}
             </span>
           </div>
-
-          {protocol.description && (
-            <p className="font-ui text-sm text-brun-mid mb-3">
-              {protocol.description}
-            </p>
-          )}
-
-          <div className="flex items-center gap-4 flex-wrap">
-            {protocol.frequency && (
-              <div>
-                <span className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  Fr\u00e9quence
-                </span>
-                <p className="text-sm font-ui text-brun-chaud">
-                  {protocol.frequency}
-                </p>
-              </div>
-            )}
-            {protocol.duration && (
-              <div>
-                <span className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                  Dur\u00e9e
-                </span>
-                <p className="text-sm font-ui text-brun-chaud">
-                  {protocol.duration}
-                </p>
-              </div>
-            )}
-            <div>
-              <span className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                Cr\u00e9\u00e9 le
-              </span>
-              <p className="text-sm font-ui text-brun-chaud">
-                {formatDate(protocol.createdAt)}
-              </p>
-            </div>
+          <div className="h-1.5 bg-or-pale/30 rounded-full">
+            <div
+              className="h-full rounded-full bg-or-sacre/40 transition-all duration-300"
+              style={{ width: `${(activeInfo.dayInProgram / activeInfo.totalDays) * 100}%` }}
+            />
           </div>
         </div>
-      ))}
+
+        {/* Barre de progression phase */}
+        <div className="mt-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-ui text-brun-mid/50">{activeInfo.phase.label}</span>
+            <span className="text-xs font-ui text-brun-mid/50">
+              J.{activeInfo.dayInPhase} / {activeInfo.phase.durationDays}
+            </span>
+          </div>
+          <div className="h-2 bg-or-pale/30 rounded-full">
+            <div
+              className="h-full rounded-full bg-or-sacre transition-all duration-300"
+              style={{ width: `${(activeInfo.dayInPhase / activeInfo.phase.durationDays) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Tab switcher */}
+      <div className="flex border-b border-or-pale">
+        {(["aujourdhui", "calendrier"] as ViewTab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setViewTab(tab)}
+            className={`px-4 py-2.5 text-sm font-ui transition-colors border-b-2 -mb-px ${
+              viewTab === tab
+                ? "text-or-sacre border-or-sacre"
+                : "text-brun-mid border-transparent hover:text-brun-chaud"
+            }`}
+          >
+            {tab === "aujourdhui" ? "Aujourd'hui" : "Calendrier"}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {viewTab === "aujourdhui" ? (
+        <DailyCard
+          isCycle={isCycle}
+          elixirs={todayElixirs}
+          practices={todayPractices}
+          checkin={checkin}
+          setCheckin={setCheckin}
+        />
+      ) : (
+        <CalendarView
+          activeInfo={activeInfo}
+          calendarCheckins={calendarCheckins}
+        />
+      )}
+
+      {/* Sticky save button */}
+      {viewTab === "aujourdhui" && (
+        <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 z-40">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full py-3 text-sm font-ui uppercase tracking-[0.06em] bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50 shadow-lg"
+          >
+            {saving ? "Enregistrement..." : saved ? "Sauvegardé ✓" : "Sauvegarder"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Tab 4 — Recommandations
-// ---------------------------------------------------------------------------
+// ═══════════════════════════════════════
+// Daily Card
+// ═══════════════════════════════════════
 
-function RecommandationsTab() {
-  const [personal, setPersonal] = useState<ClientRecommendation[]>([]);
-  const [global, setGlobal] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState(true);
+function DailyCard({
+  isCycle,
+  elixirs,
+  practices,
+  checkin,
+  setCheckin,
+}: {
+  isCycle: boolean;
+  elixirs: TodayElixir[];
+  practices: TodayPractice[];
+  checkin: CheckinData;
+  setCheckin: (fn: (prev: CheckinData) => CheckinData) => void;
+}) {
+  const sortedElixirs = [...elixirs].sort(
+    (a, b) => (TIMING_ORDER[a.timing] ?? 3) - (TIMING_ORDER[b.timing] ?? 3)
+  );
 
-  useEffect(() => {
-    async function loadRecommendations() {
-      try {
-        const res = await fetch("/api/recommendations/client");
-        if (res.ok) {
-          const data = await res.json();
-          setPersonal(data.personal ?? []);
-          setGlobal(data.global ?? []);
-        }
-      } catch {
-        // Erreur silencieuse
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadRecommendations();
-  }, []);
+  return (
+    <div className="space-y-6">
+      {/* Élixirs du jour */}
+      {sortedElixirs.length > 0 && (
+        <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+          <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">
+            {isCycle ? "Mes élixirs aujourd'hui" : "Soutien du jour"}
+          </h3>
+          <div className="space-y-2.5">
+            {sortedElixirs.map((e) => (
+              <div key={e.id} className="flex items-baseline justify-between">
+                <div>
+                  <span className="text-xs font-ui text-brun-mid/60 mr-2">
+                    {TIMING_LABELS[e.timing]}
+                  </span>
+                  <span className="text-sm font-ui text-brun-chaud">{e.name}</span>
+                </div>
+                <span className="text-sm font-ui text-brun-mid">{e.dose}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-  if (loading) {
-    return (
-      <p className="text-sm font-ui text-brun-mid/60 py-8">
-        Chargement des recommandations...
-      </p>
-    );
-  }
+      {/* Pratiques */}
+      {practices.length > 0 && (
+        <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+          <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">
+            {isCycle ? "Ma pratique" : "Pratique"}
+          </h3>
+          {practices.map((p) => (
+            <div key={p.id} className="mb-2 last:mb-0">
+              <p className="text-sm font-ui text-brun-chaud">{p.title}</p>
+              {p.description && (
+                <p className="text-xs font-ui text-brun-mid/60 mt-0.5">{p.description}</p>
+              )}
+              {p.duration && (
+                <p className="text-xs font-ui text-brun-mid/40 mt-0.5">{p.duration} min</p>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
 
-  if (personal.length === 0 && global.length === 0) {
-    return (
-      <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
-        <p className="text-sm font-ui text-brun-mid/60">
-          Aucune recommandation pour le moment
-        </p>
-      </div>
-    );
+      {/* Check-in form */}
+      {isCycle ? (
+        <CycleCheckin checkin={checkin} setCheckin={setCheckin} />
+      ) : (
+        <BreakCheckin checkin={checkin} setCheckin={setCheckin} />
+      )}
+
+      {/* Élixir taken */}
+      <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+        <PillCheckbox
+          checked={checkin.elixirTaken}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, elixirTaken: v }))}
+          label="J'ai pris mes élixirs"
+        />
+      </section>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// Cycle Check-in (complet matin/soir)
+// ═══════════════════════════════════════
+
+function CycleCheckin({
+  checkin,
+  setCheckin,
+}: {
+  checkin: CheckinData;
+  setCheckin: (fn: (prev: CheckinData) => CheckinData) => void;
+}) {
+  const sleepTypes: string[] = parseSleepType(checkin.sleepType);
+
+  function toggleSleep(key: string) {
+    const current = parseSleepType(checkin.sleepType);
+    const next = current.includes(key)
+      ? current.filter((k) => k !== key)
+      : [...current, key];
+    setCheckin((prev) => ({ ...prev, sleepType: JSON.stringify(next) }));
   }
 
   return (
-    <div className="space-y-8">
-      {/* Section personnelle */}
-      {personal.length > 0 && (
-        <section>
-          <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-4">
-            S\u00e9lectionn\u00e9es pour vous
-          </h3>
-          <div className="space-y-3">
-            {personal.map((cr) => (
-              <RecommendationCard
-                key={cr.id}
-                recommendation={cr.recommendation}
-                note={cr.note}
+    <>
+      {/* MON MATIN */}
+      <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
+        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">
+          Mon matin
+        </h3>
+
+        {/* Énergie */}
+        <SliderField
+          label="Énergie"
+          value={checkin.energyLevel}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, energyLevel: v }))}
+        />
+
+        {/* Sommeil */}
+        <SliderField
+          label="Sommeil"
+          value={checkin.sleepQuality}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, sleepQuality: v }))}
+        />
+
+        {/* Type de sommeil */}
+        <div>
+          <p className="text-xs font-ui text-brun-mid mb-2">Type de sommeil</p>
+          <div className="flex flex-wrap gap-2">
+            {SLEEP_OPTIONS.map((opt) => (
+              <PillCheckbox
+                key={opt.key}
+                checked={sleepTypes.includes(opt.key)}
+                onChange={() => toggleSleep(opt.key)}
+                label={opt.label}
               />
             ))}
           </div>
-        </section>
-      )}
+        </div>
 
-      {/* Section globale */}
-      {global.length > 0 && (
-        <section>
-          <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-4">
-            Catalogue g\u00e9n\u00e9ral
-          </h3>
-          <div className="space-y-3">
-            {global.map((rec) => (
-              <RecommendationCard key={rec.id} recommendation={rec} />
+        {/* Rêves */}
+        <div>
+          <p className="text-xs font-ui text-brun-mid mb-2">As-tu rêvé ?</p>
+          <div className="flex gap-2">
+            {DREAM_OPTIONS.map((opt) => (
+              <PillCheckbox
+                key={opt.key}
+                checked={checkin.dreamed === opt.key}
+                onChange={() => setCheckin((prev) => ({ ...prev, dreamed: opt.key }))}
+                label={opt.label}
+              />
             ))}
           </div>
-        </section>
+        </div>
+
+        {/* Dream notes */}
+        <TextArea
+          value={checkin.dreamNotes}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, dreamNotes: v }))}
+          placeholder="Rêves, messages reçus, images fortes..."
+        />
+
+        {/* Morning gratitude */}
+        <TextArea
+          value={checkin.morningGratitude}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, morningGratitude: v }))}
+          placeholder="Ce pour quoi je suis reconnaissant(e) ce matin..."
+        />
+      </section>
+
+      {/* MON SOIR */}
+      <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
+        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">
+          Mon soir
+        </h3>
+
+        {/* Free feeling */}
+        <TextArea
+          value={checkin.freeFeeling}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, freeFeeling: v }))}
+          placeholder="Ce que j'ai ressenti aujourd'hui..."
+        />
+
+        {/* 3 fiertés */}
+        <div>
+          <p className="text-xs font-ui text-brun-mid mb-2">3 moments où j&apos;ai été fier(e)</p>
+          <div className="space-y-2">
+            <TextInput
+              value={checkin.pride1}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, pride1: v }))}
+              placeholder="Premier moment de fierté..."
+            />
+            <TextInput
+              value={checkin.pride2}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, pride2: v }))}
+              placeholder="Deuxième moment de fierté..."
+            />
+            <TextInput
+              value={checkin.pride3}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, pride3: v }))}
+              placeholder="Troisième moment de fierté..."
+            />
+          </div>
+        </div>
+
+        {/* 4 gratitudes */}
+        <div>
+          <p className="text-xs font-ui text-brun-mid mb-2">4 piments de gratitude</p>
+          <div className="space-y-2">
+            <TextInput
+              value={checkin.gratitudeMoment}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, gratitudeMoment: v }))}
+              placeholder="Un moment agréable..."
+            />
+            <TextInput
+              value={checkin.gratitudeSensation}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, gratitudeSensation: v }))}
+              placeholder="Une sensation ok..."
+            />
+            <TextInput
+              value={checkin.gratitudeRecu}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, gratitudeRecu: v }))}
+              placeholder="Quelque chose reçu..."
+            />
+            <TextInput
+              value={checkin.gratitudeSoi}
+              onChange={(v) => setCheckin((prev) => ({ ...prev, gratitudeSoi: v }))}
+              placeholder="Une chose pour moi..."
+            />
+          </div>
+        </div>
+
+        {/* Self quality */}
+        <TextArea
+          value={checkin.selfQuality}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, selfQuality: v }))}
+          placeholder="Ce que je reconnais en moi aujourd'hui..."
+        />
+
+        {/* Closing sentence */}
+        <TextInput
+          value={checkin.closingSentence}
+          onChange={(v) => setCheckin((prev) => ({ ...prev, closingSentence: v }))}
+          placeholder="Clôture — 1 phrase pour résumer ma journée..."
+        />
+      </section>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════
+// Break Check-in (allégé)
+// ═══════════════════════════════════════
+
+function BreakCheckin({
+  checkin,
+  setCheckin,
+}: {
+  checkin: CheckinData;
+  setCheckin: (fn: (prev: CheckinData) => CheckinData) => void;
+}) {
+  return (
+    <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
+      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">
+        Mon ressenti
+      </h3>
+
+      <TextArea
+        value={checkin.freeFeeling}
+        onChange={(v) => setCheckin((prev) => ({ ...prev, freeFeeling: v }))}
+        placeholder="Écriture libre — ce qui me traverse en ce moment..."
+        rows={5}
+      />
+
+      <TextInput
+        value={checkin.closingSentence}
+        onChange={(v) => setCheckin((prev) => ({ ...prev, closingSentence: v }))}
+        placeholder="Clôture — 1 phrase..."
+      />
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════
+// Calendar View
+// ═══════════════════════════════════════
+
+function CalendarView({
+  activeInfo,
+  calendarCheckins,
+}: {
+  activeInfo: ActiveInfo;
+  calendarCheckins: Record<string, boolean>;
+}) {
+  const phase = activeInfo.phase;
+  const start = new Date(phase.startDate);
+  const days: Date[] = [];
+  for (let i = 0; i < phase.durationDays; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [viewCheckin, setViewCheckin] = useState<CheckinData | null>(null);
+  const [loadingDay, setLoadingDay] = useState(false);
+
+  async function handleDayClick(date: Date) {
+    const dateStr = formatISODate(date);
+    if (date >= today) return; // Future / today → no read-only view
+
+    setSelectedDay(dateStr);
+    setLoadingDay(true);
+    try {
+      const res = await fetch(`/api/daily-checkin?date=${dateStr}`);
+      const data = await res.json();
+      setViewCheckin(data.checkin ?? null);
+    } catch {
+      setViewCheckin(null);
+    } finally {
+      setLoadingDay(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">
+          {phase.label} — {phase.durationDays} jours
+        </h3>
+
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((d) => {
+            const dateStr = formatISODate(d);
+            const isToday = d.getTime() === today.getTime();
+            const isPast = d < today;
+            const completed = calendarCheckins[dateStr];
+
+            return (
+              <button
+                key={dateStr}
+                onClick={() => isPast && handleDayClick(d)}
+                disabled={!isPast}
+                className={`aspect-square rounded-full flex items-center justify-center text-xs font-ui transition-all ${
+                  isToday
+                    ? "bg-or-sacre text-white ring-2 ring-or-sacre/30"
+                    : completed
+                      ? "bg-foret/20 text-foret"
+                      : isPast
+                        ? "bg-brun-mid/10 text-brun-mid hover:bg-or-pale/50"
+                        : "bg-brun-mid/5 text-brun-mid/30"
+                }`}
+              >
+                {d.getDate()}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Read-only view of past checkin */}
+      {selectedDay && (
+        <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+          <h4 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">
+            {new Date(selectedDay).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+          </h4>
+
+          {loadingDay ? (
+            <p className="text-sm font-ui text-brun-mid/60">Chargement...</p>
+          ) : !viewCheckin ? (
+            <p className="text-sm font-ui text-brun-mid/50">Aucun check-in ce jour.</p>
+          ) : (
+            <ReadOnlyCheckin checkin={viewCheckin} />
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function RecommendationCard({
-  recommendation,
-  note,
-}: {
-  recommendation: Recommendation;
-  note?: string | null;
-}) {
-  return (
-    <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-caps text-or-sacre uppercase tracking-wider">
-              {recommendation.category}
-            </span>
-          </div>
-          <h4 className="font-display text-base text-brun-chaud mb-1">
-            {recommendation.title}
-          </h4>
-          {recommendation.description && (
-            <p className="font-ui text-sm text-brun-mid line-clamp-2">
-              {recommendation.description}
-            </p>
-          )}
-          {note && (
-            <p className="font-ui text-xs text-or-sacre/80 italic mt-2 border-l-2 border-or-pale pl-3">
-              {note}
-            </p>
-          )}
-        </div>
+function ReadOnlyCheckin({ checkin }: { checkin: CheckinData }) {
+  const fields: [string, string | null | undefined][] = [
+    ["Énergie", checkin.energyLevel ? `${checkin.energyLevel}/10` : null],
+    ["Sommeil", checkin.sleepQuality ? `${checkin.sleepQuality}/10` : null],
+    ["Gratitude matin", checkin.morningGratitude],
+    ["Ressenti", checkin.freeFeeling],
+    ["Fierté 1", checkin.pride1],
+    ["Fierté 2", checkin.pride2],
+    ["Fierté 3", checkin.pride3],
+    ["Moment agréable", checkin.gratitudeMoment],
+    ["Sensation ok", checkin.gratitudeSensation],
+    ["Reçu", checkin.gratitudeRecu],
+    ["Pour moi", checkin.gratitudeSoi],
+    ["Qualité reconnue", checkin.selfQuality],
+    ["Clôture", checkin.closingSentence],
+  ];
 
-        {recommendation.url && (
-          <a
-            href={recommendation.url}
-            target="_blank"
-            rel="noopener"
-            className="shrink-0 text-xs font-ui text-or-sacre hover:text-ambre-vif transition-colors"
-          >
-            D\u00e9couvrir \u2192
-          </a>
-        )}
-      </div>
+  const filledFields = fields.filter(([, v]) => v);
+
+  return (
+    <div className="space-y-2">
+      {filledFields.map(([label, value]) => (
+        <div key={label}>
+          <span className="text-xs font-caps text-brun-mid/60 uppercase tracking-wider">{label}</span>
+          <p className="text-sm font-ui text-brun-chaud mt-0.5">{value}</p>
+        </div>
+      ))}
+      {checkin.elixirTaken && (
+        <p className="text-xs font-ui text-foret mt-2">Élixirs pris ✓</p>
+      )}
     </div>
   );
+}
+
+// ═══════════════════════════════════════
+// Shared UI Components
+// ═══════════════════════════════════════
+
+function SliderField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (v: number) => void;
+}) {
+  const val = value ?? 5;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-ui text-brun-mid">{label}</span>
+        <span className="text-sm font-ui text-or-sacre font-medium">{val}/10</span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        value={val}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-or-sacre"
+        style={{
+          background: `linear-gradient(to right, #B8821E 0%, #B8821E ${(val - 1) * 11.1}%, #E8D5A8 ${(val - 1) * 11.1}%, #E8D5A8 100%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+function PillCheckbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`px-3 py-1.5 rounded-full text-xs font-ui transition-all duration-150 border ${
+        checked
+          ? "bg-or-sacre text-white border-or-sacre"
+          : "bg-creme-sacree text-brun-mid border-or-pale hover:border-or-sacre/50"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function TextArea({
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  value: string | null;
+  onChange: (v: string) => void;
+  placeholder: string;
+  rows?: number;
+}) {
+  return (
+    <textarea
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      rows={rows}
+      placeholder={placeholder}
+      className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre resize-none placeholder:text-brun-mid/30 placeholder:italic"
+    />
+  );
+}
+
+function TextInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string | null;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <input
+      type="text"
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic"
+    />
+  );
+}
+
+// ═══════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════
+
+function emptyCheckin(phase: string): CheckinData {
+  return {
+    phase,
+    energyLevel: null,
+    sleepQuality: null,
+    sleepType: "[]",
+    dreamed: null,
+    dreamNotes: null,
+    morningGratitude: null,
+    freeFeeling: null,
+    pride1: null,
+    pride2: null,
+    pride3: null,
+    gratitudeMoment: null,
+    gratitudeSensation: null,
+    gratitudeRecu: null,
+    gratitudeSoi: null,
+    selfQuality: null,
+    closingSentence: null,
+    elixirTaken: false,
+  };
+}
+
+function parseSleepType(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function formatISODate(date: Date): string {
+  return date.toISOString().split("T")[0];
 }

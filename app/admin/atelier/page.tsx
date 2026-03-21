@@ -39,6 +39,13 @@ const cards: AtelierCard[] = [
     icon: "⭐",
     color: "#6B4423",
   },
+  {
+    href: "/admin/elixir-library",
+    title: "Bibliothèque élixirs",
+    description: "Élixirs parcours — Activation, Intégration, Support",
+    icon: "🍯",
+    color: "#B8821E",
+  },
 ];
 
 // Page L'Atelier — hub de gestion avec grille de raccourcis
