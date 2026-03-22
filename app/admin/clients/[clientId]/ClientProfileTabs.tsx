@@ -10,6 +10,7 @@ import { computeStockInfo, stockColor, stockTextColor } from "@/lib/stock-utils"
 import DocumentsSection from "@/components/admin/DocumentsSection";
 import AnalysisSection from "@/components/admin/AnalysisSection";
 import HdTypeSelector from "@/components/admin/HdTypeSelector";
+import TimezoneSelector from "@/components/admin/TimezoneSelector";
 import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
 import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
 import ParcoursSection from "@/components/admin/ParcoursSection";
@@ -194,6 +195,11 @@ function OverviewTab({ client, dayNumber }: { client: any; dayNumber: number }) 
               <HdTypeSelector
                 clientId={client.id}
                 currentHdType={client.hdType ?? null}
+              />
+              <p className="text-xs font-ui text-brun-mid/60 mt-4 mb-1">Fuseau horaire</p>
+              <TimezoneSelector
+                clientId={client.id}
+                currentTimezone={client.timezone ?? null}
               />
             </div>
           </div>

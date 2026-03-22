@@ -77,6 +77,9 @@ export default function Sidebar({
           Outils
         </p>
         <nav className="space-y-0.5">
+          <NavItem href="/admin/day-messages" label="Messages Matin" active={isActive("/admin/day-messages")}>
+            <span>🌅</span>
+          </NavItem>
           <NavItem href="/admin/messages" label="Messages" active={isActive("/admin/messages")} badge={unreadMessagesCount}>
             <ChatIcon />
           </NavItem>

@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   try {
     const body = await request.json();
-    const { notes, status, nextSessionDate, hdType } = body;
+    const { notes, status, nextSessionDate, hdType, timezone } = body;
 
     // Vérifie que le client existe
     const existing = await prisma.client.findUnique({ where: { id } });
@@ -67,6 +67,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         : null;
     }
     if (hdType !== undefined) data.hdType = hdType || null;
+    if (timezone !== undefined) data.timezone = timezone || "Europe/Paris";
 
     const updated = await prisma.client.update({
       where: { id },

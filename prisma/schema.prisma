@@ -70,6 +70,7 @@ model Client {
   notes                 String?      // Notes internes Joffrey — NON visible client
   onboardingCompleted   Boolean      @default(false) // Onboarding formulaire rempli
   hdType                String?      // Type Human Design (GENERATOR, MANIFESTOR, etc.)
+  timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -88,6 +89,7 @@ model Client {
   analysis              ClientAnalysis?
   journeyMessageLogs    JourneyMessageLog[]
   clientPractices       ClientPractice[]
+  seenMessages          ClientMessageSeen[]
   clientPhases          ClientPhase[]
   dailyCheckins         DailyCheckin[]
 }
@@ -622,4 +624,25 @@ model DailyCheckin {
   updatedAt DateTime @updatedAt
 
   @@unique([clientId, date])
+}
+
+// Messages aléatoires du matin — gérés depuis l'admin
+model DayMessage {
+  id        String   @id @default(uuid())
+  text      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  seenBy    ClientMessageSeen[]
+}
+
+// Anti-répétition : messages déjà vus par client
+model ClientMessageSeen {
+  id         String     @id @default(uuid())
+  clientId   String
+  messageId  String
+  seenAt     DateTime   @default(now())
+  client     Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  message    DayMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, messageId])
 }
