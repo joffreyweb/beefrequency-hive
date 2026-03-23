@@ -68,6 +68,7 @@ model Client {
   charteSignee          Boolean      @default(false)
   charteSignature       String?
   charteSignedAt        DateTime?
+  language              String       @default("FR")
   startDate             DateTime     @default(now())
   nextSessionDate       DateTime?
   notes                 String?      // Notes internes Joffrey — NON visible client
@@ -191,6 +192,7 @@ model InviteToken {
   email     String
   role      Role      @default(CLIENT)
   offerType OfferType
+  language  String    @default("FR")
   usedAt    DateTime?
   expiresAt DateTime
 

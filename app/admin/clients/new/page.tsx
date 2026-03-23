@@ -16,6 +16,7 @@ export default function InviteClientPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [inviteLink, setInviteLink] = useState("");
+  const [language, setLanguage] = useState("FR");
 
   // Envoie l'invitation via POST /api/invite
   async function handleSubmit(e: React.FormEvent) {
@@ -28,7 +29,7 @@ export default function InviteClientPage() {
       const res = await fetch("/api/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, offerType }),
+        body: JSON.stringify({ email, offerType, language }),
       });
 
       const data = await res.json();
@@ -108,6 +109,15 @@ export default function InviteClientPage() {
                   {opt.label}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Langue */}
+          <div>
+            <label htmlFor="language" className="block text-xs font-ui font-light text-brun-mid uppercase tracking-wider mb-1.5">Langue du client</label>
+            <select id="language" value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200">
+              <option value="FR">FR — Français</option>
+              <option value="EN">EN — English</option>
             </select>
           </div>
 

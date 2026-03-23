@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, offerType } = body;
+    const { email, offerType, language = "FR" } = body;
 
     // Validation des champs requis
     if (!email || !offerType) {
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         offerType,
+        language,
         role: "CLIENT",
         expiresAt,
       },
