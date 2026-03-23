@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import VideoRecorder from "@/components/video/VideoRecorder";
+import CharteEngagement from "@/components/onboarding/CharteEngagement";
 
 // Données du formulaire d'onboarding
 interface FormData {
@@ -18,7 +19,6 @@ interface FormData {
   birthTimeUnknown: boolean;
   birthPlace: string;
   birthCountry: string;
-  hdType: string;
   intention: string;
 }
 
@@ -35,7 +35,6 @@ const INITIAL_FORM: FormData = {
   birthTimeUnknown: false,
   birthPlace: "",
   birthCountry: "",
-  hdType: "",
   intention: "",
 };
 
@@ -109,7 +108,6 @@ export default function OnboardingPage() {
           city: form.city.trim(),
           postalCode: form.postalCode.trim(),
           country: form.country.trim(),
-          hdType: form.hdType || null,
           intention: form.intention.trim(),
         }),
       });
@@ -313,29 +311,6 @@ export default function OnboardingPage() {
                 onChange={(v) => update("birthCountry", v)}
                 required
               />
-
-              {/* Type Human Design */}
-              <div>
-                <label className="block font-caps text-xs text-brun-chaud mb-1 uppercase tracking-wider">
-                  Connaissez-vous votre type Human Design ?
-                </label>
-                <select
-                  value={form.hdType}
-                  onChange={(e) => update("hdType", e.target.value)}
-                  className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
-                >
-                  <option value="">Je ne sais pas</option>
-                  <option value="GENERATOR">Générateur</option>
-                  <option value="MANIFESTING_GENERATOR">Générateur Manifestant</option>
-                  <option value="MANIFESTOR">Manifesteur</option>
-                  <option value="PROJECTOR">Projecteur</option>
-                  <option value="REFLECTOR">Réflecteur</option>
-                </select>
-                <p className="text-xs text-brun-mid/60 mt-1">
-                  Si vous ne connaissez pas votre type, Joffrey le déterminera pour vous.
-                </p>
-              </div>
-
               <div className="flex gap-4 pt-4">
                 <button
                   onClick={() => setStep(1)}
@@ -400,6 +375,24 @@ export default function OnboardingPage() {
               </div>
             </div>
           )}
+
+          {/* Étape 4 — Vidéo Seuil 1 */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="font-display text-xl text-brun-chaud">Votre témoignage vidéo</h2>
+                <p className="font-ui text-sm text-brun-mid mt-1">60 secondes pour poser votre point de départ.</p>
+              </div>
+              <VideoRecorder seuil="1" onComplete={() => setStep(5)} />
+              <button onClick={() => setStep(3)} className="w-full py-2 text-brun-mid font-ui text-xs uppercase tracking-wider hover:text-brun-chaud transition-colors">Précédent</button>
+            </div>
+          )}
+
+          {/* Étape 5 — Charte */}
+          {step === 5 && (
+            <CharteEngagement clientName={form.firstName + ' ' + form.lastName} onComplete={handleSubmit} />
+          )}
+
         </div>
       </div>
         </>
