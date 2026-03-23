@@ -69,6 +69,7 @@ model Client {
   charteSignature       String?
   charteSignedAt        DateTime?
   language              String       @default("FR")
+  hdData                String?
   startDate             DateTime     @default(now())
   nextSessionDate       DateTime?
   notes                 String?      // Notes internes Joffrey — NON visible client
