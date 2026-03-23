@@ -65,6 +65,9 @@ model Client {
   user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   status                ClientStatus @default(ACTIVE)
   offerType             OfferType
+  charteSignee          Boolean      @default(false)
+  charteSignature       String?
+  charteSignedAt        DateTime?
   startDate             DateTime     @default(now())
   nextSessionDate       DateTime?
   notes                 String?      // Notes internes Joffrey — NON visible client

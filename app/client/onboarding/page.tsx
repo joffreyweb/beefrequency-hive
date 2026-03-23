@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import VideoRecorder from "@/components/video/VideoRecorder";
 
 // Données du formulaire d'onboarding
 interface FormData {
@@ -390,11 +391,11 @@ export default function OnboardingPage() {
                   Précédent
                 </button>
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => setStep(4)}
                   disabled={submitting}
                   className="flex-1 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {submitting ? "Envoi en cours..." : "Envoyer"}
+                  Suivant
                 </button>
               </div>
             </div>
