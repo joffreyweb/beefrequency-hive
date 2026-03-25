@@ -20,4 +20,5 @@ jobs:
             npm install
             npx prisma migrate deploy
             npm run build
-sudo fuser -k 3000/tcp || true && pm2 restart hive
+            sudo fuser -k 3000/tcp || true
+            pm2 restart hive
