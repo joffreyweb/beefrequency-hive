@@ -3,5 +3,7 @@ import { removeAuthCookie } from "@/lib/auth";
 
 export async function POST() {
   await removeAuthCookie();
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete("onboarding_completed");
+  return response;
 }

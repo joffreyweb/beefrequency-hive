@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
 
     await setAuthCookie(token);
 
-    return NextResponse.json({
+    // Si CLIENT avec onboarding complété, poser le cookie pour le middleware
+    const response = NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
@@ -58,6 +59,24 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
     });
+
+    if (user.role === "CLIENT") {
+      const client = await prisma.client.findUnique({
+        where: { userId: user.id },
+        select: { onboardingCompleted: true },
+      });
+      if (client?.onboardingCompleted) {
+        response.cookies.set("onboarding_completed", "1", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+        });
+      }
+    }
+
+    return response;
   } catch {
     return NextResponse.json(
       { error: "Erreur serveur" },

@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // Routes publiques qui ne nécessitent pas d'auth
-const publicPaths = ["/login", "/invite", "/api/auth/login"];
+const publicPaths = ["/login", "/register", "/invite", "/api/auth/login"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -42,20 +42,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
 
-    // Onboarding guard : si CLIENT et pas sur /client/onboarding ni sur /api,
-    // vérifier via un header custom si l'onboarding est complété
-    // Note : la vérification DB se fait côté page (server component),
-    // le middleware pose un header pour que la page puisse redirect si nécessaire
+    // Onboarding guard : bloquer /client/* tant que l'onboarding n'est pas complété
     if (
       role === "CLIENT" &&
       pathname.startsWith("/client") &&
-      !pathname.startsWith("/client/onboarding") &&
-      !pathname.startsWith("/api")
+      !pathname.startsWith("/client/onboarding")
     ) {
-      // On ajoute le userId dans un header pour que les pages puissent vérifier
-      const response = NextResponse.next();
-      response.headers.set("x-user-id", payload.userId as string);
-      return response;
+      const onboardingDone = request.cookies.get("onboarding_completed")?.value;
+      if (!onboardingDone) {
+        return NextResponse.redirect(new URL("/client/onboarding", request.url));
+      }
     }
 
     // Redirection racine selon le rôle

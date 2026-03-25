@@ -86,8 +86,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validation de l'intention (minimum 50 caractères)
-    if (intention.trim().length < 50) {
+    // Validation de l'intention (minimum 50 caractères si renseignée)
+    if (intention && intention.trim().length > 0 && intention.trim().length < 50) {
       return NextResponse.json(
         { error: "L'intention doit contenir au moins 50 caractères" },
         { status: 400 }
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
         city: city.trim(),
         postalCode: postalCode.trim(),
         country: country.trim(),
-        intention: intention.trim(),
+        intention: intention?.trim() || "",
         submittedAt: new Date(),
       },
       update: {
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         city: city.trim(),
         postalCode: postalCode.trim(),
         country: country.trim(),
-        intention: intention.trim(),
+        intention: intention?.trim() || "",
         submittedAt: new Date(),
       },
     });
@@ -164,7 +164,16 @@ export async function POST(request: Request) {
       // Fire and forget — on ignore les erreurs réseau
     });
 
-    return NextResponse.json({ success: true });
+    // Pose un cookie pour que le middleware autorise l'accès /client/*
+    const response = NextResponse.json({ success: true });
+    response.cookies.set("onboarding_completed", "1", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365, // 1 an
+    });
+    return response;
   } catch {
     return NextResponse.json(
       { error: "Erreur serveur" },
