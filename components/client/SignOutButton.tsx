@@ -1,18 +1,23 @@
 "use client";
 
+import { useState } from "react";
+
 export default function SignOutButton() {
-  function handleSignOut() {
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie = "onboarding_completed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  const [loading, setLoading] = useState(false);
+
+  async function handleSignOut() {
+    setLoading(true);
+    await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
   }
 
   return (
     <button
       onClick={handleSignOut}
-      className="text-xs font-ui text-brun-mid/40 hover:text-brun-mid transition-colors"
+      disabled={loading}
+      className="text-xs font-ui text-brun-mid/40 hover:text-brun-mid transition-colors disabled:opacity-50"
     >
-      Sign out
+      {loading ? "..." : "Sign out"}
     </button>
   );
 }
