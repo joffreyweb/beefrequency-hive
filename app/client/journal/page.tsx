@@ -21,10 +21,10 @@ interface SymptomMessage {
 type Tab = "shared" | "private";
 
 const MOOD_OPTIONS = [
-  { emoji: "\u{1F614}", label: "Difficile" },
-  { emoji: "\u{1F610}", label: "Neutre" },
-  { emoji: "\u{1F642}", label: "Bien" },
-  { emoji: "\u{1F60A}", label: "Tr\u00e8s bien" },
+  { emoji: "\u{1F614}", label: "Difficult" },
+  { emoji: "\u{1F610}", label: "Neutral" },
+  { emoji: "\u{1F642}", label: "Good" },
+  { emoji: "\u{1F60A}", label: "Very good" },
   { emoji: "\u2728", label: "Excellent" },
 ];
 
@@ -124,10 +124,10 @@ export default function JournalPage() {
       if (res.ok) {
         setEntries(data.entries);
       } else {
-        setError(data.error || "Erreur lors du chargement");
+        setError(data.error || "Failed to load");
       }
     } catch {
-      setError("Erreur de connexion au serveur");
+      setError("Connection error");
     } finally {
       setLoading(false);
     }
@@ -159,7 +159,7 @@ export default function JournalPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Erreur lors de la creation");
+        setError(data.error || "Failed to create entry");
         setSubmitting(false);
         return;
       }
@@ -178,7 +178,7 @@ export default function JournalPage() {
         await fetchEntries();
       }
     } catch {
-      setError("Erreur de connexion au serveur");
+      setError("Connection error");
     } finally {
       setSubmitting(false);
     }
@@ -186,7 +186,7 @@ export default function JournalPage() {
 
   // Suppression d'une entree
   async function handleDelete(id: string) {
-    if (!confirm("Supprimer cette entree ?")) return;
+    if (!confirm("Delete this entry?")) return;
 
     try {
       const res = await fetch(`/api/journal/${id}`, { method: "DELETE" });
@@ -194,24 +194,24 @@ export default function JournalPage() {
         setEntries((prev) => prev.filter((e) => e.id !== id));
       }
     } catch {
-      setError("Erreur lors de la suppression");
+      setError("Failed to delete");
     }
   }
 
   return (
     <div className="space-y-8">
       <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-        Mon journal
+        My journal
       </h1>
 
-      {/* Section 1 — Comment je me sens aujourd'hui */}
+      {/* Section 1 — How I feel today */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
         <h2 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-4">
-          Comment je me sens aujourd&apos;hui
+          How I feel today
         </h2>
 
         {symptomLoading ? (
-          <p className="text-sm text-brun-mid/60 font-ui">Chargement...</p>
+          <p className="text-sm text-brun-mid/60 font-ui">Loading...</p>
         ) : todaySymptom ? (
           /* Deja soumis aujourd'hui */
           <div className="space-y-2">
@@ -221,14 +221,14 @@ export default function JournalPage() {
                 {todaySymptom.content.split(" ").slice(1).join(" ")}
               </span>
               <span className="text-xs font-ui text-brun-mid ml-auto">
-                {new Date(todaySymptom.createdAt).toLocaleTimeString("fr-FR", {
+                {new Date(todaySymptom.createdAt).toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </span>
             </div>
             <p className="text-xs text-brun-mid/50 font-ui">
-              D\u00e9j\u00e0 rempli aujourd&apos;hui
+              Already submitted today
             </p>
           </div>
         ) : (
@@ -268,7 +268,7 @@ export default function JournalPage() {
             <textarea
               value={symptomText}
               onChange={(e) => setSymptomText(e.target.value)}
-              placeholder="Quelque chose \u00e0 signaler ?"
+              placeholder="Anything to report?"
               rows={2}
               className="w-full px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors resize-none"
             />
@@ -280,7 +280,7 @@ export default function JournalPage() {
               disabled={!selectedMood || symptomSubmitting}
               className="bg-or-sacre text-white rounded-sharp text-xs font-ui px-4 py-2 hover:bg-ambre-vif transition-colors disabled:opacity-50"
             >
-              {symptomSubmitting ? "Envoi..." : "Envoyer"}
+              {symptomSubmitting ? "Sending..." : "Send"}
             </button>
           </div>
         )}
@@ -294,13 +294,13 @@ export default function JournalPage() {
         className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-4"
       >
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid">
-          Nouvelle entree
+          New entry
         </h2>
 
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Ecrivez ici..."
+          placeholder="Write here..."
           rows={4}
           className="w-full px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors resize-y"
           required
@@ -312,7 +312,7 @@ export default function JournalPage() {
             type="text"
             value={mood}
             onChange={(e) => setMood(e.target.value)}
-            placeholder="Humeur (optionnel)"
+            placeholder="Mood (optional)"
             className="px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors w-full sm:w-48"
           />
 
@@ -325,7 +325,7 @@ export default function JournalPage() {
               className="accent-or-sacre w-4 h-4"
             />
             <span className="text-sm font-ui text-brun-mid">
-              Garder prive
+              Keep private
             </span>
           </label>
 
@@ -335,7 +335,7 @@ export default function JournalPage() {
             disabled={submitting || !content.trim()}
             className="ml-auto px-4 py-2 rounded-sm bg-or-sacre text-creme-sacree font-ui text-sm font-medium hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
-            {submitting ? "Envoi..." : "Ajouter"}
+            {submitting ? "Sending..." : "Add"}
           </button>
         </div>
 
@@ -348,22 +348,22 @@ export default function JournalPage() {
           active={activeTab === "shared"}
           onClick={() => setActiveTab("shared")}
         >
-          Mon journal
+          My journal
         </TabButton>
         <TabButton
           active={activeTab === "private"}
           onClick={() => setActiveTab("private")}
         >
-          Journal prive
+          Private journal
         </TabButton>
       </div>
 
       {/* Liste des entrees */}
       {loading ? (
-        <p className="text-brun-mid font-ui text-sm py-4">Chargement...</p>
+        <p className="text-brun-mid font-ui text-sm py-4">Loading...</p>
       ) : entries.length === 0 ? (
         <p className="text-brun-mid font-ui text-sm py-4">
-          Aucune entree pour le moment.
+          No entries yet.
         </p>
       ) : (
         <div className="space-y-4">
@@ -377,7 +377,7 @@ export default function JournalPage() {
                   {/* Date et humeur */}
                   <div className="flex items-center gap-3 mb-2">
                     <time className="text-xs text-brun-mid font-ui">
-                      {new Date(entry.createdAt).toLocaleDateString("fr-FR", {
+                      {new Date(entry.createdAt).toLocaleDateString("en-US", {
                         weekday: "long",
                         day: "numeric",
                         month: "long",
@@ -391,7 +391,7 @@ export default function JournalPage() {
                     )}
                     {entry.isPrivate && (
                       <span className="text-xs bg-foret/10 text-foret px-2 py-0.5 rounded-sharp font-ui">
-                        Prive
+                        Private
                       </span>
                     )}
                   </div>
@@ -406,7 +406,7 @@ export default function JournalPage() {
                 <button
                   onClick={() => handleDelete(entry.id)}
                   className="text-brun-mid hover:text-red-600 transition-colors p-1 shrink-0"
-                  title="Supprimer"
+                  title="Delete"
                 >
                   <svg
                     className="w-4 h-4"

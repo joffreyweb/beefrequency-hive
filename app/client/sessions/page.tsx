@@ -5,15 +5,15 @@ import { requireOnboarding } from "@/lib/onboarding-guard";
 
 // Labels lisibles pour les types de session
 const TYPE_LABELS: Record<string, string> = {
-  ONLINE: "En ligne",
-  PRESENTIAL: "Présentiel",
-  CEREMONY: "Cérémonie",
+  ONLINE: "Online",
+  PRESENTIAL: "In-person",
+  CEREMONY: "Ceremony",
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: "Planifiée",
-  COMPLETED: "Terminée",
-  CANCELLED: "Annulée",
+  SCHEDULED: "Scheduled",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 // Sessions + Agenda client — server component, N'affiche PAS les notes privées
@@ -95,10 +95,10 @@ export default async function ClientSessionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Mes séances
+          My sessions
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Jour {dayNumber} de votre parcours
+          Day {dayNumber} of your journey
         </p>
       </div>
 
@@ -106,7 +106,7 @@ export default async function ClientSessionsPage() {
       {hasRecos && (
         <div>
           <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-            Jour {dayNumber} — Recommandations
+            Day {dayNumber} — Recommendations
           </h2>
 
           <div className="space-y-3">
@@ -114,7 +114,7 @@ export default async function ClientSessionsPage() {
             {focus && (
               <div className="border border-or-sacre bg-cire-chaude rounded-sm p-5">
                 <p className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
-                  Focus du jour
+                  Focus of the day
                 </p>
                 <p className="font-display text-lg text-brun-chaud mb-1">
                   {focus.title}
@@ -127,7 +127,7 @@ export default async function ClientSessionsPage() {
             {morningRecos.length > 0 && (
               <div className="bg-cire-chaude border-l-4 border-or-sacre rounded-sm p-5">
                 <p className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-                  Matin
+                  Morning
                 </p>
                 <div className="space-y-3">
                   {morningRecos.map((reco) => (
@@ -148,7 +148,7 @@ export default async function ClientSessionsPage() {
             {eveningRecos.length > 0 && (
               <div className="bg-cire-chaude border-l-4 border-ambre-vif rounded-sm p-5">
                 <p className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-                  Soir
+                  Evening
                 </p>
                 <div className="space-y-3">
                   {eveningRecos.map((reco) => (
@@ -172,10 +172,10 @@ export default async function ClientSessionsPage() {
       {nextSession ? (
         <div className="bg-cire-chaude border-2 border-or-sacre rounded-sm p-6">
           <p className="font-caps text-xs text-or-sacre uppercase tracking-widest mb-2">
-            Prochaine séance
+            Next session
           </p>
           <p className="font-display text-2xl text-brun-chaud">
-            {new Date(nextSession.scheduledAt).toLocaleDateString("fr-FR", {
+            {new Date(nextSession.scheduledAt).toLocaleDateString("en-US", {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -183,7 +183,7 @@ export default async function ClientSessionsPage() {
             })}
           </p>
           <p className="text-sm font-ui text-brun-mid mt-1">
-            {new Date(nextSession.scheduledAt).toLocaleTimeString("fr-FR", {
+            {new Date(nextSession.scheduledAt).toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
             })}{" "}
@@ -204,7 +204,7 @@ export default async function ClientSessionsPage() {
                 rel="noopener noreferrer"
                 className="inline-block mt-3 px-4 py-2 text-sm font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
               >
-                Rejoindre la séance
+                Join session
               </a>
             ) : null;
           })()}
@@ -212,7 +212,7 @@ export default async function ClientSessionsPage() {
       ) : (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
           <p className="text-sm font-ui text-brun-mid/60">
-            Aucune séance planifiée pour le moment
+            No sessions scheduled
           </p>
         </div>
       )}
@@ -221,7 +221,7 @@ export default async function ClientSessionsPage() {
       {upcoming.length > 0 && (
         <div>
           <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-            À venir ({upcoming.length})
+            Upcoming ({upcoming.length})
           </h2>
           <div className="space-y-2">
             {upcoming.map((s) => (
@@ -231,7 +231,7 @@ export default async function ClientSessionsPage() {
               >
                 <div>
                   <p className="text-sm font-ui text-brun-chaud">
-                    {new Date(s.scheduledAt).toLocaleDateString("fr-FR", {
+                    {new Date(s.scheduledAt).toLocaleDateString("en-US", {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
@@ -254,12 +254,12 @@ export default async function ClientSessionsPage() {
                         rel="noopener noreferrer"
                         className="px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
                       >
-                        Rejoindre la séance
+                        Join session
                       </a>
                     ) : null;
                   })()}
                   <p className="text-sm font-ui text-or-sacre">
-                    {new Date(s.scheduledAt).toLocaleTimeString("fr-FR", {
+                    {new Date(s.scheduledAt).toLocaleTimeString("en-US", {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -274,12 +274,12 @@ export default async function ClientSessionsPage() {
       {/* Historique */}
       <div>
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-          Historique ({history.length})
+          History ({history.length})
         </h2>
 
         {history.length === 0 ? (
           <p className="text-sm text-brun-mid/60 font-ui">
-            Aucune séance passée
+            No past sessions
           </p>
         ) : (
           <div className="space-y-2">
@@ -290,7 +290,7 @@ export default async function ClientSessionsPage() {
               >
                 <div>
                   <p className="text-sm font-ui text-brun-mid">
-                    {new Date(s.scheduledAt).toLocaleDateString("fr-FR", {
+                    {new Date(s.scheduledAt).toLocaleDateString("en-US", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",

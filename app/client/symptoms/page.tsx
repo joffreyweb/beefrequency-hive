@@ -63,10 +63,10 @@ export default function SymptomsPage() {
       {/* Titre et explication */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Rapporter un symptôme
+          Report a symptom
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Signalez vos symptômes ou posez une question prioritaire à Joffrey.
+          Report your symptoms or ask Joffrey a priority question.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export default function SymptomsPage() {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Décrivez votre symptôme..."
+          placeholder="Describe your symptom..."
           rows={4}
           className="w-full border border-or-pale rounded-sm p-3 font-ui text-sm text-brun-chaud bg-creme-sacree placeholder:text-brun-mid/40 focus:outline-none focus:border-or-sacre"
         />
@@ -84,21 +84,21 @@ export default function SymptomsPage() {
           disabled={sending || !content.trim()}
           className="bg-or-sacre text-creme-sacree font-ui text-sm px-5 py-2 rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
         >
-          {sending ? "Envoi..." : "Envoyer"}
+          {sending ? "Sending..." : "Send"}
         </button>
       </form>
 
       {/* Historique */}
       <section>
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          Historique
+          History
         </h2>
         {loading ? (
-          <p className="text-sm text-brun-mid/60 font-ui">Chargement...</p>
+          <p className="text-sm text-brun-mid/60 font-ui">Loading...</p>
         ) : messages.length === 0 ? (
           <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
             <p className="text-sm text-brun-mid/60 font-ui">
-              Aucun symptôme signalé.
+              No symptoms reported.
             </p>
           </div>
         ) : (
@@ -110,7 +110,7 @@ export default function SymptomsPage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-ui text-brun-mid/60">
-                    {new Date(msg.createdAt).toLocaleDateString("fr-FR", {
+                    {new Date(msg.createdAt).toLocaleDateString("en-US", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
@@ -120,7 +120,7 @@ export default function SymptomsPage() {
                   </span>
                   {msg.readAt && (
                     <span className="text-xs font-ui bg-foret/10 text-foret px-2 py-0.5 rounded-sharp">
-                      Lu
+                      Read
                     </span>
                   )}
                 </div>

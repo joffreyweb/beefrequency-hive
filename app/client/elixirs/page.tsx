@@ -53,7 +53,7 @@ export default function ClientElixirsPage() {
     loadPrescriptions();
   }, [loadPrescriptions]);
 
-  // Commander un élixir — envoie un message automatique à Joffrey
+  // Order un élixir — envoie un message automatique à Joffrey
   async function handleOrder(prescription: Prescription) {
     setOrdering(prescription.id);
     setOrderSuccess(null);
@@ -63,7 +63,7 @@ export default function ClientElixirsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: `Bonjour Joffrey, je souhaite commander à nouveau l'élixir "${prescription.elixir.name}". Merci !`,
+          content: `Hi Joffrey, I would like to reorder the elixir "${prescription.elixir.name}". Thank you!`,
         }),
       });
 
@@ -107,7 +107,7 @@ export default function ClientElixirsPage() {
     return (
       <div className="flex items-center justify-center py-16">
         <p className="text-sm font-ui text-brun-mid/60">
-          Chargement de vos élixirs...
+          Loading your elixirs...
         </p>
       </div>
     );
@@ -117,17 +117,17 @@ export default function ClientElixirsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Mes élixirs
+          My elixirs
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Vos prescriptions d&apos;élixirs en cours et passées
+          Your current and past elixir prescriptions
         </p>
       </div>
 
       {prescriptions.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
           <p className="text-sm font-ui text-brun-mid/60">
-            Aucun élixir prescrit pour le moment
+            No elixirs prescribed yet
           </p>
         </div>
       ) : (
@@ -162,7 +162,7 @@ export default function ClientElixirsPage() {
                         : "bg-brun-mid/10 text-brun-mid"
                     }`}
                   >
-                    {active ? "Actif" : "Terminé"}
+                    {active ? "Active" : "Completed"}
                   </span>
                 </div>
 
@@ -180,9 +180,8 @@ export default function ClientElixirsPage() {
                     <p
                       className={`font-ui text-sm mt-1 ${stockTextColor(stockInfo.percentRemaining)}`}
                     >
-                      {stockInfo.daysRemaining} jour
-                      {stockInfo.daysRemaining !== 1 ? "s" : ""} restant
-                      {stockInfo.daysRemaining !== 1 ? "s" : ""}
+                      {stockInfo.daysRemaining} day
+                      {stockInfo.daysRemaining !== 1 ? "s" : ""} remaining
                     </p>
                   </div>
                 )}
@@ -191,9 +190,9 @@ export default function ClientElixirsPage() {
                 {stockInfo.isLow && active && (
                   <div className="bg-red-50 border border-red-200 rounded-sharp p-3 mt-3 mb-3 flex items-center justify-between gap-3">
                     <p className="text-sm text-red-600">
-                      Il te reste {stockInfo.daysRemaining} jour
-                      {stockInfo.daysRemaining !== 1 ? "s" : ""} — penser à
-                      commander
+                      {stockInfo.daysRemaining} day
+                      {stockInfo.daysRemaining !== 1 ? "s" : ""} left — consider
+                      reordering
                     </p>
                     {prescription.reorderUrl && (
                       <a
@@ -202,7 +201,7 @@ export default function ClientElixirsPage() {
                         rel="noopener"
                         className="shrink-0 px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
                       >
-                        Commander
+                        Order
                       </a>
                     )}
                   </div>
@@ -220,7 +219,7 @@ export default function ClientElixirsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                      Quantité
+                      Quantity
                     </p>
                     <p className="text-sm font-ui text-brun-chaud mt-0.5">
                       {prescription.quantity ?? "—"}
@@ -228,7 +227,7 @@ export default function ClientElixirsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                      Dose / jour
+                      Dose / day
                     </p>
                     <p className="text-sm font-ui text-brun-chaud mt-0.5">
                       {prescription.dailyDose ?? "—"}
@@ -236,22 +235,22 @@ export default function ClientElixirsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                      Début
+                      Start
                     </p>
                     <p className="text-sm font-ui text-brun-chaud mt-0.5">
                       {new Date(prescription.startDate).toLocaleDateString(
-                        "fr-FR"
+                        "en-US"
                       )}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs font-caps text-brun-mid uppercase tracking-wider">
-                      Fin estimée
+                      Estimated end
                     </p>
                     <p className="text-sm font-ui text-brun-chaud mt-0.5">
                       {stockInfo.endDate
-                        ? stockInfo.endDate.toLocaleDateString("fr-FR")
-                        : "Non définie"}
+                        ? stockInfo.endDate.toLocaleDateString("en-US")
+                        : "Not defined"}
                     </p>
                   </div>
                 </div>
@@ -263,11 +262,11 @@ export default function ClientElixirsPage() {
                   </p>
                 )}
 
-                {/* Bouton Commander */}
+                {/* Bouton Order */}
                 <div className="flex items-center justify-end gap-2">
                   {orderSuccess === prescription.id && (
                     <span className="text-xs font-ui text-foret">
-                      Message envoyé !
+                      Message sent!
                     </span>
                   )}
                   {prescription.reorderUrl ? (
@@ -277,7 +276,7 @@ export default function ClientElixirsPage() {
                       rel="noopener"
                       className="px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
                     >
-                      Commander
+                      Order
                     </a>
                   ) : (
                     <button
@@ -286,8 +285,8 @@ export default function ClientElixirsPage() {
                       className="px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50"
                     >
                       {ordering === prescription.id
-                        ? "Envoi..."
-                        : "Commander"}
+                        ? "Sending..."
+                        : "Order"}
                     </button>
                   )}
                 </div>

@@ -11,26 +11,26 @@ export default function ClientNav() {
     return pathname === href || pathname.startsWith(href + "/");
   }
 
-  const isHome = isActive("/client/home");
+  const isHome =
+    isActive("/client/home") ||
+    isActive("/client/elixirs") ||
+    isActive("/client/sessions") ||
+    isActive("/client/agenda") ||
+    isActive("/client/programme") ||
+    isActive("/client/messages");
   const isJournal = isActive("/client/journal");
   const isPractices = isActive("/client/pratiques");
-  const isTransmission =
+  const isFromJoffrey =
+    isActive("/client/from-joffrey") ||
     isActive("/client/transmission") ||
     isActive("/client/supports") ||
     isActive("/client/recommendations");
-  const isProfile =
-    isActive("/client/elixirs") ||
-    isActive("/client/agenda") ||
-    isActive("/client/documents") ||
-    isActive("/client/sessions") ||
-    isActive("/client/programme");
 
   const items = [
     { href: "/client/home", label: "Home", active: isHome, icon: HomeIcon },
     { href: "/client/journal", label: "Journal", active: isJournal, icon: JournalIcon },
     { href: "/client/pratiques", label: "Practices", active: isPractices, icon: PracticesIcon },
-    { href: "/client/transmission", label: "Transmission", active: isTransmission, icon: TransmissionIcon },
-    { href: "/client/programme", label: "Profile", active: isProfile, icon: ProfileIcon },
+    { href: "/client/from-joffrey", label: "From Joffrey", active: isFromJoffrey, icon: TransmissionIcon },
   ];
 
   return (
@@ -53,11 +53,11 @@ export default function ClientNav() {
             href={item.href}
             onClick={(e) => { e.preventDefault(); router.push(item.href); }}
             className="flex flex-col items-center justify-center gap-0.5 transition-all duration-200"
-            style={{ width: "56px", opacity: item.active ? 1 : 0.5 }}
+            style={{ width: "64px", opacity: item.active ? 1 : 0.5 }}
           >
             <item.icon color={item.active ? "#B8821E" : "#6B4423"} />
             <span
-              className="font-ui leading-none"
+              className="font-ui leading-none text-center"
               style={{
                 fontSize: "9px",
                 letterSpacing: "0.04em",
@@ -69,7 +69,6 @@ export default function ClientNav() {
           </Link>
         ))}
       </div>
-      {/* Safe area for iOS */}
       <div className="h-[env(safe-area-inset-bottom)]" style={{ background: "rgba(253, 250, 244, 0.97)" }} />
     </nav>
   );
@@ -107,15 +106,6 @@ function TransmissionIcon({ color }: { color: string }) {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 4h16v16H4z" />
       <path d="M8 4v16M12 8h4M12 12h4M12 16h4" />
-    </svg>
-  );
-}
-
-function ProfileIcon({ color }: { color: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21v-1a6 6 0 0112 0v1" />
     </svg>
   );
 }

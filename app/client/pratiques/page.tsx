@@ -34,9 +34,9 @@ interface AuthUser {
 
 // Badge selon le type de pratique
 const TYPE_BADGES: Record<string, { emoji: string; label: string }> = {
-  BREATHING: { emoji: "🫁", label: "Respiration" },
-  VIDEO: { emoji: "🎬", label: "Vidéo" },
-  MEDITATION: { emoji: "🧘", label: "Méditation" },
+  BREATHING: { emoji: "🫁", label: "Breathing" },
+  VIDEO: { emoji: "🎬", label: "Video" },
+  MEDITATION: { emoji: "🧘", label: "Meditation" },
 };
 
 /**
@@ -57,7 +57,7 @@ function isToday(dateStr: string | null): boolean {
  * Formater une date en format lisible français.
  */
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
+  return new Date(dateStr).toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -91,7 +91,7 @@ export default function ClientPratiquesPage() {
       ]);
 
       if (!practicesRes.ok) {
-        throw new Error("Impossible de charger les pratiques");
+        throw new Error("Failed to load practices");
       }
 
       const practicesData = await practicesRes.json();
@@ -109,7 +109,7 @@ export default function ClientPratiquesPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -163,7 +163,7 @@ export default function ClientPratiquesPage() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-brun-mid font-ui text-sm">
-          Chargement de vos pratiques...
+          Loading your practices...
         </div>
       </div>
     );
@@ -177,7 +177,7 @@ export default function ClientPratiquesPage() {
           onClick={loadData}
           className="px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity"
         >
-          Réessayer
+          Retry
         </button>
       </div>
     );
@@ -211,25 +211,25 @@ export default function ClientPratiquesPage() {
       <div>
         {/* Titre de la page */}
         <h1 className="font-display text-2xl text-brun-chaud mb-8">
-          Mes pratiques
+          My practices
         </h1>
 
-        {/* Jour du parcours */}
+        {/* Day of journey */}
         {dayNumber !== null && (
           <p className="font-ui text-sm text-brun-mid mb-6">
-            Jour {dayNumber} de votre parcours
+            Day {dayNumber} of your journey
           </p>
         )}
 
         {/* Section Aujourd'hui */}
         <section className="mb-10">
           <h2 className="font-display text-lg text-brun-chaud mb-4">
-            Aujourd&apos;hui
+            Today
           </h2>
 
           {todayPractices.length === 0 ? (
             <p className="font-ui text-sm text-brun-mid">
-              Aucune pratique assignée pour le moment.
+              No practices assigned yet.
             </p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -248,7 +248,7 @@ export default function ClientPratiquesPage() {
         {activePractices.length > 0 && (
           <section>
             <h2 className="font-display text-lg text-brun-chaud mb-4">
-              Mes pratiques
+              My practices
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {activePractices.map((cp) => (
@@ -302,11 +302,11 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
 
       {/* Stats */}
       <div className="font-ui text-xs text-brun-mid/70 flex items-center gap-2 flex-wrap">
-        <span>Complété {completedCount} fois</span>
+        <span>Completed {completedCount} time{completedCount !== 1 ? "s" : ""}</span>
         {lastCompletedAt && (
           <>
             <span>·</span>
-            <span>Dernière : {formatDate(lastCompletedAt)}</span>
+            <span>Last: {formatDate(lastCompletedAt)}</span>
           </>
         )}
       </div>
@@ -323,7 +323,7 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
         onClick={onStart}
         className="mt-auto px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity self-start"
       >
-        {completedToday ? "Recommencer" : "Commencer"}
+        {completedToday ? "Redo" : "Start"}
       </button>
     </div>
   );

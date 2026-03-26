@@ -12,10 +12,10 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  MUSIC: "Musique",
-  VIDEO: "Vidéo",
+  MUSIC: "Music",
+  VIDEO: "Video",
   PDF: "PDF",
-  LINK: "Lien",
+  LINK: "Link",
 };
 
 // Page supports côté client — server component
@@ -42,17 +42,17 @@ export default async function ClientSupportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Mes supports
+          My resources
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Ressources partagées par votre accompagnante
+          Resources shared with you
         </p>
       </div>
 
       {supports.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
           <p className="text-sm font-ui text-brun-mid/60">
-            Aucun support pour le moment
+            No resources shared yet
           </p>
         </div>
       ) : (
@@ -91,7 +91,7 @@ export default async function ClientSupportsPage() {
                 rel="noopener noreferrer"
                 className="mt-auto inline-flex items-center gap-1.5 px-3 py-2 bg-or-sacre text-creme-sacree rounded-sharp text-sm font-ui hover:bg-ambre-vif transition-colors text-center justify-center"
               >
-                Accéder
+                Access
                 <svg
                   className="w-3.5 h-3.5"
                   fill="none"

@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Crée le compte admin Joffrey
+  // Admin account
   const hashedPassword = await bcrypt.hash("BeeFrequency2026!", 12);
 
   const admin = await prisma.user.upsert({
@@ -18,9 +18,9 @@ async function main() {
     },
   });
 
-  console.log("Admin créé :", admin.email);
+  console.log("Admin created:", admin.email);
 
-  // Seed ElixirLibrary — 6 élixirs exemple
+  // ElixirLibrary — 6 elixirs
   const elixirs = [
     {
       name: "Detox",
@@ -89,7 +89,78 @@ async function main() {
     });
   }
 
-  console.log("ElixirLibrary seed :", elixirs.length, "élixirs créés");
+  console.log("ElixirLibrary seed:", elixirs.length, "elixirs created");
+
+  // 66 Wisdom Messages — DayMessage seed
+  const wisdomMessages = [
+    "One thing never changes, that is infinity",
+    "Learn to identify yourself under every circumstances",
+    "We all know we have a destiny",
+    "To be calm is the highest achievement of the self",
+    "You travel in grace knowing you are protected by love",
+    "Our head bows and our heart is filled with love and joy",
+    "When you identify yourself a lot of good things happen",
+    "One who brings happiness to others, will find it",
+    "In a life of thoughts and feelings, commitment becomes your saving grace",
+    "There is no way to happiness, happiness is the way",
+    "Be interested in your elevation",
+    "Recognise that you are the truth",
+    "Be fearless knowing that all will be provided at the right time",
+    "Don't wait for heaven to come to you, create heaven",
+    "Compassion creates understanding",
+    "Desirable person is only that, who has no desire",
+    "Sing from your heart",
+    "The brightness of your being is generated from within",
+    "Be guided. Listen to the whispers of the universe",
+    "Those who have found their fulfillment are blessed",
+    "Drop your problem and keep going",
+    "Healing comes when triggers dissipate",
+    "Share your strengths, not your weaknesses",
+    "Speak the truth",
+    "Seek something higher",
+    "In order to be remembered leave nothing behind but love",
+    "You will always live happy if you live with heart",
+    "Be proud of who you are",
+    "Without gratitude, there is no prosperity",
+    "You live forever in the memory of the love you have shared",
+    "How can you uplift this moment happening right now",
+    "Every neighbour can be your teacher",
+    "Seek excellence in every person",
+    "Open up to infinity and become infinity",
+    "Practice compassion, forgiveness and kindness",
+    "Your teacher is your own intuition",
+    "Experience something higher",
+    "Let your heart speak to other hearts",
+    "Those who have found guidance are blessed",
+    "If you create a mental duality you lose your strength",
+    "Your personality is how radiant you are",
+    "Everybody wants to know whether you are dependable",
+    "Self-reliance is the greatest art",
+    "Every experience is a guidance in life, your response determines the quality",
+    "When you refuse to become upset, you are also refusing to be set up",
+    "Learn to relate to your soul, the light within you",
+    "Those who have found their soul and their self are blessed",
+    "You are the way you are, that is now",
+    "Compassion has no limit. Kindness has no enemy",
+    "Infinity which is your unknown guarantees your happiness",
+    "In a life of thoughts and feelings, commitment becomes your saving grace",
+    "You travel in grace knowing you are protected by love",
+    "Be guided. Listen to the whispers of the universe",
+    "When you identify yourself a lot of good things happen",
+    "The brightness of your being is generated from within",
+    "Your teacher is your own intuition",
+  ];
+
+  let createdCount = 0;
+  for (const text of wisdomMessages) {
+    const existing = await prisma.dayMessage.findFirst({ where: { text } });
+    if (!existing) {
+      await prisma.dayMessage.create({ data: { text, isActive: true } });
+      createdCount++;
+    }
+  }
+
+  console.log("DayMessage seed:", createdCount, "new messages created,", wisdomMessages.length, "total");
 }
 
 main()

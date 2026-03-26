@@ -147,7 +147,7 @@ export default function ClientMessagesPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <p className="font-ui text-sm text-brun-mid/60">
-          Chargement des messages…
+          Loading messages...
         </p>
       </div>
     );
@@ -184,7 +184,7 @@ export default function ClientMessagesPage() {
               : "text-brun-mid hover:text-or-sacre"
           }`}
         >
-          Parcours
+          Journey
           {unreadJourney > 0 && (
             <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-[10px] font-ui bg-ambre-vif text-white rounded-full">
               {unreadJourney}
@@ -199,12 +199,12 @@ export default function ClientMessagesPage() {
         <div className="px-5 py-3 border-b border-or-pale">
           <h2 className="font-ui text-sm text-brun-chaud">
             {activeTab === "conversation"
-              ? `Conversation avec ${adminName}`
-              : "Messages de parcours"}
+              ? `Conversation with ${adminName}`
+              : "Journey messages"}
           </h2>
           {activeTab === "parcours" && (
             <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
-              Messages automatiques et personnalisés de Joffrey
+              Automated and personalized messages from Joffrey
             </p>
           )}
         </div>
@@ -214,8 +214,8 @@ export default function ClientMessagesPage() {
           {displayedMessages.length === 0 ? (
             <p className="text-center text-sm text-brun-mid/60 font-ui mt-8">
               {activeTab === "conversation"
-                ? "Aucun message pour le moment.\nÉcrivez votre premier message ci-dessous."
-                : "Aucun message de parcours reçu."}
+                ? "No messages yet.\nWrite your first message below."
+                : "No journey messages received."}
             </p>
           ) : (
             displayedMessages.map((msg) => (
@@ -243,7 +243,7 @@ export default function ClientMessagesPage() {
         {activeTab === "parcours" && displayedMessages.length > 0 && (
           <div className="px-5 py-2 border-t border-or-pale/50 text-center">
             <p className="text-xs font-ui text-brun-mid/40">
-              Ces messages sont en lecture seule
+              These messages are read-only
             </p>
           </div>
         )}

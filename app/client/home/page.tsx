@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireOnboarding } from "@/lib/onboarding-guard";
 import Link from "next/link";
-import HomeDocuments from "@/components/client/HomeDocuments";
+import DocumentUploadButton from "@/components/client/DocumentUploadButton";
 
 const sessionTypeLabels: Record<string, string> = {
   ONLINE: "Online",
@@ -27,13 +27,11 @@ export default async function ClientHomePage() {
         orderBy: { scheduledAt: "asc" },
         take: 1,
       },
-      dailyFocuses: true,
       clientPractices: {
         where: { isActive: true },
         include: { practice: true },
-        take: 3,
+        take: 1,
       },
-      documents: { orderBy: { createdAt: "desc" } },
       elixirPrescriptions: {
         where: { endDate: null },
         include: { elixir: true },
@@ -51,18 +49,16 @@ export default async function ClientHomePage() {
 
   const firstName = client.intake?.firstName || client.user.name;
 
-  const todayFocus =
-    (
-      client.dailyFocuses as {
-        id: string;
-        dayFrom: number;
-        dayTo: number;
-        title: string;
-        message: string;
-      }[]
-    )
-      .filter((f) => f.dayFrom <= dayNumber && f.dayTo >= dayNumber)
-      .sort((a, b) => b.dayFrom - a.dayFrom)[0] ?? null;
+  // Wisdom message of the day — cycle through DayMessages
+  const allMessages = await prisma.dayMessage.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const wisdomMessage =
+    allMessages.length > 0
+      ? allMessages[(dayNumber - 1) % allMessages.length]
+      : null;
 
   const nextSession = client.sessions[0] ?? null;
   const now = Date.now();
@@ -70,36 +66,27 @@ export default async function ClientHomePage() {
     nextSession &&
     new Date(nextSession.scheduledAt).getTime() - now < 24 * 60 * 60 * 1000;
 
-  const unreadMessages = await prisma.message.count({
-    where: { receiverId: session.userId, readAt: null },
-  });
+  const todayPractice = client.clientPractices[0] ?? null;
 
   return (
-    <div className="space-y-6">
-      {/* Greeting */}
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          {firstName} —{" "}
-          <span className="text-or-sacre">Day {dayNumber}</span>
-        </h1>
-      </div>
-
-      {/* Daily message — prominent */}
-      {todayFocus && (
-        <div className="bg-cire-chaude border-l-4 border-or-sacre rounded-sm p-5">
-          <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-2">
-            Today&apos;s message
-          </p>
-          <p className="font-display text-lg text-brun-chaud mb-1">
-            {todayFocus.title}
-          </p>
-          <p className="font-ui text-sm text-brun-mid leading-relaxed">
-            {todayFocus.message}
+    <div className="space-y-8">
+      {/* a) Wisdom message — prominent, centered */}
+      {wisdomMessage && (
+        <div className="text-center py-6">
+          <p className="font-display text-xl sm:text-2xl text-brun-chaud leading-relaxed italic max-w-md mx-auto">
+            &ldquo;{wisdomMessage.text}&rdquo;
           </p>
         </div>
       )}
 
-      {/* Elixirs — prescribed */}
+      {/* b) First name + Day number */}
+      <div className="text-center">
+        <h1 className="font-display text-2xl text-brun-chaud">
+          {firstName} — <span className="text-or-sacre">Day {dayNumber}</span>
+        </h1>
+      </div>
+
+      {/* c) Elixirs prescribed */}
       {client.elixirPrescriptions.length > 0 && (
         <div>
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
@@ -118,91 +105,66 @@ export default async function ClientHomePage() {
               </div>
             ))}
           </div>
-          <Link
-            href="/client/elixirs"
-            className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors mt-2 inline-block"
-          >
-            See all &rarr;
-          </Link>
         </div>
       )}
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Next session */}
-        <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-            Next session
+      {/* d) Today's practice */}
+      {todayPractice && (
+        <Link
+          href="/client/pratiques"
+          className="block bg-cire-chaude border border-or-pale rounded-sm p-5 hover:border-or-sacre transition-colors"
+        >
+          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
+            Today&apos;s practice
           </h2>
-          {nextSession ? (
-            <>
-              <p className="font-display text-lg text-brun-chaud">
-                {new Date(nextSession.scheduledAt).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </p>
-              <p className="text-sm text-brun-mid mt-1">
-                {new Date(nextSession.scheduledAt).toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                —{" "}
-                {sessionTypeLabels[nextSession.type] ?? nextSession.type}
-              </p>
-              {isWithin24h && nextSession.zoomLink && (
-                <a
-                  href={nextSession.zoomLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-3 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
-                >
-                  Join on Zoom
-                </a>
-              )}
-            </>
-          ) : (
-            <p className="text-brun-mid text-sm font-ui">
-              No session scheduled
-            </p>
-          )}
-        </div>
+          <p className="font-display text-lg text-brun-chaud">
+            {todayPractice.practice.title}
+          </p>
+          <p className="font-ui text-sm text-or-sacre mt-1">
+            Start &rarr;
+          </p>
+        </Link>
+      )}
 
-        {/* Unread messages */}
-        <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-            Messages
-          </h2>
-          {unreadMessages > 0 ? (
-            <div>
-              <p className="font-display text-lg text-brun-chaud">
-                {unreadMessages} unread message{unreadMessages > 1 ? "s" : ""}
-              </p>
-              <Link
-                href="/client/messages"
-                className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors mt-2 inline-block"
-              >
-                View &rarr;
-              </Link>
-            </div>
-          ) : (
-            <p className="text-brun-mid text-sm font-ui">
-              No new messages
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Documents */}
-      <div>
-        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-          My documents
+      {/* e) Next session */}
+      <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+        <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
+          Next session
         </h2>
-        <HomeDocuments
-          clientDocuments={JSON.parse(JSON.stringify(client.documents))}
-        />
+        {nextSession ? (
+          <>
+            <p className="font-display text-lg text-brun-chaud">
+              {new Date(nextSession.scheduledAt).toLocaleDateString("en-US", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </p>
+            <p className="text-sm text-brun-mid mt-1">
+              {new Date(nextSession.scheduledAt).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}{" "}
+              — {sessionTypeLabels[nextSession.type] ?? nextSession.type}
+            </p>
+            {isWithin24h && nextSession.zoomLink && (
+              <a
+                href={nextSession.zoomLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
+              >
+                Join on Zoom
+              </a>
+            )}
+          </>
+        ) : (
+          <p className="text-brun-mid text-sm font-ui">No session scheduled</p>
+        )}
       </div>
+
+      {/* f) Share a document — discreet upload button */}
+      <DocumentUploadButton />
     </div>
   );
 }

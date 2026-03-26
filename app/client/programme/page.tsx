@@ -68,15 +68,15 @@ interface CheckinData {
 type ViewTab = "aujourdhui" | "calendrier";
 
 const TIMING_ORDER: Record<string, number> = { MATIN: 0, JOURNEE: 1, SOIR: 2, FLEXIBLE: 3 };
-const TIMING_LABELS: Record<string, string> = { MATIN: "Matin", SOIR: "Soir", JOURNEE: "Journée", FLEXIBLE: "Flexible" };
+const TIMING_LABELS: Record<string, string> = { MATIN: "Morning", SOIR: "Evening", JOURNEE: "Daytime", FLEXIBLE: "Flexible" };
 
 const SLEEP_OPTIONS = [
-  { key: "leger", label: "Léger" },
-  { key: "profond", label: "Profond" },
-  { key: "reves", label: "Rêves" },
-  { key: "reveils", label: "Réveils" },
-  { key: "endormissement_long", label: "Long endormissement" },
-  { key: "nuit_continue", label: "Nuit continue" },
+  { key: "leger", label: "Light" },
+  { key: "profond", label: "Deep" },
+  { key: "reves", label: "Dreams" },
+  { key: "reveils", label: "Awakenings" },
+  { key: "endormissement_long", label: "Slow onset" },
+  { key: "nuit_continue", label: "Continuous night" },
 ];
 
 const slideVariants = {
@@ -143,7 +143,7 @@ export default function ProgrammePage() {
         for (const c of checkins.checkins ?? []) map[c.date.split("T")[0]] = true;
         setCalendarCheckins(map);
 
-        // Charger musique J7 si jour 7/14/21
+        // Load J7 music if day 7/14/21
         const day = data.activeInfo.dayInPhase;
         if (data.activeInfo.phase.phaseType === "CYCLE" && day % 7 === 0) {
           const supRes = await fetch("/api/supports?type=MUSIC&limit=1");
@@ -186,15 +186,15 @@ export default function ProgrammePage() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <p className="text-sm font-ui text-brun-mid/60">Chargement…</p>
+      <p className="text-sm font-ui text-brun-mid/60">Loading...</p>
     </div>
   );
 
   if (!activeInfo) return (
     <div className="space-y-4 pb-24">
-      <h1 className="font-display text-2xl text-brun-chaud">Le Passage</h1>
+      <h1 className="font-display text-2xl text-brun-chaud">The Passage</h1>
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
-        <p className="text-sm font-ui text-brun-mid/60">Votre parcours n&apos;a pas encore été configuré.</p>
+        <p className="text-sm font-ui text-brun-mid/60">Your journey has not been configured yet.</p>
       </div>
     </div>
   );
@@ -210,10 +210,10 @@ export default function ProgrammePage() {
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-or-sacre/10 text-or-sacre text-sm font-ui">
             <span className="w-2 h-2 rounded-full bg-or-sacre" />
-            {activeInfo.phase.label} · J.{activeInfo.dayInPhase}
+            {activeInfo.phase.label} · Day {activeInfo.dayInPhase}
           </span>
         </div>
-        <ProgressBar label="Progression globale" value={activeInfo.dayInProgram} total={activeInfo.totalDays} thin />
+        <ProgressBar label="Overall progress" value={activeInfo.dayInProgram} total={activeInfo.totalDays} thin />
         <ProgressBar label={activeInfo.phase.label} value={activeInfo.dayInPhase} total={activeInfo.phase.durationDays} />
       </div>
 
@@ -222,7 +222,7 @@ export default function ProgrammePage() {
         {(["aujourdhui", "calendrier"] as ViewTab[]).map(tab => (
           <button key={tab} onClick={() => setViewTab(tab)}
             className={`px-4 py-2.5 text-sm font-ui transition-colors border-b-2 -mb-px ${viewTab === tab ? "text-or-sacre border-or-sacre" : "text-brun-mid border-transparent"}`}>
-            {tab === "aujourdhui" ? "Aujourd'hui" : "Calendrier"}
+            {tab === "aujourdhui" ? "Today" : "Calendar"}
           </button>
         ))}
       </div>
@@ -230,11 +230,11 @@ export default function ProgrammePage() {
       {viewTab === "aujourdhui" ? (
         <div className="space-y-6">
 
-          {/* Élixirs */}
+          {/* Elixirs */}
           {todayElixirs.length > 0 && (
             <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
               <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">
-                {isCycle ? "Mes élixirs aujourd'hui" : "Soutien du jour"}
+                {isCycle ? "My elixirs today" : "Today's support"}
               </h3>
               <div className="space-y-2.5">
                 {[...todayElixirs]
@@ -253,16 +253,16 @@ export default function ProgrammePage() {
                 <ChipBtn
                   selected={checkin.elixirTaken}
                   onClick={() => setCheckin(prev => ({ ...prev, elixirTaken: !prev.elixirTaken }))}
-                  label={checkin.elixirTaken ? "✓ Élixirs pris" : "J'ai pris mes élixirs"}
+                  label={checkin.elixirTaken ? "✓ Elixirs taken" : "I took my elixirs"}
                 />
               </div>
             </section>
           )}
 
-          {/* Pratiques */}
+          {/* Practices */}
           {todayPractices.length > 0 && (
             <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-              <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">Ma pratique</h3>
+              <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">My practice</h3>
               {todayPractices.map(p => (
                 <div key={p.id} className="mb-2 last:mb-0">
                   <p className="text-sm font-ui text-brun-chaud">{p.title}</p>
@@ -273,7 +273,7 @@ export default function ProgrammePage() {
             </section>
           )}
 
-          {/* Check-in matin */}
+          {/* Morning check-in */}
           {isCycle ? (
             morningDone ? (
               <MorningDoneCard checkin={checkin} onEdit={() => { setMorningDone(false); setMorningStep(0); }} />
@@ -290,7 +290,7 @@ export default function ProgrammePage() {
             <BreakCheckin checkin={checkin} setCheckin={setCheckin} />
           )}
 
-          {/* Check-in soir */}
+          {/* Evening check-in */}
           {isCycle && morningDone && (
             <EveningCheckin checkin={checkin} setCheckin={setCheckin} />
           )}
@@ -300,11 +300,11 @@ export default function ProgrammePage() {
             <WeeklyRitual music={weeklyMusic} day={activeInfo.dayInPhase} />
           )}
 
-          {/* Bouton save */}
+          {/* Save button */}
           <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-creme-sacree/90 backdrop-blur-sm z-40 border-t border-or-pale/50">
             <motion.button whileTap={{ scale: 0.97 }} onClick={handleSave} disabled={saving}
               className="w-full py-3.5 text-sm font-ui uppercase tracking-[0.08em] bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50">
-              {saving ? "Enregistrement…" : saved ? "Moment validé ✓" : "Valider ce moment"}
+              {saving ? "Saving..." : saved ? "Moment saved ✓" : "Save this moment"}
             </motion.button>
           </div>
         </div>
@@ -338,34 +338,34 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
     // 0 — Intro
     <div key="intro" className="text-center space-y-10 py-8">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-        <p className="font-caps text-xs text-brun-mid/50 uppercase tracking-widest mb-6">Mon matin</p>
-        <h2 className="font-display text-3xl text-brun-chaud leading-snug">Commence là où tu es.</h2>
+        <p className="font-caps text-xs text-brun-mid/50 uppercase tracking-widest mb-6">My morning</p>
+        <h2 className="font-display text-3xl text-brun-chaud leading-snug">Start where you are.</h2>
       </motion.div>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }}>
         <motion.button whileTap={{ scale: 0.96 }} onClick={next}
           className="bg-or-sacre text-white px-8 py-3 rounded-sharp font-ui text-sm uppercase tracking-wider">
-          Commencer
+          Start
         </motion.button>
       </motion.div>
     </div>,
 
-    // 1 — Énergie
+    // 1 — Energy
     <div key="energie" className="space-y-8 py-4">
-      <StepHeader label="Énergie" question="Comment est ton énergie ce matin ?" />
-      <SliderStep value={checkin.energyLevel ?? 5} onChange={v => setCheckin(prev => ({ ...prev, energyLevel: v }))} guidance="Sans analyser." />
+      <StepHeader label="Energy" question="How is your energy this morning?" />
+      <SliderStep value={checkin.energyLevel ?? 5} onChange={v => setCheckin(prev => ({ ...prev, energyLevel: v }))} guidance="Without analyzing." />
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 2 — Sommeil
+    // 2 — Sleep
     <div key="sommeil" className="space-y-8 py-4">
-      <StepHeader label="Sommeil" question="Comment as-tu dormi ?" />
-      <SliderStep value={checkin.sleepQuality ?? 5} onChange={v => setCheckin(prev => ({ ...prev, sleepQuality: v }))} guidance="Juste ressentir." />
+      <StepHeader label="Sleep" question="How did you sleep?" />
+      <SliderStep value={checkin.sleepQuality ?? 5} onChange={v => setCheckin(prev => ({ ...prev, sleepQuality: v }))} guidance="Just feel." />
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 3 — Type de sommeil
+    // 3 — Sleep type
     <div key="sleep-type" className="space-y-8 py-4">
-      <StepHeader label="Type de sommeil" question="Qu'est-ce qui décrit ta nuit ?" />
+      <StepHeader label="Sleep type" question="What describes your night?" />
       <div className="flex flex-wrap gap-2">
         {SLEEP_OPTIONS.map(opt => (
           <ChipBtn key={opt.key} selected={sleepTypes.includes(opt.key)}
@@ -375,11 +375,11 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 4 — Rêves
+    // 4 — Dreams
     <div key="reves" className="space-y-6 py-4">
-      <StepHeader label="Rêves" question="Quelque chose est resté ?" />
+      <StepHeader label="Dreams" question="Did anything stay with you?" />
       <div className="flex gap-3">
-        {[{ key: "OUI", label: "Oui" }, { key: "NON", label: "Non" }, { key: "SAIS_PAS", label: "Flou" }].map(opt => (
+        {[{ key: "OUI", label: "Yes" }, { key: "NON", label: "No" }, { key: "SAIS_PAS", label: "Hazy" }].map(opt => (
           <ChipBtn key={opt.key} selected={checkin.dreamed === opt.key}
             onClick={() => setCheckin(prev => ({ ...prev, dreamed: opt.key }))}
             label={opt.label} flex />
@@ -392,7 +392,7 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
             <VoiceTextarea
               value={checkin.dreamNotes ?? ""}
               onChange={v => setCheckin(prev => ({ ...prev, dreamNotes: v }))}
-              placeholder="Quelques mots suffisent…"
+              placeholder="A few words are enough..."
               rows={3}
             />
           </motion.div>
@@ -401,28 +401,28 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 5 — Ressenti matin
+    // 5 — Morning feeling
     <div key="ressenti" className="space-y-6 py-4">
-      <StepHeader label="Ressenti" question="Ce que je ressens ce matin." />
+      <StepHeader label="Feeling" question="What I feel this morning." />
       <VoiceTextarea
         value={checkin.morningGratitude ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, morningGratitude: v }))}
-        placeholder="Aucune attente. Juste ce qui est là."
+        placeholder="No expectations. Just what is here."
         rows={4}
       />
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 6 — Validation matin
+    // 6 — Morning validation
     <div key="done-matin" className="text-center space-y-8 py-12">
       <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}
-        className="font-display text-3xl text-brun-chaud">C&apos;est noté.</motion.h2>
+        className="font-display text-3xl text-brun-chaud">Noted.</motion.h2>
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }}
-        className="text-sm font-ui text-brun-mid/50 italic">Rien à ajouter.</motion.p>
+        className="text-sm font-ui text-brun-mid/50 italic">Nothing to add.</motion.p>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0, duration: 0.4 }}>
         <motion.button whileTap={{ scale: 0.96 }} onClick={next}
           className="bg-or-sacre text-white px-8 py-3 rounded-sharp font-ui text-sm uppercase tracking-wider">
-          Continuer vers le soir →
+          Continue to evening →
         </motion.button>
       </motion.div>
     </div>,
@@ -459,21 +459,21 @@ function EveningCheckin({ checkin, setCheckin }: {
 }) {
   return (
     <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
-      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">Mon soir</h3>
+      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">My evening</h3>
 
       <VoiceTextarea value={checkin.freeFeeling ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, freeFeeling: v }))}
-        placeholder="Ce que j'ai traversé aujourd'hui…" rows={3} />
+        placeholder="What I went through today..." rows={3} />
 
       <div>
-        <p className="text-xs font-ui text-brun-mid mb-1">4 instants vrais</p>
-        <p className="text-xs font-ui text-brun-mid/40 italic mb-3">Lumière et ombre ont la même valeur ici.</p>
+        <p className="text-xs font-ui text-brun-mid mb-1">4 true moments</p>
+        <p className="text-xs font-ui text-brun-mid/40 italic mb-3">Light and shadow hold equal value here.</p>
         <div className="space-y-2">
           {[
-            { field: "gratitudeMoment" as const, ph: "Un moment qui m'a touché…" },
-            { field: "gratitudeSensation" as const, ph: "Quelque chose que j'ai reçu…" },
-            { field: "gratitudeRecu" as const, ph: "Ce qui a émergé — joie, colère, doute, légèreté…" },
-            { field: "gratitudeSoi" as const, ph: "Ce que j'observe en moi ce soir…" },
+            { field: "gratitudeMoment" as const, ph: "A moment that touched me..." },
+            { field: "gratitudeSensation" as const, ph: "Something I received..." },
+            { field: "gratitudeRecu" as const, ph: "What emerged — joy, anger, doubt, lightness..." },
+            { field: "gratitudeSoi" as const, ph: "What I observe in myself tonight..." },
           ].map(({ field, ph }) => (
             <input key={field} type="text" value={checkin[field] ?? ""}
               onChange={e => setCheckin(prev => ({ ...prev, [field]: e.target.value }))}
@@ -485,11 +485,11 @@ function EveningCheckin({ checkin, setCheckin }: {
 
       <VoiceTextarea value={checkin.selfQuality ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, selfQuality: v }))}
-        placeholder="Ce que je reconnais en moi ce soir…" rows={2} />
+        placeholder="What I recognize in myself tonight..." rows={2} />
 
       <input type="text" value={checkin.closingSentence ?? ""}
         onChange={e => setCheckin(prev => ({ ...prev, closingSentence: e.target.value }))}
-        placeholder="Une phrase pour clore cette journée…"
+        placeholder="One sentence to close this day..."
         className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic" />
     </section>
   );
@@ -506,14 +506,14 @@ function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }
       className="bg-cire-chaude border border-or-sacre/30 rounded-sm p-5 space-y-4">
       <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-or-sacre animate-pulse" />
-        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">Rituel du jour {day}</p>
+        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">Day {day} ritual</p>
       </div>
-      <p className="font-display text-xl text-brun-chaud">Un moment différent ce soir.</p>
+      <p className="font-display text-xl text-brun-chaud">A different moment tonight.</p>
       <p className="text-sm font-ui text-brun-mid leading-relaxed">
-        Prends ton élixir.<br />
-        Mets ce son.<br />
-        Observe ce qui passe.<br />
-        <span className="italic text-brun-mid/60">21 minutes. Sans rien faire d&apos;autre.</span>
+        Take your elixir.<br />
+        Play this sound.<br />
+        Observe what passes.<br />
+        <span className="italic text-brun-mid/60">21 minutes. Nothing else.</span>
       </p>
 
       {music ? (
@@ -521,7 +521,7 @@ function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }
           {!started ? (
             <motion.button whileTap={{ scale: 0.96 }} onClick={() => setStarted(true)}
               className="w-full py-3 bg-or-sacre text-white rounded-sharp font-ui text-sm uppercase tracking-wider">
-              Commencer · {music.title}
+              Start · {music.title}
             </motion.button>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
@@ -529,12 +529,12 @@ function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }
               {music.description && (
                 <p className="text-xs font-ui text-brun-mid/60 italic">{music.description}</p>
               )}
-              <p className="text-center text-xs font-ui text-brun-mid/40 italic">Ferme les yeux quand tu es prêt.</p>
+              <p className="text-center text-xs font-ui text-brun-mid/40 italic">Close your eyes when you are ready.</p>
             </motion.div>
           )}
         </div>
       ) : (
-        <p className="text-xs font-ui text-brun-mid/40 italic">Aucune musique assignée pour cette semaine.</p>
+        <p className="text-xs font-ui text-brun-mid/40 italic">No music assigned this week.</p>
       )}
     </motion.section>
   );
@@ -548,13 +548,13 @@ function BreakCheckin({ checkin, setCheckin }: {
 }) {
   return (
     <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
-      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">Mon ressenti</h3>
+      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">My feeling</h3>
       <VoiceTextarea value={checkin.freeFeeling ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, freeFeeling: v }))}
-        placeholder="Écriture libre — ce qui me traverse en ce moment…" rows={5} />
+        placeholder="Free writing — what is moving through me right now..." rows={5} />
       <input type="text" value={checkin.closingSentence ?? ""}
         onChange={e => setCheckin(prev => ({ ...prev, closingSentence: e.target.value }))}
-        placeholder="Clôture — 1 phrase…"
+        placeholder="Closing — 1 sentence..."
         className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic" />
     </section>
   );
@@ -566,12 +566,12 @@ function MorningDoneCard({ checkin, onEdit }: { checkin: CheckinData; onEdit: ()
   return (
     <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">Mon matin · complété</p>
-        <button onClick={onEdit} className="text-xs font-ui text-brun-mid/40 hover:text-brun-mid">Modifier</button>
+        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">My morning · completed</p>
+        <button onClick={onEdit} className="text-xs font-ui text-brun-mid/40 hover:text-brun-mid">Edit</button>
       </div>
       <div className="flex gap-6">
-        {checkin.energyLevel && <div><p className="text-xs font-ui text-brun-mid/50">Énergie</p><p className="font-display text-2xl text-brun-chaud">{checkin.energyLevel}/10</p></div>}
-        {checkin.sleepQuality && <div><p className="text-xs font-ui text-brun-mid/50">Sommeil</p><p className="font-display text-2xl text-brun-chaud">{checkin.sleepQuality}/10</p></div>}
+        {checkin.energyLevel && <div><p className="text-xs font-ui text-brun-mid/50">Energy</p><p className="font-display text-2xl text-brun-chaud">{checkin.energyLevel}/10</p></div>}
+        {checkin.sleepQuality && <div><p className="text-xs font-ui text-brun-mid/50">Sleep</p><p className="font-display text-2xl text-brun-chaud">{checkin.sleepQuality}/10</p></div>}
       </div>
       {checkin.morningGratitude && (
         <p className="text-sm font-ui text-brun-mid/70 italic mt-3 border-l-2 border-or-pale pl-3 leading-relaxed">
@@ -610,7 +610,7 @@ function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo
   return (
     <div className="space-y-4">
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{phase.label} — {phase.durationDays} jours</h3>
+        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{phase.label} — {phase.durationDays} days</h3>
         <div className="grid grid-cols-7 gap-2">
           {days.map(d => {
             const dateStr = formatISODate(d);
@@ -629,23 +629,23 @@ function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo
       {selectedDay && (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
           <h4 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">
-            {new Date(selectedDay).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+            {new Date(selectedDay).toLocaleDateString("en-US", { day: "numeric", month: "long" })}
           </h4>
-          {loadingDay ? <p className="text-sm font-ui text-brun-mid/60">Chargement…</p> :
-            !viewCheckin ? <p className="text-sm font-ui text-brun-mid/50">Aucun check-in ce jour.</p> :
+          {loadingDay ? <p className="text-sm font-ui text-brun-mid/60">Loading...</p> :
+            !viewCheckin ? <p className="text-sm font-ui text-brun-mid/50">No check-in this day.</p> :
             <div className="space-y-2">
-              {([["Énergie", viewCheckin.energyLevel ? `${viewCheckin.energyLevel}/10` : null],
-                ["Sommeil", viewCheckin.sleepQuality ? `${viewCheckin.sleepQuality}/10` : null],
-                ["Ressenti matin", viewCheckin.morningGratitude],
-                ["Ressenti soir", viewCheckin.freeFeeling],
-                ["Clôture", viewCheckin.closingSentence],
+              {([["Energy", viewCheckin.energyLevel ? `${viewCheckin.energyLevel}/10` : null],
+                ["Sleep", viewCheckin.sleepQuality ? `${viewCheckin.sleepQuality}/10` : null],
+                ["Morning feeling", viewCheckin.morningGratitude],
+                ["Evening feeling", viewCheckin.freeFeeling],
+                ["Closing", viewCheckin.closingSentence],
               ] as [string, string | null][]).filter(([, v]) => v).map(([label, value]) => (
                 <div key={label}>
                   <span className="text-xs font-caps text-brun-mid/60 uppercase tracking-wider">{label}</span>
                   <p className="text-sm font-ui text-brun-chaud mt-0.5">{value}</p>
                 </div>
               ))}
-              {viewCheckin.elixirTaken && <p className="text-xs font-ui text-foret mt-2">Élixirs pris ✓</p>}
+              {viewCheckin.elixirTaken && <p className="text-xs font-ui text-foret mt-2">Elixirs taken ✓</p>}
             </div>
           }
         </div>
@@ -661,7 +661,7 @@ function ProgressBar({ label, value, total, thin }: { label: string; value: numb
     <div>
       <div className="flex justify-between mb-1">
         <span className="text-xs font-ui text-brun-mid/50">{label}</span>
-        <span className="text-xs font-ui text-brun-mid/50">J.{value} / {total}</span>
+        <span className="text-xs font-ui text-brun-mid/50">Day {value} / {total}</span>
       </div>
       <div className={`${thin ? "h-1.5" : "h-2"} bg-or-pale/30 rounded-full`}>
         <div className={`h-full rounded-full ${thin ? "bg-or-sacre/40" : "bg-or-sacre"} transition-all`}
@@ -713,7 +713,7 @@ function ContinueBtn({ onClick }: { onClick: () => void }) {
     <div className="flex justify-end pt-2">
       <motion.button whileTap={{ scale: 0.96 }} onClick={onClick}
         className="text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors">
-        Continuer →
+        Continue →
       </motion.button>
     </div>
   );
@@ -730,7 +730,7 @@ function VoiceTextarea({ value, onChange, placeholder, rows = 3 }: {
       || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     const recognition = new (SpeechRecognition as new () => { lang: string; continuous: boolean; interimResults: boolean; onresult: (e: unknown) => void; onend: () => void; start: () => void; stop: () => void })();
-    recognition.lang = "fr-FR";
+    recognition.lang = "en-US";
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.onresult = (e: unknown) => {
@@ -759,7 +759,7 @@ function VoiceTextarea({ value, onChange, placeholder, rows = 3 }: {
         animate={{ color: listening ? "#B8821E" : "#B4B2A9" }}
         onClick={listening ? stopListening : startListening}
         className="absolute right-3 top-3"
-        title={listening ? "Arrêter" : "Dicter"}>
+        title={listening ? "Stop" : "Dictate"}>
         {listening ? (
           <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
             <MicIcon active />
@@ -785,11 +785,11 @@ function MicIcon({ active }: { active: boolean }) {
 }
 
 // ─── Time Window Helper ───────────────────────────────────────────────────────
-// Exporté pour usage dans d'autres composants si besoin
-export function getTimeWindow(): "matin" | "inter" | "soir" | "fermé" {
+// Exported for use in other components if needed
+export function getTimeWindow(): "morning" | "inter" | "evening" | "closed" {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 13) return "matin";
+  if (hour >= 5 && hour < 13) return "morning";
   if (hour >= 13 && hour < 16) return "inter";
-  if (hour >= 16 && hour < 24) return "soir";
-  return "fermé";
+  if (hour >= 16 && hour < 24) return "evening";
+  return "closed";
 }

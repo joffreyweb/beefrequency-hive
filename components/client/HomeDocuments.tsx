@@ -3,10 +3,10 @@
 import { useState, useRef } from "react";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  ANALYSE: "Analyse",
-  IDENTITE: "Identité",
-  MEDICAL: "Médical",
-  AUTRE: "Autre",
+  ANALYSE: "Analysis",
+  IDENTITE: "Identity",
+  MEDICAL: "Medical",
+  AUTRE: "Other",
 };
 
 function mimeIcon(mimeType: string): string {
@@ -22,13 +22,13 @@ function mimeIcon(mimeType: string): string {
 }
 
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} o`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
+  return new Date(dateStr).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
   });
@@ -110,10 +110,10 @@ export default function HomeDocuments({ clientDocuments }: HomeDocumentsProps) {
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         const data = await res.json();
-        setError(data.error || "Erreur lors de l'envoi");
+        setError(data.error || "Upload failed");
       }
     } catch {
-      setError("Erreur lors de l'envoi du fichier");
+      setError("File upload failed");
     } finally {
       setUploading(false);
     }
@@ -153,7 +153,7 @@ export default function HomeDocuments({ clientDocuments }: HomeDocumentsProps) {
               disabled={uploading}
               className="bg-or-sacre text-white rounded-sharp px-3 py-1 text-xs font-ui hover:bg-ambre-vif transition-colors disabled:opacity-50"
             >
-              {uploading ? "Envoi..." : "Envoyer"}
+              {uploading ? "Uploading..." : "Send"}
             </button>
             <button
               onClick={() => {
@@ -162,7 +162,7 @@ export default function HomeDocuments({ clientDocuments }: HomeDocumentsProps) {
               }}
               className="text-brun-mid text-xs font-ui hover:text-brun-chaud transition-colors"
             >
-              Annuler
+              Cancel
             </button>
           </div>
         ) : (
@@ -175,13 +175,13 @@ export default function HomeDocuments({ clientDocuments }: HomeDocumentsProps) {
               className="hidden"
             />
             <p className="text-brun-mid font-ui text-sm">
-              Glissez un fichier ici ou
+              Drag a file here or
             </p>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="bg-or-sacre text-white rounded-sharp px-3 py-1 text-xs font-ui hover:bg-ambre-vif transition-colors"
             >
-              Choisir un fichier
+              Choose a file
             </button>
           </div>
         )}
@@ -194,7 +194,7 @@ export default function HomeDocuments({ clientDocuments }: HomeDocumentsProps) {
       {/* Liste compacte des documents */}
       {documents.length === 0 ? (
         <p className="text-brun-mid font-ui text-sm text-center py-2">
-          Aucun document
+          No documents
         </p>
       ) : (
         <div className="space-y-2">
@@ -222,7 +222,7 @@ export default function HomeDocuments({ clientDocuments }: HomeDocumentsProps) {
                 download={doc.fileName}
                 className="text-or-sacre text-xs font-ui hover:text-ambre-vif transition-colors flex-shrink-0"
               >
-                Télécharger
+                Download
               </a>
             </div>
           ))}

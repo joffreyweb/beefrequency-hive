@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 // Labels français pour les catégories
 const CATEGORY_LABELS: Record<string, string> = {
-  ANALYSE: "Analyse",
-  IDENTITE: "Identité",
-  MEDICAL: "Médical",
-  AUTRE: "Autre",
+  ANALYSE: "Analysis",
+  IDENTITE: "Identity",
+  MEDICAL: "Medical",
+  AUTRE: "Other",
 };
 
 // Icône selon le type MIME
@@ -25,14 +25,14 @@ function mimeIcon(mimeType: string): string {
 
 // Formate la taille en KB ou MB
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} o`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // Formate la date
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
+  return new Date(dateStr).toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -133,10 +133,10 @@ export default function ClientDocumentsPage() {
         await fetchDocuments();
       } else {
         const data = await res.json();
-        setError(data.error || "Erreur lors de l'envoi");
+        setError(data.error || "Upload failed");
       }
     } catch {
-      setError("Erreur lors de l'envoi du fichier");
+      setError("File upload failed");
     } finally {
       setUploading(false);
     }
@@ -144,7 +144,7 @@ export default function ClientDocumentsPage() {
 
   // Suppression d'un document
   async function handleDelete(id: string) {
-    if (!confirm("Supprimer ce document ?")) return;
+    if (!confirm("Delete this document?")) return;
 
     try {
       const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
@@ -161,10 +161,10 @@ export default function ClientDocumentsPage() {
       {/* En-tête */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Mes documents
+          My documents
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Partagez vos analyses, documents médicaux et autres fichiers
+          Share your analyses, medical documents, and other files
         </p>
       </div>
 
@@ -206,7 +206,7 @@ export default function ClientDocumentsPage() {
                 disabled={uploading}
                 className="bg-or-sacre text-white rounded-sharp px-5 py-2 text-sm font-ui hover:bg-ambre-vif transition-colors disabled:opacity-50"
               >
-                {uploading ? "Envoi en cours..." : "Envoyer"}
+                {uploading ? "Uploading..." : "Send"}
               </button>
 
               <button
@@ -216,16 +216,16 @@ export default function ClientDocumentsPage() {
                 }}
                 className="text-brun-mid text-sm font-ui hover:text-brun-chaud transition-colors"
               >
-                Annuler
+                Cancel
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             <p className="text-brun-mid font-ui">
-              Glissez-déposez un fichier ici
+              Drag and drop a file here
             </p>
-            <p className="text-brun-mid/60 text-sm font-ui">ou</p>
+            <p className="text-brun-mid/60 text-sm font-ui">or</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -237,10 +237,10 @@ export default function ClientDocumentsPage() {
               onClick={() => fileInputRef.current?.click()}
               className="bg-or-sacre text-white rounded-sharp px-5 py-2 text-sm font-ui hover:bg-ambre-vif transition-colors"
             >
-              Choisir un fichier
+              Choose a file
             </button>
             <p className="text-brun-mid/50 text-xs font-ui mt-2">
-              PDF, images ou Word — 10 Mo maximum
+              PDF, images or Word — 10 MB maximum
             </p>
           </div>
         )}
@@ -253,11 +253,11 @@ export default function ClientDocumentsPage() {
       {/* Liste des documents */}
       {loading ? (
         <p className="text-brun-mid font-ui text-sm">
-          Chargement des documents...
+          Loading documents...
         </p>
       ) : documents.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-          <p className="text-brun-mid font-ui">Aucun document pour le moment</p>
+          <p className="text-brun-mid font-ui">No documents yet</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -296,13 +296,13 @@ export default function ClientDocumentsPage() {
                   download={doc.fileName}
                   className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors"
                 >
-                  Télécharger
+                  Download
                 </a>
                 <button
                   onClick={() => handleDelete(doc.id)}
                   className="text-brun-mid/60 text-sm font-ui hover:text-red-600 transition-colors"
                 >
-                  Supprimer
+                  Delete
                 </button>
               </div>
             </div>
