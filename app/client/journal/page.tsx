@@ -201,7 +201,7 @@ export default function JournalPage() {
   return (
     <div className="space-y-8">
       <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-        My journal
+        Journal
       </h1>
 
       {/* Section 1 — How I feel today */}
@@ -348,7 +348,7 @@ export default function JournalPage() {
           active={activeTab === "shared"}
           onClick={() => setActiveTab("shared")}
         >
-          My journal
+          Journal
         </TabButton>
         <TabButton
           active={activeTab === "private"}

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireOnboarding } from "@/lib/onboarding-guard";
 import Link from "next/link";
 import DocumentUploadButton from "@/components/client/DocumentUploadButton";
-import SignOutButton from "@/components/client/SignOutButton";
+
 
 const sessionTypeLabels: Record<string, string> = {
   ONLINE: "Online",
@@ -167,11 +167,6 @@ export default async function ClientHomePage() {
 
       {/* f) Share a document — discreet upload button */}
       <DocumentUploadButton />
-
-      {/* Sign out */}
-      <div className="flex justify-end pt-4">
-        <SignOutButton />
-      </div>
     </div>
   );
 }

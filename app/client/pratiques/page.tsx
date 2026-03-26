@@ -244,23 +244,6 @@ export default function ClientPratiquesPage() {
           )}
         </section>
 
-        {/* Section Toutes les pratiques */}
-        {activePractices.length > 0 && (
-          <section>
-            <h2 className="font-display text-lg text-brun-chaud mb-4">
-              Practices
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {activePractices.map((cp) => (
-                <PracticeCard
-                  key={cp.id}
-                  clientPractice={cp}
-                  onStart={() => setActivePractice(cp)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
       </div>
     </>
   );
