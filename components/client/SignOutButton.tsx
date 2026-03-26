@@ -8,11 +8,16 @@ export default function SignOutButton() {
   async function handleSignOut() {
     setLoading(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      // Wait for the response to ensure cookie is deleted
+      await res.json();
     } catch {
       // Continue to redirect even if fetch fails
     }
-    window.location.href = "/login";
+    // Clear any client-side cache and force full reload to /login
+    document.cookie = "token=; Max-Age=0; path=/";
+    document.cookie = "onboarding_completed=; Max-Age=0; path=/";
+    window.location.replace("/login");
   }
 
   return (
