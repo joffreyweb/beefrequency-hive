@@ -47,7 +47,8 @@ export default async function ClientHomePage() {
       (Date.now() - new Date(client.startDate).getTime()) / 86400000
     ) + 1;
 
-  const firstName = client.intake?.firstName || client.user.name;
+  // Use full name from User table — intake.firstName may be incomplete
+  const displayName = client.user.name || client.intake?.firstName || "You";
 
   // Wisdom message of the day — cycle through DayMessages
   const allMessages = await prisma.dayMessage.findMany({
@@ -82,7 +83,7 @@ export default async function ClientHomePage() {
       {/* b) First name + Day number */}
       <div className="text-center">
         <h1 className="font-display text-2xl text-brun-chaud">
-          {firstName} — <span className="text-or-sacre">Day {dayNumber}</span>
+          {displayName} — <span className="text-or-sacre">Day {dayNumber}</span>
         </h1>
       </div>
 
