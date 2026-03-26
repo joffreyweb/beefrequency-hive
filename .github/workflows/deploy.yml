@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy Hive PWA to VPS
 
 on:
   push:
@@ -20,5 +20,5 @@ jobs:
             npm install
             npx prisma migrate deploy
             npm run build
-            sudo fuser -k 3000/tcp || true
+            sudo fuser -k 3001/tcp || true
             pm2 restart hive
