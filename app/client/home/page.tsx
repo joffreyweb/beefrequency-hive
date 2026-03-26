@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireOnboarding } from "@/lib/onboarding-guard";
 import Link from "next/link";
 import DocumentUploadButton from "@/components/client/DocumentUploadButton";
+import CheckinButtons from "@/components/client/CheckinButtons";
 
 
 const sessionTypeLabels: Record<string, string> = {
@@ -80,6 +81,9 @@ export default async function ClientHomePage() {
           </p>
         </div>
       )}
+
+      {/* Check-in buttons */}
+      <CheckinButtons />
 
       {/* b) First name + Day number */}
       <div className="text-center">

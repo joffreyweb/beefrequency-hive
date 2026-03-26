@@ -244,8 +244,93 @@ export default function ClientPratiquesPage() {
           )}
         </section>
 
+        {/* Library */}
+        <LibrarySection />
+
       </div>
     </>
+  );
+}
+
+const LIBRARY_CATEGORIES = [
+  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Breathwork" },
+  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Reset" },
+  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Anxiety" },
+  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Stress" },
+];
+
+interface LibPractice {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+}
+
+function LibrarySection() {
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [libPractices, setLibPractices] = useState<LibPractice[]>([]);
+  const [libLoading, setLibLoading] = useState(false);
+
+  async function openCategory(cat: string) {
+    if (selectedCat === cat) {
+      setSelectedCat(null);
+      return;
+    }
+    setSelectedCat(cat);
+    setLibLoading(true);
+    try {
+      const res = await fetch(`/api/practices?category=${cat}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLibPractices(data.practices ?? []);
+      }
+    } catch {
+      setLibPractices([]);
+    } finally {
+      setLibLoading(false);
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="font-display text-lg text-brun-chaud mb-4">Library</h2>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {LIBRARY_CATEGORIES.map((cat) => (
+          <button
+            key={cat.key}
+            onClick={() => openCategory(cat.key)}
+            className={`flex items-center gap-2 p-4 rounded-sm border transition-colors text-left ${
+              selectedCat === cat.key
+                ? "bg-or-sacre/10 border-or-sacre"
+                : "bg-cire-chaude border-or-pale hover:border-or-sacre/50"
+            }`}
+          >
+            <span className="text-xl">{cat.emoji}</span>
+            <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {selectedCat && (
+        <div className="mt-2">
+          {libLoading ? (
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Loading...</p>
+          ) : libPractices.length === 0 ? (
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Nothing here yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {libPractices.map((p) => (
+                <div key={p.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
+                  <p className="font-display text-base text-brun-chaud">{p.title}</p>
+                  <p className="font-ui text-sm text-brun-mid mt-1">{p.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
