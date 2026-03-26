@@ -16,31 +16,49 @@ export default function CheckinButtons() {
   const eveningOpen = hour >= 16 && hour <= 23;
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="grid grid-cols-2 gap-3">
+      {/* Morning card */}
       {morningOpen ? (
         <Link
           href="/client/checkin/morning"
-          className="text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors"
+          className="bg-cire-chaude border border-or-sacre rounded-sm p-4 hover:bg-or-sacre/5 transition-colors"
         >
-          Morning check-in &rarr;
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">☀️</span>
+            <span className="font-ui text-sm text-brun-chaud">Morning check-in</span>
+          </div>
+          <p className="font-ui text-xs text-or-sacre">Available until 1pm</p>
         </Link>
       ) : (
-        <span className="text-sm font-ui text-brun-mid/30">
-          Morning check-in
-        </span>
+        <div className="bg-creme-sacree border border-or-pale/50 rounded-sm p-4 opacity-50">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg grayscale">☀️</span>
+            <span className="font-ui text-sm text-brun-mid/50">Morning check-in</span>
+          </div>
+          <p className="font-ui text-xs text-brun-mid/40">Opens at 5am</p>
+        </div>
       )}
-      <span className="text-brun-mid/20">·</span>
+
+      {/* Evening card */}
       {eveningOpen ? (
         <Link
           href="/client/checkin/evening"
-          className="text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors"
+          className="bg-cire-chaude border border-or-sacre rounded-sm p-4 hover:bg-or-sacre/5 transition-colors"
         >
-          Evening check-in &rarr;
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🌙</span>
+            <span className="font-ui text-sm text-brun-chaud">Evening check-in</span>
+          </div>
+          <p className="font-ui text-xs text-or-sacre">Available until midnight</p>
         </Link>
       ) : (
-        <span className="text-sm font-ui text-brun-mid/30">
-          Evening check-in
-        </span>
+        <div className="bg-creme-sacree border border-or-pale/50 rounded-sm p-4 opacity-50">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg grayscale">🌙</span>
+            <span className="font-ui text-sm text-brun-mid/50">Evening check-in</span>
+          </div>
+          <p className="font-ui text-xs text-brun-mid/40">Opens at 4pm</p>
+        </div>
       )}
     </div>
   );

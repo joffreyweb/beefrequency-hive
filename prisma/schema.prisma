@@ -50,6 +50,10 @@ model User {
   name           String
   lastLoginAt    DateTime? // Dernière connexion — pour "Today's Activity"
   dailyRecapTime String    @default("18:00") // Heure du récapitulatif de journée (HH:mm)
+  morningReminderEnabled Boolean @default(false)
+  morningReminderTime    String  @default("07:00")
+  eveningReminderEnabled Boolean @default(false)
+  eveningReminderTime    String  @default("20:00")
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 
 interface JournalEntry {
   id: string;
@@ -203,6 +204,9 @@ export default function JournalPage() {
       <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
         Journal
       </h1>
+
+      {/* Check-in link */}
+      <CheckinLink />
 
       {/* Section 1 — How I feel today */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
@@ -429,6 +433,31 @@ export default function JournalPage() {
       )}
     </div>
   );
+}
+
+function CheckinLink() {
+  const [hour, setHour] = useState<number | null>(null);
+  useEffect(() => { setHour(new Date().getHours()); }, []);
+  if (hour === null) return null;
+
+  const morningOpen = hour >= 5 && hour < 13;
+  const eveningOpen = hour >= 16 && hour <= 23;
+
+  if (morningOpen) {
+    return (
+      <Link href="/client/checkin/morning" className="text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors">
+        Go to morning check-in &rarr;
+      </Link>
+    );
+  }
+  if (eveningOpen) {
+    return (
+      <Link href="/client/checkin/evening" className="text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors">
+        Go to evening check-in &rarr;
+      </Link>
+    );
+  }
+  return null;
 }
 
 // Bouton d'onglet
