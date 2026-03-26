@@ -41,7 +41,8 @@ type TabKey =
   | "analysis"
   | "documents"
   | "messages"
-  | "recommendations";
+  | "recommendations"
+  | "cartes";
 
 // Sous-onglets du programme
 type ProgramSubTab = "elixirs" | "protocols" | "practices";
@@ -78,6 +79,7 @@ export default function ClientProfileTabs({
     { key: "documents", label: "Documents", badge: unreadDocCount },
     { key: "messages", label: "Messages", badge: unreadMsgCount },
     { key: "recommendations", label: "Recommandations", badge: 0 },
+    { key: "cartes", label: "Cartes", badge: client.cartesGeneratedAt ? 0 : -1 },
   ];
 
   return (
@@ -129,6 +131,9 @@ export default function ClientProfileTabs({
       )}
       {activeTab === "recommendations" && (
         <RecommendationsTab client={client} />
+      )}
+      {activeTab === "cartes" && (
+        <CartesTab client={client} />
       )}
     </div>
   );
@@ -815,6 +820,180 @@ function RecommendationsTab({ client }: { client: any }) {
           initialRecommendations={client.clientRecommendations}
         />
       </section>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   TAB 9 — Cartes (HD · Astro · BaZi · Numerology)
+   ───────────────────────────────────────────── */
+function CartesTab({ client }: { client: any }) {
+  const [regenerating, setRegenerating] = useState(false);
+  const [status, setStatus] = useState("");
+
+  async function handleRegenerate() {
+    setRegenerating(true);
+    setStatus("Generating...");
+    try {
+      const res = await fetch("/api/admin/generate-cartes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: client.id }),
+      });
+      if (res.ok) {
+        setStatus("Generation started. Refresh in a few moments.");
+      } else {
+        setStatus("Error starting generation.");
+      }
+    } catch {
+      setStatus("Error.");
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  const hd = client.hdFullData;
+  const astro = client.astroData;
+  const bazi = client.baziData;
+  const num = client.numerologyData;
+  const generated = client.cartesGeneratedAt;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-ui text-brun-chaud font-medium">Client Cards</h3>
+          {generated && (
+            <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
+              Generated {new Date(generated).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {status && <span className="text-xs font-ui text-or-sacre">{status}</span>}
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="px-4 py-2 bg-or-sacre text-white rounded-sharp text-xs font-ui hover:bg-ambre-vif transition-colors disabled:opacity-50"
+          >
+            {regenerating ? "..." : "Regenerate"}
+          </button>
+        </div>
+      </div>
+
+      {!generated && !status && (
+        <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
+          <p className="font-ui text-sm text-brun-mid">No cards generated yet. Click Regenerate to start.</p>
+        </div>
+      )}
+
+      {/* Human Design */}
+      {hd && (
+        <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-3">
+          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">Human Design</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Stat label="Type" value={hd.type} />
+            <Stat label="Authority" value={hd.authority} />
+            <Stat label="Profile" value={hd.profile} />
+            <Stat label="Cross" value={hd.cross} />
+          </div>
+          {hd.definedCenters && (
+            <div>
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Defined Centers</p>
+              <div className="flex flex-wrap gap-1">
+                {hd.definedCenters.map((c: string) => (
+                  <span key={c} className="text-xs bg-or-sacre/10 text-or-sacre px-2 py-0.5 rounded-sharp">{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {hd.definedChannels && (
+            <div>
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Channels</p>
+              <p className="text-xs font-ui text-brun-chaud">{hd.definedChannels.join(" · ")}</p>
+            </div>
+          )}
+          {hd.synthesis && (
+            <div className="border-t border-or-pale pt-3 mt-3">
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthesis</p>
+              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap leading-relaxed">{hd.synthesis}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Astrology */}
+      {astro && (
+        <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-3">
+          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">Evolutionary Astrology — Kaypacha</h4>
+          {astro.natalChart?.ascendant && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Stat label="Ascendant" value={astro.natalChart.ascendant.sign} />
+              <Stat label="Sun" value={astro.natalChart.positions?.Sun?.sign} />
+              <Stat label="Moon" value={astro.natalChart.positions?.Moon?.sign} />
+              <Stat label="Pluto" value={astro.natalChart.evolutionarySoul?.pluto?.sign} />
+              <Stat label="North Node" value={astro.natalChart.evolutionarySoul?.northNode?.sign} />
+              <Stat label="South Node" value={astro.natalChart.evolutionarySoul?.southNode?.sign} />
+            </div>
+          )}
+          {astro.synthesis && (
+            <div className="border-t border-or-pale pt-3 mt-3">
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthesis</p>
+              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap leading-relaxed">{astro.synthesis}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* BaZi */}
+      {bazi && (
+        <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-3">
+          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">BaZi — Four Pillars</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {bazi.pillars && Object.entries(bazi.pillars).map(([key, pillar]: [string, any]) => (
+              <div key={key} className="text-center">
+                <p className="text-xs font-ui text-brun-mid/60 capitalize">{key}</p>
+                <p className="text-sm font-ui text-brun-chaud">{pillar.stem} {pillar.branch}</p>
+                <p className="text-xs font-ui text-or-sacre">{pillar.animal}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Stat label="Day Master" value={bazi.dayMaster} />
+            <Stat label="Dominant" value={bazi.dominantElement} />
+          </div>
+          {bazi.synthesis && (
+            <div className="border-t border-or-pale pt-3 mt-3">
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthesis</p>
+              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap leading-relaxed">{bazi.synthesis}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Numerology */}
+      {num && (
+        <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-3">
+          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">Numerology</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <Stat label="Life Path" value={num.lifePath} />
+            <Stat label="Expression" value={num.expression} />
+            <Stat label="Soul" value={num.soul} />
+            <Stat label="Personality" value={num.personality} />
+            <Stat label="Birthday" value={num.birthday} />
+            <Stat label="Maturity" value={num.maturity} />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: any }) {
+  return (
+    <div>
+      <p className="text-xs font-ui text-brun-mid/60">{label}</p>
+      <p className="text-sm font-ui text-brun-chaud">{value ?? "—"}</p>
     </div>
   );
 }

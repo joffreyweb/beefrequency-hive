@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import { generateAllCartes } from "@/lib/generateCartes";
 
 // GET /api/clients — Liste tous les clients (admin uniquement)
 export async function GET() {
@@ -55,6 +56,9 @@ export async function POST(request: NextRequest) {
         user: { select: { name: true, email: true } },
       },
     });
+
+    // Trigger card generation in background (non-blocking)
+    generateAllCartes(client.id).catch(console.error);
 
     return NextResponse.json(client, { status: 201 });
   } catch {

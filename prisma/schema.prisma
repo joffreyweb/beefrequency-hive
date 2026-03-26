@@ -81,6 +81,20 @@ model Client {
   hdType                String?      // Type Human Design (GENERATOR, MANIFESTOR, etc.)
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
 
+  // Données de naissance étendues
+  birthTime             String?      // Format HH:MM
+  birthCity             String?
+  birthCountry          String?
+  birthLat              Float?
+  birthLng              Float?
+
+  // Cartes générées (JSON)
+  hdFullData            Json?        // Human Design complet
+  astroData             Json?        // Astrologie Kaypacha
+  baziData              Json?        // BaZi chinois
+  numerologyData        Json?        // Numérologie
+  cartesGeneratedAt     DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -101,6 +115,7 @@ model Client {
   seenMessages          ClientMessageSeen[]
   clientPhases          ClientPhase[]
   dailyCheckins         DailyCheckin[]
+  openWebuiQueue        OpenWebuiQueue[]
 }
 
 model JournalEntry {
@@ -655,4 +670,25 @@ model ClientMessageSeen {
   message    DayMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, messageId])
+}
+
+// Queue de synchronisation vers Open WebUI
+model OpenWebuiQueue {
+  id          String    @id @default(cuid())
+  clientId    String
+  clientName  String
+  content     String    @db.Text
+  status      String    @default("PENDING") // PENDING | DONE | ERROR
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  client      Client    @relation(fields: [clientId], references: [id])
+}
+
+// 360 Symboles Sabiens (Dane Rudhyar)
+model SabianSymbol {
+  id      Int    @id
+  degree  Int    // 1 à 360
+  sign    String
+  symbol  String
+  keynote String
 }
