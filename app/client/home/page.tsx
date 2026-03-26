@@ -169,7 +169,7 @@ export default async function ClientHomePage() {
       <DocumentUploadButton />
 
       {/* Sign out */}
-      <div className="text-center pt-4">
+      <div className="flex justify-end pt-4">
         <SignOutButton />
       </div>
     </div>
