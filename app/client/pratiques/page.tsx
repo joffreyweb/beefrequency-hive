@@ -211,7 +211,7 @@ export default function ClientPratiquesPage() {
       <div>
         {/* Titre de la page */}
         <h1 className="font-display text-2xl text-brun-chaud mb-8">
-          My practices
+          Practices
         </h1>
 
         {/* Day of journey */}
@@ -248,7 +248,7 @@ export default function ClientPratiquesPage() {
         {activePractices.length > 0 && (
           <section>
             <h2 className="font-display text-lg text-brun-chaud mb-4">
-              My practices
+              Practices
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {activePractices.map((cp) => (

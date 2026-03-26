@@ -207,7 +207,7 @@ export default function JournalPage() {
       {/* Section 1 — How I feel today */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
         <h2 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-4">
-          How I feel today
+          How do you feel today?
         </h2>
 
         {symptomLoading ? (
@@ -268,7 +268,7 @@ export default function JournalPage() {
             <textarea
               value={symptomText}
               onChange={(e) => setSymptomText(e.target.value)}
-              placeholder="Anything to report?"
+              placeholder="What is present for you right now?"
               rows={2}
               className="w-full px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors resize-none"
             />
