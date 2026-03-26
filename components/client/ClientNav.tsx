@@ -2,10 +2,25 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function ClientNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Poll unread messages every 15s
+  useEffect(() => {
+    function fetchUnread() {
+      fetch("/api/messages/unread-count")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => { if (data?.count != null) setUnreadCount(data.count); })
+        .catch(() => {});
+    }
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   function isActive(href: string): boolean {
     return pathname === href || pathname.startsWith(href + "/");
@@ -16,10 +31,10 @@ export default function ClientNav() {
     isActive("/client/elixirs") ||
     isActive("/client/sessions") ||
     isActive("/client/agenda") ||
-    isActive("/client/programme") ||
-    isActive("/client/messages");
+    isActive("/client/programme");
   const isJournal = isActive("/client/journal");
   const isPractices = isActive("/client/pratiques");
+  const isMessages = isActive("/client/messages");
   const isFromJoffrey =
     isActive("/client/from-joffrey") ||
     isActive("/client/transmission") ||
@@ -27,10 +42,11 @@ export default function ClientNav() {
     isActive("/client/recommendations");
 
   const items = [
-    { href: "/client/home", label: "Home", active: isHome, icon: HomeIcon },
-    { href: "/client/journal", label: "Journal", active: isJournal, icon: JournalIcon },
-    { href: "/client/pratiques", label: "Practices", active: isPractices, icon: PracticesIcon },
-    { href: "/client/from-joffrey", label: "From Joffrey", active: isFromJoffrey, icon: TransmissionIcon },
+    { href: "/client/home", label: "Home", active: isHome, icon: HomeIcon, badge: 0 },
+    { href: "/client/journal", label: "Journal", active: isJournal, icon: JournalIcon, badge: 0 },
+    { href: "/client/pratiques", label: "Practices", active: isPractices, icon: PracticesIcon, badge: 0 },
+    { href: "/client/messages", label: "Messages", active: isMessages, icon: MessagesIcon, badge: unreadCount },
+    { href: "/client/from-joffrey", label: "From Joffrey", active: isFromJoffrey, icon: TransmissionIcon, badge: 0 },
   ];
 
   return (
@@ -45,22 +61,29 @@ export default function ClientNav() {
     >
       <div
         className="flex items-center justify-around"
-        style={{ maxWidth: "640px", margin: "0 auto", height: "60px", padding: "0 8px" }}
+        style={{ maxWidth: "640px", margin: "0 auto", height: "60px", padding: "0 4px" }}
       >
         {items.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={(e) => { e.preventDefault(); router.push(item.href); }}
-            className="flex flex-col items-center justify-center gap-0.5 transition-all duration-200"
-            style={{ width: "64px", opacity: item.active ? 1 : 0.5 }}
+            className="relative flex flex-col items-center justify-center gap-0.5 transition-all duration-200"
+            style={{ width: "56px", opacity: item.active ? 1 : 0.5 }}
           >
-            <item.icon color={item.active ? "#B8821E" : "#6B4423"} />
+            <div className="relative">
+              <item.icon color={item.active ? "#B8821E" : "#6B4423"} />
+              {item.badge > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-or-sacre text-white text-[9px] font-ui px-1">
+                  {item.badge > 9 ? "9+" : item.badge}
+                </span>
+              )}
+            </div>
             <span
               className="font-ui leading-none text-center"
               style={{
-                fontSize: "9px",
-                letterSpacing: "0.04em",
+                fontSize: "8px",
+                letterSpacing: "0.03em",
                 color: item.active ? "#B8821E" : "#6B4423",
               }}
             >
@@ -97,6 +120,14 @@ function PracticesIcon({ color }: { color: string }) {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 3" />
+    </svg>
+  );
+}
+
+function MessagesIcon({ color }: { color: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 4h16v12H7l-4 4V4z" />
     </svg>
   );
 }
