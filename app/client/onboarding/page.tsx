@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import VideoRecorder from "@/components/video/VideoRecorder";
 import CharteEngagement from "@/components/onboarding/CharteEngagement";
 
-// Données du formulaire d'onboarding
 interface FormData {
   firstName: string;
   lastName: string;
@@ -40,12 +39,11 @@ const INITIAL_FORM: FormData = {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0); // 0 = écran de bienvenue
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Récupère l'email de l'utilisateur connecté au montage
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
@@ -57,13 +55,11 @@ export default function OnboardingPage() {
       .catch(() => {});
   }, []);
 
-  // Mise à jour générique d'un champ
   function update(field: keyof FormData, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setError(null);
   }
 
-  // Validation par étape
   function isStep1Valid() {
     return (
       form.firstName.trim() !== "" &&
@@ -83,13 +79,7 @@ export default function OnboardingPage() {
     );
   }
 
-  function isStep3Valid() {
-    return true; // Intention optionnelle
-  }
-
-  // Soumission finale
   async function handleSubmit() {
-
     setSubmitting(true);
     setError(null);
 
@@ -114,13 +104,13 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Une erreur est survenue");
+        setError(data.error || "Something went wrong");
         return;
       }
 
       router.push("/client/home");
     } catch {
-      setError("Une erreur est survenue");
+      setError("Something went wrong");
     } finally {
       setSubmitting(false);
     }
@@ -128,16 +118,19 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-creme-sacree flex flex-col">
-      {/* Écran de bienvenue */}
+      {/* Step 0 — Welcome */}
       {step === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <h1 className="font-display text-4xl sm:text-5xl text-brun-chaud mb-6">
-            Bienvenue.
+            Welcome.
           </h1>
+          <p className="font-display text-lg sm:text-xl text-brun-mid/80 italic mb-4">
+            This space is yours.
+          </p>
           <p className="font-ui text-sm sm:text-base text-brun-mid max-w-md leading-relaxed mb-8">
-            Avant que nous commencions, j&apos;ai besoin de vous connaître un peu.
-            Ces informations resteront confidentielles et me permettront de vous
-            accompagner avec précision.
+            Before we begin, I need to know you a little.
+            This information remains confidential and allows me
+            to walk beside you with precision.
           </p>
           <p className="font-display text-sm text-brun-mid/70 italic mb-10">
             — Joffrey Deleplanque
@@ -146,15 +139,15 @@ export default function OnboardingPage() {
             onClick={() => setStep(1)}
             className="px-8 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors"
           >
-            Commencer
+            Begin
           </button>
         </div>
       )}
 
-      {/* Formulaire (étapes 1-3) */}
+      {/* Steps 1-5 */}
       {step >= 1 && (
         <>
-      {/* Header avec logo */}
+      {/* Header */}
       <header className="flex flex-col items-center pt-8 pb-4">
         <h1 className="font-display text-2xl text-or-sacre">Hive</h1>
         <p className="font-caps text-xs tracking-widest text-brun-mid uppercase">
@@ -162,9 +155,9 @@ export default function OnboardingPage() {
         </p>
       </header>
 
-      {/* Indicateur d'étapes */}
+      {/* Step indicator */}
       <div className="flex items-center justify-center gap-0 mb-8">
-        {[1, 2, 3].map((s, i) => (
+        {[1, 2, 3, 4, 5].map((s, i) => (
           <div key={s} className="flex items-center">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-ui transition-colors ${
@@ -177,9 +170,9 @@ export default function OnboardingPage() {
             >
               {s}
             </div>
-            {i < 2 && (
+            {i < 4 && (
               <div
-                className={`w-12 h-0.5 ${
+                className={`w-8 h-0.5 ${
                   s < step ? "bg-foret" : "bg-or-pale"
                 }`}
               />
@@ -188,21 +181,25 @@ export default function OnboardingPage() {
         ))}
       </div>
 
-      {/* Contenu du formulaire */}
+      {/* Form content */}
       <div className="flex-1 flex items-start justify-center px-4">
         <div className="w-full max-w-lg">
-          {/* Étape 1 — Identité */}
+          {/* Step 1 — Who are you? */}
           {step === 1 && (
             <div className="space-y-4">
+              <div className="mb-6">
+                <h2 className="font-display text-xl text-brun-chaud">Who are you?</h2>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <Field
-                  label="Prénom"
+                  label="First name"
                   value={form.firstName}
                   onChange={(v) => update("firstName", v)}
                   required
                 />
                 <Field
-                  label="Nom"
+                  label="Last name"
                   value={form.lastName}
                   onChange={(v) => update("lastName", v)}
                   required
@@ -217,7 +214,7 @@ export default function OnboardingPage() {
               />
 
               <Field
-                label="Adresse postale"
+                label="Postal address"
                 value={form.postalAddress}
                 onChange={(v) => update("postalAddress", v)}
                 required
@@ -225,13 +222,13 @@ export default function OnboardingPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <Field
-                  label="Ville"
+                  label="City"
                   value={form.city}
                   onChange={(v) => update("city", v)}
                   required
                 />
                 <Field
-                  label="Code postal"
+                  label="Postal code"
                   value={form.postalCode}
                   onChange={(v) => update("postalCode", v)}
                   required
@@ -239,7 +236,7 @@ export default function OnboardingPage() {
               </div>
 
               <Field
-                label="Pays"
+                label="Country"
                 value={form.country}
                 onChange={(v) => update("country", v)}
                 required
@@ -251,18 +248,22 @@ export default function OnboardingPage() {
                   disabled={!isStep1Valid()}
                   className="w-full py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Suivant
+                  Next
                 </button>
               </div>
             </div>
           )}
 
-          {/* Étape 2 — Naissance */}
+          {/* Step 2 — When were you born? */}
           {step === 2 && (
             <div className="space-y-4">
+              <div className="mb-6">
+                <h2 className="font-display text-xl text-brun-chaud">When were you born?</h2>
+              </div>
+
               <div>
                 <label className="block text-sm font-ui text-brun-chaud mb-1">
-                  Date de naissance <span className="text-or-sacre">*</span>
+                  Date of birth <span className="text-or-sacre">*</span>
                 </label>
                 <input
                   type="date"
@@ -274,7 +275,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-ui text-brun-chaud mb-1">
-                  Heure de naissance
+                  Time of birth
                 </label>
                 <input
                   type="time"
@@ -293,20 +294,20 @@ export default function OnboardingPage() {
                     className="accent-or-sacre"
                   />
                   <span className="text-sm font-ui text-brun-mid">
-                    Je ne connais pas mon heure de naissance
+                    I don&apos;t know my time of birth
                   </span>
                 </label>
               </div>
 
               <Field
-                label="Ville de naissance"
+                label="City of birth"
                 value={form.birthPlace}
                 onChange={(v) => update("birthPlace", v)}
                 required
               />
 
               <Field
-                label="Pays de naissance"
+                label="Country of birth"
                 value={form.birthCountry}
                 onChange={(v) => update("birthCountry", v)}
                 required
@@ -316,28 +317,28 @@ export default function OnboardingPage() {
                   onClick={() => setStep(1)}
                   className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider hover:text-brun-chaud transition-colors"
                 >
-                  Précédent
+                  Back
                 </button>
                 <button
                   onClick={() => setStep(3)}
                   disabled={!isStep2Valid()}
                   className="flex-1 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Suivant
+                  Next
                 </button>
               </div>
             </div>
           )}
 
-          {/* Étape 3 — Intention */}
+          {/* Step 3 — Intention (optional) */}
           {step === 3 && (
             <div className="space-y-4">
               <div>
                 <h2 className="font-display text-xl text-brun-chaud">
-                  Qu&apos;est-ce qui vous amène ici ?
+                  What brings you here — right now?
                 </h2>
                 <p className="font-ui text-sm text-brun-mid mt-1">
-                  Pas d&apos;obligation. Quelques mots suffisent si vous le souhaitez.
+                  No obligation. A few words are enough if you wish.
                 </p>
               </div>
 
@@ -346,11 +347,11 @@ export default function OnboardingPage() {
                   value={form.intention}
                   onChange={(e) => update("intention", e.target.value)}
                   rows={6}
-                  placeholder="Pas d'obligation. Quelques mots suffisent si vous le souhaitez."
+                  placeholder="No obligation. A few words are enough if you wish."
                   className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors resize-none"
                 />
                 <p className="text-xs text-brun-mid/50 text-right mt-1">
-                  {form.intention.trim().length} caractères
+                  {form.intention.trim().length} characters
                 </p>
               </div>
 
@@ -363,34 +364,34 @@ export default function OnboardingPage() {
                   onClick={() => setStep(2)}
                   className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider hover:text-brun-chaud transition-colors"
                 >
-                  Précédent
+                  Back
                 </button>
                 <button
                   onClick={() => setStep(4)}
                   disabled={submitting}
                   className="flex-1 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Suivant
+                  Next
                 </button>
               </div>
             </div>
           )}
 
-          {/* Étape 4 — Vidéo Seuil 1 */}
+          {/* Step 4 — Video Threshold 1 */}
           {step === 4 && (
             <div className="space-y-4">
               <div>
-                <h2 className="font-display text-xl text-brun-chaud">Votre témoignage vidéo</h2>
-                <p className="font-ui text-sm text-brun-mid mt-1">60 secondes pour poser votre point de départ.</p>
+                <h2 className="font-display text-xl text-brun-chaud">Your starting point.</h2>
+                <p className="font-ui text-sm text-brun-mid mt-1">60 seconds to set down where you are right now.</p>
               </div>
               <VideoRecorder seuil="1" onComplete={() => setStep(5)} />
-              <button onClick={() => setStep(3)} className="w-full py-2 text-brun-mid font-ui text-xs uppercase tracking-wider hover:text-brun-chaud transition-colors">Précédent</button>
+              <button onClick={() => setStep(3)} className="w-full py-2 text-brun-mid font-ui text-xs uppercase tracking-wider hover:text-brun-chaud transition-colors">Back</button>
             </div>
           )}
 
-          {/* Étape 5 — Charte */}
+          {/* Step 5 — Charter */}
           {step === 5 && (
-            <CharteEngagement clientName={form.firstName + ' ' + form.lastName} onComplete={handleSubmit} />
+            <CharteEngagement clientFirstName={form.firstName} clientName={form.firstName + ' ' + form.lastName} onComplete={handleSubmit} />
           )}
 
         </div>
@@ -401,7 +402,6 @@ export default function OnboardingPage() {
   );
 }
 
-// Composant champ de saisie réutilisable
 function Field({
   label,
   value,

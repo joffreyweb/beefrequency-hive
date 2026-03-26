@@ -190,6 +190,14 @@ function OverviewTab({ client, dayNumber }: { client: any; dayNumber: number }) 
             </div>
             <div>
               <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
+                Langue
+              </p>
+              <p className="text-sm font-ui text-brun-chaud">
+                {client.language === "EN" ? "English" : "Francais"}
+              </p>
+            </div>
+            <div>
+              <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
                 Type Human Design
               </p>
               <HdTypeSelector

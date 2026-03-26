@@ -15,10 +15,10 @@ export default async function ClientLayout({
 
   return (
     <div className="min-h-screen bg-creme-sacree flex flex-col">
-      <ClientNav />
-      <main className="flex-1 max-w-lg w-full mx-auto px-4 pb-6" style={{ paddingTop: "72px" }}>
+      <main className="flex-1 max-w-lg w-full mx-auto px-4 pt-6 pb-24">
         {children}
       </main>
+      <ClientNav />
     </div>
   );
 }

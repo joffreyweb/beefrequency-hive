@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 
 interface Props {
+  clientFirstName: string;
   clientName: string;
   onComplete: () => void;
 }
 
-export default function CharteEngagement({ clientName, onComplete }: Props) {
+export default function CharteEngagement({ clientFirstName, clientName, onComplete }: Props) {
   const [checks, setChecks] = useState({ c1: false, c2: false, c3: false });
   const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,7 @@ export default function CharteEngagement({ clientName, onComplete }: Props) {
   const allChecked = checks.c1 && checks.c2 && checks.c3;
 
   async function handleSubmit() {
-    if (!allChecked || submitting) return;
+    if (!allChecked || !scrolled || submitting) return;
     setSubmitting(true);
     try {
       await fetch("/api/onboarding/charte", {
@@ -49,50 +50,50 @@ export default function CharteEngagement({ clientName, onComplete }: Props) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="font-display text-2xl text-brun-chaud">Convention & Engagement</h2>
-        <p className="font-ui text-sm text-brun-mid mt-1">Lisez attentivement avant de signer.</p>
+        <h2 className="font-display text-2xl text-brun-chaud">Our engagement.</h2>
+        <p className="font-ui text-sm text-brun-mid mt-1">Please read carefully before signing.</p>
       </div>
 
       <div
         ref={scrollRef}
-        className="h-72 overflow-y-auto border border-or-pale rounded-sm bg-cire-chaude p-4 text-sm font-ui text-brun-chaud space-y-4 leading-relaxed"
+        className="h-80 overflow-y-auto border border-or-pale rounded-sm bg-cire-chaude p-5 text-sm font-ui text-brun-chaud space-y-4 leading-relaxed"
       >
-        <p className="font-display text-base text-brun-chaud">Objet de la Convention</p>
-        <p>Cette convention encadre les modalités de réservation, d&apos;annulation et d&apos;engagement dans le cadre de l&apos;accompagnement proposé. Elle repose sur une responsabilité mutuelle et une qualité de présence nécessaire au travail engagé.</p>
+        <p className="font-display text-base text-brun-chaud">Purpose of this Agreement</p>
+        <p>This agreement governs the terms of booking, cancellation and commitment within the framework of the accompaniment offered. It rests upon mutual responsibility and a quality of presence essential to the work engaged.</p>
 
-        <p className="font-display text-base">1. Réservation des séances</p>
-        <p>Toute séance est confirmée uniquement après règlement ou dans le cadre d&apos;un forfait prépayé. Sans paiement préalable, aucun créneau n&apos;est réservé.</p>
+        <p className="font-display text-base">1. Session Booking</p>
+        <p>Every session is confirmed only upon payment or within the scope of a prepaid package. Without prior payment, no time slot is reserved.</p>
 
-        <p className="font-display text-base">2. Modification & Annulation</p>
-        <p>Toute séance non honorée ou annulée moins de 48 heures à l&apos;avance est due et non reportable. Les demandes de modification effectuées plus de 48 heures à l&apos;avance sont possibles, sous réserve de disponibilités. Un seul ajustement exceptionnel (joker) est autorisé sur l&apos;ensemble du parcours.</p>
+        <p className="font-display text-base">2. Changes &amp; Cancellations</p>
+        <p>Any session not attended or cancelled less than 48 hours in advance is due and non-transferable. Modification requests made more than 48 hours in advance are possible, subject to availability. A single exceptional adjustment (joker) is granted over the entire journey.</p>
 
-        <p className="font-display text-base">3. Engagement du participant</p>
-        <p>Le participant s&apos;engage dans un processus impliquant une présence active, une continuité dans les échanges et l&apos;utilisation des outils proposés. Des phases d&apos;inconfort ou de résistance peuvent apparaître — elles font partie intégrante du processus. Dans ces moments, le participant s&apos;engage à rester en lien et ne pas interrompre le processus sans communication.</p>
+        <p className="font-display text-base">3. Participant&apos;s Commitment</p>
+        <p>The participant commits to a process involving active presence, continuity in exchanges and the use of the proposed tools. Phases of discomfort or resistance may arise — they are an integral part of the process. In such moments, the participant commits to staying in contact and not interrupting the process without communication.</p>
 
-        <p className="font-display text-base">4. Responsabilité personnelle</p>
-        <p>Cet accompagnement constitue exclusivement le partage d&apos;une expérience personnelle et de pratiques de bien-être. Il ne constitue en aucun cas un acte médical, un diagnostic, un traitement ou une prescription. Joffrey Deleplanque n&apos;est pas médecin. Aucun contenu partagé ne remplace un avis médical ou un traitement en cours. Le participant s&apos;engage à consulter un professionnel de santé qualifié pour toute question médicale.</p>
+        <p className="font-display text-base">4. Personal Responsibility</p>
+        <p>This accompaniment constitutes exclusively the sharing of a personal experience and well-being practices. It does not in any way constitute a medical act, diagnosis, treatment or prescription. Joffrey Deleplanque is not a physician. No content shared replaces medical advice or ongoing treatment. The participant commits to consulting a qualified healthcare professional for any medical question.</p>
 
-        <p className="font-display text-base">5. Nature du processus</p>
-        <p>Le travail inclut des pratiques de respiration, de méditation, l&apos;utilisation d&apos;élixirs et des processus d&apos;observation intérieure. Les élixirs proposés sont des préparations naturelles partagées dans le cadre d&apos;une expérience personnelle — ils ne constituent pas des médicaments et ne font l&apos;objet d&apos;aucune allégation thérapeutique. Le participant s&apos;engage librement dans ces pratiques en pleine conscience de leurs effets possibles.</p>
+        <p className="font-display text-base">5. Nature of the Process</p>
+        <p>The work includes breathing practices, meditation, the use of elixirs and processes of inner observation. The elixirs offered are natural preparations shared within the framework of a personal experience — they do not constitute medication and carry no therapeutic claims. The participant freely engages in these practices with full awareness of their possible effects.</p>
 
-        <p className="font-display text-base">6. Interruption du parcours</p>
-        <p>Le participant peut décider d&apos;interrompre le parcours. Cette décision doit être accompagnée d&apos;une séance de clôture permettant d&apos;intégrer et de finaliser le processus. Aucune interruption ne se fait sans cet échange.</p>
+        <p className="font-display text-base">6. Interruption of the Journey</p>
+        <p>The participant may decide to interrupt the journey. This decision must be accompanied by a closing session to integrate and finalise the process. No interruption takes place without this exchange.</p>
 
-        <p className="font-display text-base">7. Protection des données — RGPD</p>
-        <p>Les données personnelles collectées (vidéos, journal, données de naissance) sont traitées de manière confidentielle, hébergées en Suisse (Infomaniak) et ne sont jamais partagées avec des tiers. Conformément au RGPD, le participant dispose d&apos;un droit d&apos;accès, de rectification et de suppression de ses données.</p>
+        <p className="font-display text-base">7. Data Protection — GDPR</p>
+        <p>Personal data collected (videos, journal, birth data) is processed confidentially, hosted in Switzerland (Infomaniak) and is never shared with third parties. In accordance with the GDPR, the participant has the right to access, rectify and delete their data.</p>
 
         <p className="text-brun-mid/60 text-xs pt-4">— Joffrey Deleplanque · BeeFrequency</p>
       </div>
 
       {!scrolled && (
-        <p className="text-xs text-brun-mid/60 font-ui text-center">↓ Faites défiler jusqu&apos;en bas pour continuer</p>
+        <p className="text-xs text-brun-mid/60 font-ui text-center animate-pulse">↓ Scroll to the bottom to continue</p>
       )}
 
-      <div className="space-y-3">
+      <div className={`space-y-3 transition-opacity duration-300 ${scrolled ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
         {[
-          { key: "c1", text: "J'ai lu et j'accepte les conditions d'accompagnement, la politique d'annulation (48h) et l'engagement de présence." },
-          { key: "c2", text: "Je reconnais que cet accompagnement constitue le partage d'une expérience personnelle et ne remplace en aucun cas un suivi médical. Joffrey Deleplanque n'est pas médecin." },
-          { key: "c3", text: "J'accepte le traitement confidentiel de mes données personnelles hébergées en Suisse, conformément au RGPD." },
+          { key: "c1", text: "I have read and accept the terms of accompaniment, the cancellation policy (48h) and the commitment of presence." },
+          { key: "c2", text: "I acknowledge that this accompaniment constitutes the sharing of a personal experience and does not replace medical care in any way. Joffrey Deleplanque is not a physician." },
+          { key: "c3", text: "I accept the confidential processing of my personal data hosted in Switzerland, in accordance with the GDPR." },
         ].map(({ key, text }) => (
           <label key={key} className="flex items-start gap-3 cursor-pointer">
             <input
@@ -106,14 +107,18 @@ export default function CharteEngagement({ clientName, onComplete }: Props) {
         ))}
       </div>
 
-      <p className="font-display text-lg text-center text-brun-chaud italic">{clientName}</p>
+      {/* Auto-signature with first name */}
+      <div className="text-center py-2">
+        <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-1">Signed by</p>
+        <p className="font-display text-2xl text-brun-chaud italic">{clientFirstName}</p>
+      </div>
 
       <button
         onClick={handleSubmit}
-        disabled={!allChecked || submitting}
+        disabled={!allChecked || !scrolled || submitting}
         className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-widest rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {submitting ? "Enregistrement..." : "Signer et accéder à mon espace"}
+        {submitting ? "Signing..." : "I commit"}
       </button>
     </div>
   );

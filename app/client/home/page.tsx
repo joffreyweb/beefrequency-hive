@@ -6,15 +6,9 @@ import Link from "next/link";
 import HomeDocuments from "@/components/client/HomeDocuments";
 
 const sessionTypeLabels: Record<string, string> = {
-  ONLINE: "En ligne",
-  PRESENTIAL: "Présentiel",
-  CEREMONY: "Cérémonie",
-};
-
-const practiceTypeEmoji: Record<string, string> = {
-  BREATHING: "\uD83E\uDEC1",
-  VIDEO: "\uD83C\uDFAC",
-  MEDITATION: "\uD83E\uDDD8",
+  ONLINE: "Online",
+  PRESENTIAL: "In-person",
+  CEREMONY: "Ceremony",
 };
 
 export default async function ClientHomePage() {
@@ -40,21 +34,23 @@ export default async function ClientHomePage() {
         take: 3,
       },
       documents: { orderBy: { createdAt: "desc" } },
+      elixirPrescriptions: {
+        where: { endDate: null },
+        include: { elixir: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
   if (!client) redirect("/login");
 
-  // Jour dans le parcours
   const dayNumber =
     Math.floor(
       (Date.now() - new Date(client.startDate).getTime()) / 86400000
     ) + 1;
 
-  // Prénom
   const firstName = client.intake?.firstName || client.user.name;
 
-  // Focus du jour — le plus spécifique (dayFrom le plus élevé)
   const todayFocus =
     (
       client.dailyFocuses as {
@@ -68,68 +64,87 @@ export default async function ClientHomePage() {
       .filter((f) => f.dayFrom <= dayNumber && f.dayTo >= dayNumber)
       .sort((a, b) => b.dayFrom - a.dayFrom)[0] ?? null;
 
-  // Prochaine séance
   const nextSession = client.sessions[0] ?? null;
   const now = Date.now();
   const isWithin24h =
     nextSession &&
     new Date(nextSession.scheduledAt).getTime() - now < 24 * 60 * 60 * 1000;
 
-  // Messages non lus
   const unreadMessages = await prisma.message.count({
     where: { receiverId: session.userId, readAt: null },
   });
-
-  // Pratique du jour — première non complétée aujourd'hui
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const todayPractice =
-    client.clientPractices.find(
-      (cp) => !cp.lastCompletedAt || new Date(cp.lastCompletedAt) < todayStart
-    ) ?? null;
 
   return (
     <div className="space-y-6">
       {/* Greeting */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Bonjour {firstName} —{" "}
-          <span className="text-or-sacre">Jour {dayNumber}</span> de votre
-          parcours
+          {firstName} —{" "}
+          <span className="text-or-sacre">Day {dayNumber}</span>
         </h1>
       </div>
 
-      {/* Focus du jour */}
+      {/* Daily message — prominent */}
       {todayFocus && (
         <div className="bg-cire-chaude border-l-4 border-or-sacre rounded-sm p-5">
+          <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-2">
+            Today&apos;s message
+          </p>
           <p className="font-display text-lg text-brun-chaud mb-1">
             {todayFocus.title}
           </p>
-          <p className="font-ui text-sm text-brun-mid">
+          <p className="font-ui text-sm text-brun-mid leading-relaxed">
             {todayFocus.message}
           </p>
         </div>
       )}
 
-      {/* Grille principale */}
+      {/* Elixirs — prescribed */}
+      {client.elixirPrescriptions.length > 0 && (
+        <div>
+          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
+            Your elixirs
+          </h2>
+          <div className="space-y-3">
+            {client.elixirPrescriptions.map((rx: any) => (
+              <div key={rx.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
+                <p className="font-display text-base text-brun-chaud">{rx.elixir.name}</p>
+                <p className="font-ui text-sm text-brun-mid mt-1">
+                  {rx.dosage || rx.elixir.dosage}
+                </p>
+                {rx.notes && (
+                  <p className="font-ui text-xs text-brun-mid/60 italic mt-1">{rx.notes}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/client/elixirs"
+            className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors mt-2 inline-block"
+          >
+            See all &rarr;
+          </Link>
+        </div>
+      )}
+
+      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Prochaine séance */}
+        {/* Next session */}
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-            Prochaine séance
+            Next session
           </h2>
           {nextSession ? (
             <>
               <p className="font-display text-lg text-brun-chaud">
-                {new Date(nextSession.scheduledAt).toLocaleDateString("fr-FR", {
+                {new Date(nextSession.scheduledAt).toLocaleDateString("en-US", {
                   weekday: "long",
                   day: "numeric",
                   month: "long",
                 })}
               </p>
               <p className="text-sm text-brun-mid mt-1">
-                {new Date(nextSession.scheduledAt).toLocaleTimeString("fr-FR", {
+                {new Date(nextSession.scheduledAt).toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}{" "}
@@ -143,18 +158,18 @@ export default async function ClientHomePage() {
                   rel="noopener noreferrer"
                   className="inline-block mt-3 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
                 >
-                  Rejoindre sur Zoom
+                  Join on Zoom
                 </a>
               )}
             </>
           ) : (
             <p className="text-brun-mid text-sm font-ui">
-              Aucune séance planifiée
+              No session scheduled
             </p>
           )}
         </div>
 
-        {/* Messages non lus */}
+        {/* Unread messages */}
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
             Messages
@@ -162,56 +177,27 @@ export default async function ClientHomePage() {
           {unreadMessages > 0 ? (
             <div>
               <p className="font-display text-lg text-brun-chaud">
-                {unreadMessages} message{unreadMessages > 1 ? "s" : ""} non
-                lu{unreadMessages > 1 ? "s" : ""}
+                {unreadMessages} unread message{unreadMessages > 1 ? "s" : ""}
               </p>
               <Link
                 href="/client/messages"
                 className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors mt-2 inline-block"
               >
-                Voir &rarr;
+                View &rarr;
               </Link>
             </div>
           ) : (
             <p className="text-brun-mid text-sm font-ui">
-              Aucun nouveau message
+              No new messages
             </p>
           )}
         </div>
-
-        {/* Pratique du jour */}
-        {todayPractice && (
-          <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-            <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-              Pratique du jour
-            </h2>
-            <p className="font-display text-lg text-brun-chaud">
-              {todayPractice.practice.title}
-            </p>
-            <span className="inline-block mt-1 text-sm text-brun-mid">
-              {practiceTypeEmoji[todayPractice.practice.type] ?? ""}{" "}
-              {todayPractice.practice.type === "BREATHING"
-                ? "Respiration"
-                : todayPractice.practice.type === "VIDEO"
-                  ? "Vidéo"
-                  : "Méditation"}
-            </span>
-            <div className="mt-3">
-              <Link
-                href="/client/programme"
-                className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors"
-              >
-                Commencer &rarr;
-              </Link>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Documents */}
       <div>
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-          Mes documents
+          My documents
         </h2>
         <HomeDocuments
           clientDocuments={JSON.parse(JSON.stringify(client.documents))}

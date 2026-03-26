@@ -173,6 +173,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           </div>
           <div className="flex items-center gap-4 mt-1">
             <p className="text-xs font-ui text-brun-mid/60">{client.user.email}</p>
+            <span className="text-xs font-ui px-1.5 py-0.5 rounded-sharp bg-cire-chaude text-brun-mid border border-or-pale">
+              {client.language === "EN" ? "EN" : "FR"}
+            </span>
             {client.nextSessionDate && (
               <p className="text-xs font-ui text-brun-mid/50">
                 Prochaine session : {formatDate(client.nextSessionDate)}
