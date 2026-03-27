@@ -1,16 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-
-interface JournalEntry {
-  id: string;
-  content: string;
-  isPrivate: boolean;
-  mood: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface SymptomMessage {
   id: string;
@@ -18,8 +9,6 @@ interface SymptomMessage {
   readAt: string | null;
   createdAt: string;
 }
-
-type Tab = "shared" | "private";
 
 const MOOD_OPTIONS = [
   { emoji: "\u{1F614}", label: "Difficult" },
@@ -40,10 +29,6 @@ function isSameDay(dateStr: string): boolean {
 }
 
 export default function JournalPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("shared");
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
   // Formulaire de creation
   const [content, setContent] = useState("");
   const [mood, setMood] = useState("");
@@ -114,30 +99,6 @@ export default function JournalPage() {
     }
   }
 
-  // Charge les entrees selon l'onglet actif
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
-      const privateParam = activeTab === "private" ? "true" : "false";
-      const res = await fetch(`/api/journal?private=${privateParam}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        setEntries(data.entries);
-      } else {
-        setError(data.error || "Failed to load");
-      }
-    } catch {
-      setError("Connection error");
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
-
   // Creation d'une entree
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -170,32 +131,11 @@ export default function JournalPage() {
       setMood("");
       setIsPrivate(false);
 
-      // Recharge les entrees si l'onglet correspond
-      const createdPrivate = data.entry.isPrivate;
-      if (
-        (createdPrivate && activeTab === "private") ||
-        (!createdPrivate && activeTab === "shared")
-      ) {
-        await fetchEntries();
-      }
+      // Entry saved
     } catch {
       setError("Connection error");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  // Suppression d'une entree
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this entry?")) return;
-
-    try {
-      const res = await fetch(`/api/journal/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setEntries((prev) => prev.filter((e) => e.id !== id));
-      }
-    } catch {
-      setError("Failed to delete");
     }
   }
 
@@ -346,91 +286,6 @@ export default function JournalPage() {
         {error && <p className="text-sm text-red-600 font-ui">{error}</p>}
       </form>
 
-      {/* Onglets */}
-      <div className="flex gap-1 border-b border-or-pale">
-        <TabButton
-          active={activeTab === "shared"}
-          onClick={() => setActiveTab("shared")}
-        >
-          Journal
-        </TabButton>
-        <TabButton
-          active={activeTab === "private"}
-          onClick={() => setActiveTab("private")}
-        >
-          Private journal
-        </TabButton>
-      </div>
-
-      {/* Liste des entrees */}
-      {loading ? (
-        <p className="text-brun-mid font-ui text-sm py-4">Loading...</p>
-      ) : entries.length === 0 ? (
-        <p className="text-brun-mid font-ui text-sm py-4">
-          No entries yet.
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="bg-cire-chaude border border-or-pale rounded-sm p-5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  {/* Date et humeur */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <time className="text-xs text-brun-mid font-ui">
-                      {new Date(entry.createdAt).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </time>
-                    {entry.mood && (
-                      <span className="text-xs bg-creme-sacree text-or-sacre px-2 py-0.5 rounded-sharp font-ui">
-                        {entry.mood}
-                      </span>
-                    )}
-                    {entry.isPrivate && (
-                      <span className="text-xs bg-foret/10 text-foret px-2 py-0.5 rounded-sharp font-ui">
-                        Private
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Contenu */}
-                  <p className="text-brun-chaud font-ui text-sm whitespace-pre-wrap leading-relaxed">
-                    {entry.content}
-                  </p>
-                </div>
-
-                {/* Bouton supprimer */}
-                <button
-                  onClick={() => handleDelete(entry.id)}
-                  className="text-brun-mid hover:text-red-600 transition-colors p-1 shrink-0"
-                  title="Delete"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -460,26 +315,3 @@ function CheckinLink() {
   return null;
 }
 
-// Bouton d'onglet
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-sm font-ui transition-colors border-b-2 -mb-px ${
-        active
-          ? "border-or-sacre text-or-sacre"
-          : "border-transparent text-brun-mid hover:text-brun-chaud"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}

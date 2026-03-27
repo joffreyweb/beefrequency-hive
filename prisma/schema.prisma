@@ -378,6 +378,7 @@ model ClientIntake {
   addressLine2   String?  // Complement d'adresse
   city           String
   postalCode     String
+  phoneNumber    String?  // Telephone livraison
   country        String
   intention      String   // Ce qui amène le client
 

@@ -13,6 +13,7 @@ interface FormData {
   addressLine2: string;
   city: string;
   postalCode: string;
+  phoneNumber: string;
   country: string;
   birthDate: string;
   birthTime: string;
@@ -30,6 +31,7 @@ const INITIAL_FORM: FormData = {
   addressLine2: "",
   city: "",
   postalCode: "",
+  phoneNumber: "",
   country: "France",
   birthDate: "",
   birthTime: "",
@@ -122,6 +124,7 @@ export default function OnboardingPage() {
           addressLine2: form.addressLine2.trim() || null,
           city: form.city.trim(),
           postalCode: form.postalCode.trim(),
+          phoneNumber: form.phoneNumber.trim() || null,
           country: form.country.trim(),
           intention: form.intention.trim(),
         }),
@@ -155,12 +158,11 @@ export default function OnboardingPage() {
       {/* Step -1 — Language Selection */}
       {step === -1 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <h1 className="font-display text-3xl sm:text-4xl text-brun-chaud mb-3">
-            Hive
-          </h1>
-          <p className="font-caps text-xs tracking-widest text-brun-mid uppercase mb-12">
-            BeeFrequency
-          </p>
+          <div className="flex items-center gap-2 mb-12">
+            <span className="font-ui text-lg font-light lowercase text-brun-mid">be</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8D5A8" strokeWidth="1" strokeLinejoin="round"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" /></svg>
+            <span className="font-ui text-lg font-light lowercase text-brun-mid">beefrequency</span>
+          </div>
 
           <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-8">
             <button
@@ -200,19 +202,13 @@ export default function OnboardingPage() {
       {/* Step 0 — Welcome */}
       {step === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <h1 className="font-display text-4xl sm:text-5xl text-brun-chaud mb-6">
-            Welcome.
-          </h1>
-          <p className="font-display text-lg sm:text-xl text-brun-mid/80 italic mb-4">
-            This space is yours.
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo_joffrey_transparent.png" alt="" width={80} height={80} className="mb-6" />
+          <p className="font-display text-lg sm:text-xl text-brun-chaud leading-relaxed mb-2">
+            You are not here to perform.
           </p>
-          <p className="font-ui text-sm sm:text-base text-brun-mid max-w-md leading-relaxed mb-8">
-            Before we begin, I need to know you a little.
-            This information remains confidential and allows me
-            to walk beside you with precision.
-          </p>
-          <p className="font-display text-sm text-brun-mid/70 italic mb-10">
-            — Joffrey Deleplanque
+          <p className="font-display text-lg sm:text-xl text-brun-chaud leading-relaxed mb-10">
+            You are here to arrive.
           </p>
           <button
             onClick={() => setStep(1)}
@@ -226,11 +222,10 @@ export default function OnboardingPage() {
       {/* Steps 1-5 */}
       {step >= 1 && (
         <>
-      <header className="flex flex-col items-center pt-8 pb-4">
-        <h1 className="font-display text-2xl text-or-sacre">Hive</h1>
-        <p className="font-caps text-xs tracking-widest text-brun-mid uppercase">
-          BeeFrequency
-        </p>
+      <header className="flex items-center justify-center gap-2 pt-8 pb-4">
+        <span className="font-ui text-base font-light lowercase text-brun-mid">be</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8D5A8" strokeWidth="1" strokeLinejoin="round"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" /></svg>
+        <span className="font-ui text-base font-light lowercase text-brun-mid">beefrequency</span>
       </header>
 
       <div className="flex items-center justify-center gap-0 mb-8">
@@ -321,6 +316,19 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-ui text-brun-chaud mb-1">
+                  Phone number
+                </label>
+                <input
+                  type="tel"
+                  value={form.phoneNumber}
+                  onChange={(e) => update("phoneNumber", e.target.value)}
+                  placeholder="+33 6 XX XX XX XX"
+                  className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-ui text-brun-chaud mb-1">
                   Country <span className="text-or-sacre">*</span>
                 </label>
                 <select
@@ -400,7 +408,33 @@ export default function OnboardingPage() {
               </div>
 
               <Field label="City of birth" value={form.birthPlace} onChange={(v) => update("birthPlace", v)} required />
-              <Field label="Country of birth" value={form.birthCountry} onChange={(v) => update("birthCountry", v)} required />
+
+              <div>
+                <label className="block text-sm font-ui text-brun-chaud mb-1">Country of birth</label>
+                <select
+                  value={form.birthCountry}
+                  onChange={(e) => update("birthCountry", e.target.value)}
+                  className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
+                >
+                  <option value="">Select...</option>
+                  <option value="France">France</option>
+                  <option value="Belgium">Belgium</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="Luxembourg">Luxembourg</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Spain">Spain</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Germany">Germany</option>
+                  <option value="Netherlands">Netherlands</option>
+                  <option value="Italy">Italy</option>
+                  <option value="Portugal">Portugal</option>
+                  <option value="Morocco">Morocco</option>
+                  <option value="Algeria">Algeria</option>
+                  <option value="Tunisia">Tunisia</option>
+                  <option value="United States">United States</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setStep(1)} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider hover:text-brun-chaud transition-colors">
@@ -422,10 +456,10 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <div>
                 <h2 className="font-display text-xl text-brun-chaud">
-                  What brings you here — right now?
+                  What is my intention, my goal?
                 </h2>
                 <p className="font-ui text-sm text-brun-mid mt-1">
-                  No obligation. A few words are enough if you wish.
+                  All answers are good 😉
                 </p>
               </div>
               <div>
@@ -433,7 +467,7 @@ export default function OnboardingPage() {
                   value={form.intention}
                   onChange={(e) => update("intention", e.target.value)}
                   rows={6}
-                  placeholder="No obligation. A few words are enough if you wish."
+                  placeholder="A few words are enough..."
                   className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors resize-none"
                 />
                 <p className="text-xs text-brun-mid/50 text-right mt-1">
@@ -445,8 +479,8 @@ export default function OnboardingPage() {
                 <button onClick={() => setStep(2)} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider hover:text-brun-chaud transition-colors">
                   Back
                 </button>
-                <button onClick={() => setStep(4)} disabled={submitting} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                  Next
+                <button onClick={() => setStep(4)} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors">
+                  Continue
                 </button>
               </div>
             </div>

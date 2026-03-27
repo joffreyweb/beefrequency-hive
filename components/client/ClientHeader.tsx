@@ -83,8 +83,10 @@ export default function ClientHeader() {
           className="h-full flex items-center justify-between"
           style={{ maxWidth: "640px", margin: "0 auto", padding: "0 20px" }}
         >
-          <Link href="/client/home" className="font-display text-lg text-or-sacre tracking-wide">
-            Hive
+          <Link href="/client/home" className="flex items-center gap-1.5">
+            <span className="font-ui text-sm font-light lowercase text-brun-mid">be</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8D5A8" strokeWidth="1" strokeLinejoin="round"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" /></svg>
+            <span className="font-ui text-sm font-light lowercase text-brun-mid">beefrequency</span>
           </Link>
           <div className="flex items-center gap-2">
             {info && (
