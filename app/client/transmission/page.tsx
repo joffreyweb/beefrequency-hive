@@ -383,9 +383,10 @@ export default function TransmissionPage() {
 
 const LIBRARY_CATEGORIES = [
   { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Breathwork" },
-  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Reset" },
+  { key: "SOMMEIL", emoji: "\uD83D\uDE34", label: "Sleep" },
   { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Anxiety" },
   { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Stress" },
+  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Reset" },
 ];
 
 interface LibPractice {

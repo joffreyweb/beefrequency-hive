@@ -125,8 +125,8 @@ function MessagesIcon({ color }: { color: string }) {
 function TransmissionIcon({ color }: { color: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4h16v16H4z" />
-      <path d="M8 4v16M12 8h4M12 12h4M12 16h4" />
+      <path d="M12 19V5" />
+      <path d="M5 12l7-7 7 7" />
     </svg>
   );
 }
