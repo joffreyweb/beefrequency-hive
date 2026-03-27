@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     // Client — ses propres supports
     const client = await prisma.client.findUnique({
       where: { userId: session.userId },
+      select: { id: true },
     });
 
     if (!client) {

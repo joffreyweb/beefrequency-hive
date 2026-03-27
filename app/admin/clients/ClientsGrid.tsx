@@ -10,6 +10,7 @@ interface SerializedClient {
   offerType: string;
   offerLabel: string;
   status: string;
+  language: string;
   startDate: string;
   analysisStatus: string | null;
   pendingCount: number;
@@ -82,20 +83,17 @@ export default function ClientsGrid({
                     {initials}
                   </span>
                 </div>
-                <p className="font-ui text-sm text-brun-chaud">{client.name}</p>
-                <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
-                  {client.offerLabel}
-                </p>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs font-ui text-brun-mid/50">
-                    Jour {dayNumber}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <p className="font-ui text-sm text-brun-chaud">{client.name}</p>
                   {client.pendingCount > 0 && (
                     <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full">
                       {client.pendingCount}
                     </span>
                   )}
                 </div>
+                <p className="text-[10px] font-ui text-brun-mid mt-1">
+                  Day {dayNumber} · {client.offerLabel} · {client.language}
+                </p>
               </Link>
             );
           })}

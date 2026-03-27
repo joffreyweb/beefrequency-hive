@@ -28,6 +28,7 @@ export default async function ClientsListPage() {
     offerType: client.offerType,
     offerLabel: OFFER_LABELS[client.offerType] ?? client.offerType,
     status: client.status,
+    language: client.language,
     startDate: client.startDate.toISOString(),
     analysisStatus: client.analysis?.status ?? null,
     pendingCount: client._count.pendingActions,

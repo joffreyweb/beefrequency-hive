@@ -11,7 +11,9 @@ export async function GET() {
   const { session } = result;
   const client = await prisma.client.findUnique({
     where: { userId: session.userId },
-    include: {
+    select: {
+      id: true,
+      startDate: true,
       clientPhases: {
         orderBy: [{ startDate: "asc" }],
         include: {

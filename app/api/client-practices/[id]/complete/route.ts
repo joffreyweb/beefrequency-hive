@@ -18,6 +18,7 @@ export async function POST(
     // Récupérer le client connecté
     const client = await prisma.client.findUnique({
       where: { userId: session.userId },
+      select: { id: true },
     });
 
     if (!client) {
