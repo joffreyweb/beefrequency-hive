@@ -53,27 +53,17 @@ export default function OnboardingPage() {
   const [savingLang, setSavingLang] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/auth/me").then((r) => r.json()),
-      fetch("/api/client/profile").then((r) => r.ok ? r.json() : null),
-    ]).then(([authData, profileData]) => {
-      if (authData.user?.email) {
-        setForm((prev) => ({ ...prev, email: authData.user.email }));
-      }
-      // If language is the default "FR" from schema, treat as "not yet chosen" → show selector
-      // If the client explicitly chose (via this step), it will have been set
-      // We use a simple heuristic: show language step for all new onboardings
-      // The onboarding guard already ensures this page is only shown to new clients
-      const lang = profileData?.language;
-      if (!lang || lang === "FR") {
-        // Show language selection first
-        setStep(-1);
-      } else {
-        setStep(0);
-      }
-    }).catch(() => {
-      setStep(0);
-    });
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user?.email) {
+          setForm((prev) => ({ ...prev, email: data.user.email }));
+        }
+      })
+      .catch(() => {});
+    // Always show language selection as first step of onboarding
+    // This page is only shown to new clients (onboarding guard)
+    setStep(-1);
   }, []);
 
   function update(field: keyof FormData, value: string | boolean) {
@@ -100,22 +90,17 @@ export default function OnboardingPage() {
     );
   }
 
-  async function handleLanguageSave() {
+  function handleLanguageSave() {
     if (!selectedLang) return;
     setSavingLang(true);
-    try {
-      await fetch("/api/client/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: selectedLang }),
-      });
-      setStep(0);
-    } catch {
-      // Continue anyway
-      setStep(0);
-    } finally {
+    fetch("/api/client/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: selectedLang }),
+    }).finally(() => {
       setSavingLang(false);
-    }
+      setStep(0);
+    });
   }
 
   async function handleSubmit() {
