@@ -148,7 +148,7 @@ export default function TransmissionPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "practices", label: "Practices" },
-    { key: "supports", label: "Supports" },
+    { key: "supports", label: "From Joffrey" },
     { key: "recommendations", label: "Recommendations" },
   ];
 
@@ -173,18 +173,21 @@ export default function TransmissionPage() {
       )}
 
       <div className="space-y-6">
-        <h1 className="font-display text-2xl text-brun-chaud">Transmission</h1>
+        <div>
+          <h1 className="font-display text-2xl text-brun-chaud">Transmission</h1>
+          <p className="font-ui text-sm text-brun-mid mt-1">What has been given to you.</p>
+        </div>
 
-        {/* Tab bar */}
-        <div className="flex gap-1 bg-cire-chaude rounded-full p-1">
+        {/* Tab bar — line style */}
+        <div className="flex border-b border-or-pale">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 px-3 py-2 rounded-full text-xs font-ui uppercase tracking-wider transition-all duration-150 ${
+              className={`flex-1 pb-3 text-sm font-ui transition-colors ${
                 activeTab === tab.key
-                  ? "bg-or-sacre text-white"
-                  : "text-brun-mid hover:text-brun-chaud"
+                  ? "text-brun-chaud font-normal border-b-2 border-or-sacre"
+                  : "text-brun-mid font-light hover:text-brun-chaud"
               }`}
             >
               {tab.label}
@@ -200,57 +203,64 @@ export default function TransmissionPage() {
           <>
             {/* Practices tab */}
             {activeTab === "practices" && (
-              <div>
-                {activePractices.length === 0 ? (
-                  <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-                    <p className="text-sm font-ui text-brun-mid/60">No practices assigned yet.</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {activePractices
-                      .sort((a, b) => {
-                        const aD = isToday(a.lastCompletedAt);
-                        const bD = isToday(b.lastCompletedAt);
-                        if (aD && !bD) return 1;
-                        if (!aD && bD) return -1;
-                        return 0;
-                      })
-                      .map((cp) => {
-                        const badge = TYPE_BADGES[cp.practice.type] ?? { emoji: "", label: cp.practice.type };
-                        const completedToday = isToday(cp.lastCompletedAt);
-                        return (
-                          <div key={cp.id} className="bg-cire-chaude border border-or-pale rounded-sm p-5 flex flex-col gap-3">
-                            <div className="flex items-center justify-between">
-                              <span className="font-caps text-xs text-or-sacre tracking-wider uppercase">
-                                {badge.emoji} {badge.label}
-                              </span>
-                              {completedToday && (
-                                <span className="text-foret font-ui text-sm font-semibold">✓</span>
+              <div className="space-y-10">
+                {/* Assigned practices */}
+                <section>
+                  <h2 className="font-display text-lg text-brun-chaud mb-4">Today</h2>
+                  {activePractices.length === 0 ? (
+                    <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
+                      <p className="text-sm font-ui text-brun-mid/60">No practices assigned yet.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {activePractices
+                        .sort((a, b) => {
+                          const aD = isToday(a.lastCompletedAt);
+                          const bD = isToday(b.lastCompletedAt);
+                          if (aD && !bD) return 1;
+                          if (!aD && bD) return -1;
+                          return 0;
+                        })
+                        .map((cp) => {
+                          const badge = TYPE_BADGES[cp.practice.type] ?? { emoji: "", label: cp.practice.type };
+                          const completedToday = isToday(cp.lastCompletedAt);
+                          return (
+                            <div key={cp.id} className="bg-cire-chaude border border-or-pale rounded-sm p-5 flex flex-col gap-3">
+                              <div className="flex items-center justify-between">
+                                <span className="font-caps text-xs text-or-sacre tracking-wider uppercase">
+                                  {badge.emoji} {badge.label}
+                                </span>
+                                {completedToday && (
+                                  <span className="text-foret font-ui text-sm font-semibold">✓</span>
+                                )}
+                              </div>
+                              <h3 className="font-display text-lg text-brun-chaud leading-snug">{cp.practice.title}</h3>
+                              <p className="font-ui text-sm text-brun-mid line-clamp-2">{cp.practice.description}</p>
+                              <div className="font-ui text-xs text-brun-mid/70">
+                                Completed {cp.completedCount} time{cp.completedCount !== 1 ? "s" : ""}
+                              </div>
+                              {cp.note && (
+                                <p className="font-ui text-xs text-or-sacre/80 italic border-l-2 border-or-pale pl-3">{cp.note}</p>
                               )}
+                              <button
+                                onClick={() => setActivePractice(cp)}
+                                className="mt-auto px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity self-start"
+                              >
+                                {completedToday ? "Redo" : "Start"}
+                              </button>
                             </div>
-                            <h3 className="font-display text-lg text-brun-chaud leading-snug">{cp.practice.title}</h3>
-                            <p className="font-ui text-sm text-brun-mid line-clamp-2">{cp.practice.description}</p>
-                            <div className="font-ui text-xs text-brun-mid/70">
-                              Completed {cp.completedCount} time{cp.completedCount !== 1 ? "s" : ""}
-                            </div>
-                            {cp.note && (
-                              <p className="font-ui text-xs text-or-sacre/80 italic border-l-2 border-or-pale pl-3">{cp.note}</p>
-                            )}
-                            <button
-                              onClick={() => setActivePractice(cp)}
-                              className="mt-auto px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity self-start"
-                            >
-                              {completedToday ? "Redo" : "Start"}
-                            </button>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
+                          );
+                        })}
+                    </div>
+                  )}
+                </section>
+
+                {/* Library */}
+                <LibrarySection />
               </div>
             )}
 
-            {/* Supports tab */}
+            {/* From Joffrey tab (supports) */}
             {activeTab === "supports" && (
               <div>
                 {supports.length === 0 ? (
@@ -288,7 +298,7 @@ export default function TransmissionPage() {
               </div>
             )}
 
-            {/* Recommendations tab */}
+            {/* From Joffrey tab */}
             {activeTab === "recommendations" && (
               <div className="space-y-8">
                 {personalRecos.length > 0 && (
@@ -366,5 +376,88 @@ export default function TransmissionPage() {
         )}
       </div>
     </>
+  );
+}
+
+/* ─── Library section (practice categories) ─── */
+
+const LIBRARY_CATEGORIES = [
+  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Breathwork" },
+  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Reset" },
+  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Anxiety" },
+  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Stress" },
+];
+
+interface LibPractice {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+}
+
+function LibrarySection() {
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [libPractices, setLibPractices] = useState<LibPractice[]>([]);
+  const [libLoading, setLibLoading] = useState(false);
+
+  async function openCategory(cat: string) {
+    if (selectedCat === cat) {
+      setSelectedCat(null);
+      return;
+    }
+    setSelectedCat(cat);
+    setLibLoading(true);
+    try {
+      const res = await fetch(`/api/practices?category=${cat}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLibPractices(data.practices ?? []);
+      }
+    } catch {
+      setLibPractices([]);
+    } finally {
+      setLibLoading(false);
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="font-display text-lg text-brun-chaud mb-4">Library</h2>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {LIBRARY_CATEGORIES.map((cat) => (
+          <button
+            key={cat.key}
+            onClick={() => openCategory(cat.key)}
+            className={`flex items-center gap-2 p-4 rounded-sm border transition-colors text-left ${
+              selectedCat === cat.key
+                ? "bg-or-sacre/10 border-or-sacre"
+                : "bg-cire-chaude border-or-pale hover:border-or-sacre/50"
+            }`}
+          >
+            <span className="text-xl">{cat.emoji}</span>
+            <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
+          </button>
+        ))}
+      </div>
+      {selectedCat && (
+        <div className="mt-2">
+          {libLoading ? (
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Loading...</p>
+          ) : libPractices.length === 0 ? (
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Nothing here yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {libPractices.map((p) => (
+                <div key={p.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
+                  <p className="font-display text-base text-brun-chaud">{p.title}</p>
+                  <p className="font-ui text-sm text-brun-mid mt-1">{p.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

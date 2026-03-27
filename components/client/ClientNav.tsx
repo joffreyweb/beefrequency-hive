@@ -33,20 +33,19 @@ export default function ClientNav() {
     isActive("/client/agenda") ||
     isActive("/client/programme");
   const isJournal = isActive("/client/journal");
-  const isPractices = isActive("/client/pratiques");
-  const isMessages = isActive("/client/messages");
-  const isFromJoffrey =
-    isActive("/client/from-joffrey") ||
+  const isTransmission =
     isActive("/client/transmission") ||
+    isActive("/client/pratiques") ||
+    isActive("/client/from-joffrey") ||
     isActive("/client/supports") ||
     isActive("/client/recommendations");
+  const isMessages = isActive("/client/messages");
 
   const items = [
     { href: "/client/home", label: "Home", active: isHome, icon: HomeIcon, badge: 0 },
     { href: "/client/journal", label: "Journal", active: isJournal, icon: JournalIcon, badge: 0 },
-    { href: "/client/pratiques", label: "Practices", active: isPractices, icon: PracticesIcon, badge: 0 },
+    { href: "/client/transmission", label: "Transmission", active: isTransmission, icon: TransmissionIcon, badge: 0 },
     { href: "/client/messages", label: "Messages", active: isMessages, icon: MessagesIcon, badge: unreadCount },
-    { href: "/client/from-joffrey", label: "From Joffrey", active: isFromJoffrey, icon: TransmissionIcon, badge: 0 },
   ];
 
   return (
@@ -111,15 +110,6 @@ function JournalIcon({ color }: { color: string }) {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 4h16v16H4z" />
       <path d="M8 8h8M8 12h6M8 16h4" />
-    </svg>
-  );
-}
-
-function PracticesIcon({ color }: { color: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 3" />
     </svg>
   );
 }
