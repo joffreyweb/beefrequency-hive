@@ -374,11 +374,12 @@ model ClientIntake {
   birthTime     String?  // "HH:MM" ou null si inconnu
   birthPlace    String
   birthCountry  String
-  postalAddress String
-  city          String
-  postalCode    String
-  country       String
-  intention     String   // Ce qui amène le client
+  postalAddress  String
+  addressLine2   String?  // Complement d'adresse
+  city           String
+  postalCode     String
+  country        String
+  intention      String   // Ce qui amène le client
 
   submittedAt DateTime @default(now())
 }

@@ -197,10 +197,22 @@ function OverviewTab({ client, dayNumber }: { client: any; dayNumber: number }) 
               <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
                 Langue
               </p>
-              <p className="text-sm font-ui text-brun-chaud">
-                {client.language === "EN" ? "English" : "Francais"}
-              </p>
+              <LanguageSelector clientId={client.id} currentLanguage={client.language} />
             </div>
+            {/* Delivery address */}
+            {client.intake?.postalAddress && (
+              <div>
+                <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
+                  Delivery address
+                </p>
+                <div className="text-sm font-ui text-brun-chaud space-y-0.5">
+                  <p>{client.intake.postalAddress}</p>
+                  {client.intake.addressLine2 && <p>{client.intake.addressLine2}</p>}
+                  <p>{client.intake.postalCode} {client.intake.city}</p>
+                  <p>{client.intake.country}</p>
+                </div>
+              </div>
+            )}
             <div>
               <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
                 Type Human Design
@@ -995,5 +1007,38 @@ function Stat({ label, value }: { label: string; value: any }) {
       <p className="text-xs font-ui text-brun-mid/60">{label}</p>
       <p className="text-sm font-ui text-brun-chaud">{value ?? "—"}</p>
     </div>
+  );
+}
+
+function LanguageSelector({ clientId, currentLanguage }: { clientId: string; currentLanguage: string }) {
+  const [lang, setLang] = useState(currentLanguage);
+  const [saving, setSaving] = useState(false);
+
+  async function handleChange(newLang: string) {
+    setLang(newLang);
+    setSaving(true);
+    try {
+      await fetch(`/api/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: newLang }),
+      });
+    } catch {
+      setLang(currentLanguage);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <select
+      value={lang}
+      onChange={(e) => handleChange(e.target.value)}
+      disabled={saving}
+      className="text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp px-2 py-1 focus:outline-none focus:border-or-sacre disabled:opacity-50"
+    >
+      <option value="EN">English</option>
+      <option value="FR">Français</option>
+    </select>
   );
 }
