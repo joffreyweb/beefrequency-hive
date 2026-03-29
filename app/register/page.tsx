@@ -54,7 +54,8 @@ function RegisterForm() {
         }
 
         setEmail(data.email);
-      } catch {
+      } catch (err) {
+        console.error("[register] verifyToken failed:", err);
         setTokenError("Erreur de connexion au serveur");
       } finally {
         setVerifying(false);
@@ -105,7 +106,8 @@ function RegisterForm() {
       }
 
       router.push("/client/onboarding");
-    } catch {
+    } catch (err) {
+      console.error("[register] handleSubmit failed:", err);
       setError("Erreur de connexion au serveur");
     } finally {
       setLoading(false);

@@ -10,10 +10,13 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
+    console.log("[invite GET] token reçu:", token);
+    console.log("[invite GET] DATABASE_URL définie:", !!process.env.DATABASE_URL);
 
     const invite = await prisma.inviteToken.findUnique({
       where: { token },
     });
+    console.log("[invite GET] résultat DB:", invite ? `found (id=${invite.id})` : "null");
 
     // Token inexistant
     if (!invite) {
@@ -44,7 +47,8 @@ export async function GET(
       offerType: invite.offerType,
       language: invite.language,
     });
-  } catch {
+  } catch (err) {
+    console.error("[invite GET] erreur:", err);
     return NextResponse.json(
       { error: "Erreur serveur" },
       { status: 500 }
@@ -77,9 +81,11 @@ export async function POST(
     }
 
     // Verification du token
+    console.log("[invite POST] token reçu:", token);
     const invite = await prisma.inviteToken.findUnique({
       where: { token },
     });
+    console.log("[invite POST] résultat DB:", invite ? `found (id=${invite.id})` : "null");
 
     if (!invite) {
       return NextResponse.json(
@@ -163,7 +169,8 @@ export async function POST(
         role: user.role,
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("[invite POST] erreur:", err);
     return NextResponse.json(
       { error: "Erreur serveur" },
       { status: 500 }
