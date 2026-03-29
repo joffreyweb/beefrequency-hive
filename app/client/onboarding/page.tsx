@@ -128,35 +128,35 @@ export default function OnboardingPage() {
       {step === 1 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           {/* Logo + hexagon + BeeFrequency */}
-          <div className="relative flex items-center justify-center mb-8">
-            {/* Hexagon outline */}
-            <svg
-              width="160"
-              height="160"
-              viewBox="0 0 160 160"
-              fill="none"
-              className="absolute"
-            >
-              <polygon
-                points="80,8 148,42 148,118 80,152 12,118 12,42"
-                stroke="#E8D5A8"
-                strokeWidth="1"
+          <div className="flex flex-col items-center">
+            <div className="relative flex items-center justify-center">
+              {/* Hexagon outline */}
+              <svg
+                width="160"
+                height="160"
+                viewBox="0 0 160 160"
                 fill="none"
+                className="absolute"
+              >
+                <polygon
+                  points="80,8 148,42 148,118 80,152 12,118 12,42"
+                  stroke="#E8D5A8"
+                  strokeWidth="1"
+                  fill="none"
+                />
+              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo_joffrey_transparent.png"
+                alt=""
+                className="relative z-10 w-24 h-24"
               />
-            </svg>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo_joffrey_transparent.png"
-              alt=""
-              width={100}
-              height={100}
-              className="relative z-10"
-            />
+            </div>
+            <p className="font-caps text-xs text-or-sacre tracking-[0.25em] uppercase mt-3">
+              BEEFREQUENCY
+            </p>
           </div>
-          <p className="font-caps text-sm text-or-sacre tracking-[0.2em] uppercase mb-8">
-            BeeFrequency
-          </p>
-          <h1 className="font-display text-2xl text-brun-chaud mb-4">
+          <h1 className="font-display text-2xl text-brun-chaud mt-8 mb-4">
             {T(t.onboarding.welcomeTitle)}
           </h1>
           <p className="font-display text-lg text-brun-mid leading-relaxed mb-10 max-w-sm">
