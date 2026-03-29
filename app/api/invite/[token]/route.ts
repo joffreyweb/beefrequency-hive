@@ -42,6 +42,7 @@ export async function GET(
     return NextResponse.json({
       email: invite.email,
       offerType: invite.offerType,
+      language: invite.language,
     });
   } catch {
     return NextResponse.json(
@@ -58,19 +59,19 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
-    const { name, password } = await request.json();
+    const { name, password, language } = await request.json();
 
     // Validations
-    if (!name || !password) {
+    if (!password) {
       return NextResponse.json(
-        { error: "Nom et mot de passe requis" },
+        { error: "Password is required" },
         { status: 400 }
       );
     }
 
     if (password.length < 8) {
       return NextResponse.json(
-        { error: "Le mot de passe doit contenir au moins 8 caracteres" },
+        { error: "Password must be at least 8 characters" },
         { status: 400 }
       );
     }
@@ -123,7 +124,7 @@ export async function POST(
           email: invite.email.toLowerCase().trim(),
           password: hashedPassword,
           role: "CLIENT",
-          name: name.trim(),
+          name: name?.trim() || invite.email.split("@")[0],
         },
       });
 
@@ -132,6 +133,7 @@ export async function POST(
           userId: newUser.id,
           offerType: invite.offerType,
           status: "ACTIVE",
+          language: language === "EN" ? "EN" : "FR",
         },
       });
 

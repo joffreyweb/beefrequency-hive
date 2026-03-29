@@ -2,17 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { computeStockInfo } from "@/lib/stock-utils";
 import DashboardActions from "./DashboardActions";
 import AgendaZoomButton from "./AgendaZoomButton";
-
-const OFFER_LABELS: Record<string, string> = {
-  HIVE_EXPERIENCE: "Hive Experience",
-  THE_PASSAGE: "The Passage",
-  SOUVERAINETE: "Souveraineté",
-};
+import ClientTimeline from "./ClientTimeline";
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   ONLINE: "En ligne",
-  PRESENTIAL: "Présentiel",
-  CEREMONY: "Cérémonie",
+  PRESENTIAL: "Pr\u00e9sentiel",
+  CEREMONY: "C\u00e9r\u00e9monie",
 };
 
 const URGENCY_ORDER: Record<string, number> = {
@@ -21,7 +16,6 @@ const URGENCY_ORDER: Record<string, number> = {
   green: 2,
 };
 
-/** Extrait les 2 premières lettres d'un nom pour l'avatar */
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -37,54 +31,59 @@ export default async function AdminDashboard() {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const [activeClientsCount, todaySessions, pendingActions, allPrescriptions] =
+  const [activeClientsCount, todaySessions, pendingActions, allPrescriptions, activeClients, unreadMessages] =
     await Promise.all([
-      // 1. Clients actifs
       prisma.client.count({ where: { status: "ACTIVE" } }),
-
-      // 2. Séances du jour
       prisma.session.findMany({
-        where: {
-          scheduledAt: { gte: todayStart, lte: todayEnd },
-        },
+        where: { scheduledAt: { gte: todayStart, lte: todayEnd } },
         orderBy: { scheduledAt: "asc" },
-        include: {
-          client: {
-            include: { user: { select: { name: true } } },
-          },
-        },
+        include: { client: { include: { user: { select: { name: true } } } } },
       }),
-
-      // 3. Actions en attente (tri custom en JS)
       prisma.pendingAction.findMany({
         where: { completedAt: null },
-        include: {
-          client: {
-            include: { user: { select: { name: true } } },
-          },
-        },
+        include: { client: { include: { user: { select: { name: true } } } } },
       }),
-
-      // 4. Prescriptions actives pour calcul stocks critiques
       prisma.elixirPrescription.findMany({
         where: { client: { status: "ACTIVE" } },
       }),
+      // Detailed client data for overview
+      prisma.client.findMany({
+        where: { status: { in: ["ACTIVE", "PAUSED"] } },
+        include: {
+          user: { select: { name: true } },
+          intake: { select: { firstName: true } },
+          elixirPrescriptions: {
+            where: { endDate: null },
+            include: { elixir: { select: { name: true } } },
+          },
+          sessions: {
+            where: { status: "SCHEDULED", scheduledAt: { gte: new Date() } },
+            orderBy: { scheduledAt: "asc" },
+            take: 1,
+          },
+          dailyCheckins: {
+            orderBy: { date: "desc" },
+            take: 1,
+          },
+          clientPhases: {
+            orderBy: { startDate: "asc" },
+          },
+        },
+        orderBy: { startDate: "asc" },
+      }),
+      prisma.message.count({ where: { readAt: null, receiver: { role: "ADMIN" } } }),
     ]);
 
-  // Tri custom des actions : red > amber > green, puis createdAt desc
   pendingActions.sort((a, b) => {
-    const urgDiff =
-      (URGENCY_ORDER[a.urgency] ?? 2) - (URGENCY_ORDER[b.urgency] ?? 2);
+    const urgDiff = (URGENCY_ORDER[a.urgency] ?? 2) - (URGENCY_ORDER[b.urgency] ?? 2);
     if (urgDiff !== 0) return urgDiff;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  // Calcul stocks critiques
   const criticalStocksCount = allPrescriptions.filter(
     (rx) => computeStockInfo(rx).isLow
   ).length;
 
-  // Sérialiser les actions pour le client component
   const serializedActions = pendingActions.map((a) => ({
     id: a.id,
     type: a.type,
@@ -96,139 +95,204 @@ export default async function AdminDashboard() {
     createdAt: a.createdAt.toISOString(),
   }));
 
+  // Prepare client overview data
+  const clientOverviews = activeClients.map((c) => {
+    const dayNumber = Math.floor((Date.now() - new Date(c.startDate).getTime()) / 86400000) + 1;
+    const displayName = c.intake?.firstName || c.user.name || "Client";
+
+    // Determine current cycle
+    let currentCycle = "Cycle 1";
+    let currentWeek = Math.ceil(dayNumber / 7);
+    if (dayNumber <= 21) { currentCycle = "Cycle 1"; currentWeek = Math.ceil(dayNumber / 7); }
+    else if (dayNumber <= 31) { currentCycle = "Break 1"; currentWeek = Math.ceil((dayNumber - 21) / 7); }
+    else if (dayNumber <= 52) { currentCycle = "Cycle 2"; currentWeek = Math.ceil((dayNumber - 31) / 7); }
+    else if (dayNumber <= 62) { currentCycle = "Break 2"; currentWeek = Math.ceil((dayNumber - 52) / 7); }
+    else if (dayNumber <= 83) { currentCycle = "Cycle 3"; currentWeek = Math.ceil((dayNumber - 62) / 7); }
+    else { currentCycle = "Break 3"; currentWeek = Math.ceil((dayNumber - 83) / 7); }
+
+    const lastCheckin = c.dailyCheckins[0];
+    const nextSession = c.sessions[0];
+
+    return {
+      id: c.id,
+      name: displayName,
+      dayNumber,
+      totalDays: 93,
+      currentCycle,
+      currentWeek,
+      status: c.status,
+      startDate: c.startDate.toISOString(),
+      lastCheckinDate: lastCheckin?.date ? new Date(lastCheckin.date).toISOString() : null,
+      hasMorningCheckin: lastCheckin?.energyLevel != null,
+      hasEveningCheckin: lastCheckin?.gratitudeMoment != null,
+      elixirs: c.elixirPrescriptions.map((rx) => ({
+        name: rx.elixir.name,
+        dosage: rx.dosage || "",
+      })),
+      nextSession: nextSession ? {
+        date: nextSession.scheduledAt.toISOString(),
+        zoomLink: nextSession.zoomLink,
+      } : null,
+    };
+  });
+
   return (
     <div className="h-full flex flex-col gap-6">
-      {/* Titre de la page */}
       <h1 className="font-display text-2xl font-light text-brun-chaud">
         Le Cockpit
       </h1>
 
-      {/* Ligne du haut : 4 cards métriques */}
-      <div className="grid grid-cols-4 gap-4">
-        {/* Clients actifs */}
+      {/* KPI cards */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">
-            Clients actifs
-          </p>
-          <p className="font-display text-3xl text-or-sacre">
-            {activeClientsCount}
-          </p>
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">Clients actifs</p>
+          <p className="font-display text-3xl text-or-sacre">{activeClientsCount}</p>
         </div>
-
-        {/* Séances aujourd'hui */}
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">
-            Séances aujourd&apos;hui
-          </p>
-          <p className="font-display text-3xl text-or-sacre">
-            {todaySessions.length}
-          </p>
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">S&eacute;ances aujourd&apos;hui</p>
+          <p className="font-display text-3xl text-or-sacre">{todaySessions.length}</p>
         </div>
-
-        {/* Actions en attente */}
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">
-            Actions en attente
-          </p>
-          <p
-            className={`font-display text-3xl ${
-              pendingActions.length > 0 ? "text-red-500" : "text-or-sacre"
-            }`}
-          >
-            {pendingActions.length}
-          </p>
-        </div>
-
-        {/* Stocks critiques */}
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">
-            Stocks critiques
-          </p>
-          <p
-            className={`font-display text-3xl ${
-              criticalStocksCount > 0 ? "text-red-500" : "text-or-sacre"
-            }`}
-          >
-            {criticalStocksCount}
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">Messages non lus</p>
+          <p className={`font-display text-3xl ${unreadMessages > 0 ? "text-red-500" : "text-or-sacre"}`}>
+            {unreadMessages}
           </p>
         </div>
       </div>
 
-      {/* Ligne du bas : 2 colonnes */}
-      <div className="flex-1 grid grid-cols-[1.2fr_1fr] gap-6 min-h-0">
-        {/* Colonne gauche — Agenda du jour */}
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] h-full overflow-y-auto">
+      {/* Client overview list */}
+      <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
+        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
+          Vue clients
+        </h2>
+        {clientOverviews.length === 0 ? (
+          <p className="text-sm font-ui text-brun-mid/60">Aucun client actif</p>
+        ) : (
+          <div className="space-y-4">
+            {clientOverviews.map((client) => (
+              <div key={client.id} className="border border-or-pale/50 rounded-lg p-4 space-y-3">
+                {/* Name + Day + Progress */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-or-sacre/10 flex items-center justify-center">
+                      <span className="text-xs font-ui font-medium text-or-sacre">
+                        {getInitials(client.name)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-display text-base text-brun-chaud">{client.name}</p>
+                      <p className="font-ui text-xs text-brun-mid">
+                        Day {client.dayNumber} / {client.totalDays} &middot; {client.currentCycle} &middot; Semaine {client.currentWeek}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-ui px-2 py-0.5 rounded-full ${
+                    client.status === "ACTIVE" ? "bg-foret/10 text-foret" :
+                    client.status === "PAUSED" ? "bg-amber-100 text-amber-700" :
+                    "bg-gray-100 text-gray-500"
+                  }`}>
+                    {client.status === "ACTIVE" ? "Actif" : client.status === "PAUSED" ? "En pause" : "Termin\u00e9"}
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-2 rounded-full bg-or-pale/50 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-or-sacre transition-all"
+                    style={{ width: `${Math.min((client.dayNumber / client.totalDays) * 100, 100)}%` }}
+                  />
+                </div>
+
+                {/* Timeline */}
+                <ClientTimeline dayNumber={client.dayNumber} />
+
+                {/* Quick info row */}
+                <div className="grid grid-cols-3 gap-3 text-xs font-ui">
+                  {/* Check-ins */}
+                  <div>
+                    <p className="text-brun-mid/60 mb-1">Derniers check-ins</p>
+                    <div className="flex gap-2">
+                      <span className={client.hasMorningCheckin ? "text-or-sacre" : "text-brun-mid/30"}>
+                        {"\u2600\uFE0F"} {client.hasMorningCheckin ? "Fait" : "-"}
+                      </span>
+                      <span className={client.hasEveningCheckin ? "text-or-sacre" : "text-brun-mid/30"}>
+                        {"\uD83C\uDF19"} {client.hasEveningCheckin ? "Fait" : "-"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Elixirs */}
+                  <div>
+                    <p className="text-brun-mid/60 mb-1">&Eacute;lixirs</p>
+                    {client.elixirs.length > 0 ? (
+                      client.elixirs.map((e, i) => (
+                        <p key={i} className="text-brun-chaud truncate">{e.name}</p>
+                      ))
+                    ) : (
+                      <p className="text-brun-mid/30">-</p>
+                    )}
+                  </div>
+
+                  {/* Next session */}
+                  <div>
+                    <p className="text-brun-mid/60 mb-1">Prochain RDV</p>
+                    {client.nextSession ? (
+                      <div>
+                        <p className="text-brun-chaud">
+                          {new Date(client.nextSession.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                        </p>
+                        {client.nextSession.zoomLink && (
+                          <a href={client.nextSession.zoomLink} target="_blank" rel="noopener noreferrer" className="text-or-sacre hover:text-ambre-vif">
+                            Zoom &rarr;
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-brun-mid/30">-</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Agenda + Actions */}
+      <div className="grid grid-cols-[1.2fr_1fr] gap-6 min-h-0">
+        {/* Agenda du jour */}
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] overflow-y-auto">
           <div className="p-5">
             <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
               Agenda du jour
             </h2>
-
             {todaySessions.length === 0 ? (
               <div className="flex items-center justify-center h-32">
-                <p className="text-sm font-ui text-brun-mid/60">
-                  Aucune séance aujourd&apos;hui
-                </p>
+                <p className="text-sm font-ui text-brun-mid/60">Aucune s&eacute;ance aujourd&apos;hui</p>
               </div>
             ) : (
               <div>
                 {todaySessions.map((session, index) => {
                   const clientName = session.client.user.name ?? "";
                   const initials = getInitials(clientName);
-
                   return (
                     <div key={session.id}>
                       <div className="flex items-start gap-3 py-3">
-                        {/* Avatar initiales */}
                         <div className="w-8 h-8 rounded-full bg-or-sacre/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="text-xs font-ui font-medium text-or-sacre">
-                            {initials}
-                          </span>
+                          <span className="text-xs font-ui font-medium text-or-sacre">{initials}</span>
                         </div>
-
-                        {/* Contenu */}
                         <div className="flex-1">
                           <p className="font-display text-lg text-or-sacre">
-                            {new Date(session.scheduledAt).toLocaleTimeString(
-                              "fr-FR",
-                              { hour: "2-digit", minute: "2-digit" }
-                            )}
+                            {new Date(session.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                           </p>
-                          <p className="font-ui text-sm text-brun-chaud mt-0.5">
-                            {clientName}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-caps uppercase bg-or-sacre/10 text-or-sacre px-2 py-0.5 rounded-sharp">
-                              {OFFER_LABELS[session.client.offerType] ??
-                                session.client.offerType}
-                            </span>
-                            {/* Status pill */}
-                            <span
-                              className={`text-xs font-ui px-2 py-0.5 rounded-full ${
-                                session.status === "COMPLETED"
-                                  ? "bg-or-sacre/10 text-or-sacre"
-                                  : "bg-foret/10 text-foret"
-                              }`}
-                            >
-                              {session.status === "COMPLETED"
-                                ? "Terminée"
-                                : "Planifiée"}
-                            </span>
-                          </div>
+                          <p className="font-ui text-sm text-brun-chaud mt-0.5">{clientName}</p>
                           <p className="text-xs text-brun-mid mt-1">
-                            {SESSION_TYPE_LABELS[session.type] ?? session.type} ·{" "}
-                            {session.duration} min
+                            {SESSION_TYPE_LABELS[session.type] ?? session.type} &middot; {session.duration} min
                           </p>
                         </div>
-
-                        {/* Bouton Zoom — prominent si lien existant, sinon ajout inline */}
-                        <AgendaZoomButton
-                          sessionId={session.id}
-                          initialZoomLink={session.zoomLink ?? null}
-                        />
+                        <AgendaZoomButton sessionId={session.id} initialZoomLink={session.zoomLink ?? null} />
                       </div>
-                      {index < todaySessions.length - 1 && (
-                        <div className="border-b border-or-pale/30" />
-                      )}
+                      {index < todaySessions.length - 1 && <div className="border-b border-or-pale/30" />}
                     </div>
                   );
                 })}
@@ -237,7 +301,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* Colonne droite — Actions en attente (client component) */}
+        {/* Actions en attente */}
         <DashboardActions initialActions={serializedActions} />
       </div>
     </div>

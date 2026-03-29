@@ -2,10 +2,13 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import type { Lang } from "@/lib/translations";
+import { t } from "@/lib/translations";
 
 interface InviteData {
   email: string;
   offerType: string;
+  language?: string;
 }
 
 export default function InvitePage({
@@ -20,13 +23,15 @@ export default function InvitePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Formulaire
-  const [name, setName] = useState("");
+  // Language selection — FIRST GESTURE
+  const [lang, setLang] = useState<Lang | null>(null);
+
+  // Form
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Verification du token au montage
+  // Verify token on mount
   useEffect(() => {
     async function verifyToken() {
       try {
@@ -39,8 +44,12 @@ export default function InvitePage({
         }
 
         setInviteData(data);
+        // Pre-select language from invite token if available
+        if (data.language === "EN" || data.language === "FR") {
+          setLang(data.language);
+        }
       } catch {
-        setError("Erreur de connexion au serveur");
+        setError("Server connection error");
       } finally {
         setLoading(false);
       }
@@ -49,22 +58,20 @@ export default function InvitePage({
     verifyToken();
   }, [token]);
 
-  // Soumission du formulaire
+  const T = (key: { EN: string; FR: string }) => key[lang || "FR"];
+
+  // Form submit
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    const L = lang || "FR";
 
-    // Validations
-    if (!name.trim()) {
-      setError("Le nom est requis");
-      return;
-    }
     if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caracteres");
+      setError(t.invite.errorPasswordMin[L]);
       return;
     }
     if (password !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas");
+      setError(t.invite.errorPasswordMatch[L]);
       return;
     }
 
@@ -74,43 +81,45 @@ export default function InvitePage({
       const res = await fetch(`/api/invite/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), password }),
+        body: JSON.stringify({ password, language: L }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Erreur lors de la creation du compte");
+        setError(data.error || t.invite.errorCreate[L]);
         setSubmitting(false);
         return;
       }
 
-      // Redirection vers l'espace client
-      router.push("/client/home");
+      router.push("/client/onboarding");
     } catch {
-      setError("Erreur de connexion au serveur");
+      setError(t.invite.errorServer[lang || "FR"]);
       setSubmitting(false);
     }
   }
 
-  // Etats de chargement / erreur sans formulaire
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-creme-sacree flex items-center justify-center">
-        <p className="text-brun-mid font-ui">Verification de l&apos;invitation...</p>
+        <p className="text-brun-mid font-ui">
+          {lang ? T(t.invite.verifying) : "Verifying..."}
+        </p>
       </div>
     );
   }
 
+  // Invalid token
   if (!inviteData) {
     return (
       <div className="min-h-screen bg-creme-sacree flex items-center justify-center px-4">
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 max-w-md w-full text-center">
           <h1 className="font-display text-2xl text-brun-chaud mb-3">
-            Invitation invalide
+            {T(t.invite.errorInvalid)}
           </h1>
           <p className="text-brun-mid font-ui text-sm">
-            {error || "Ce lien d'invitation n'est plus valide ou a deja ete utilise."}
+            {error || T(t.invite.errorExpired)}
           </p>
         </div>
       </div>
@@ -120,12 +129,39 @@ export default function InvitePage({
   return (
     <div className="min-h-screen bg-creme-sacree flex items-center justify-center px-4">
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 max-w-md w-full">
+        {/* Language toggle — FIRST GESTURE */}
+        <div className="flex justify-center gap-3 mb-8">
+          <button
+            onClick={() => setLang("EN")}
+            className={`px-5 py-2.5 rounded-lg border-2 transition-all duration-200 ${
+              lang === "EN"
+                ? "bg-or-sacre border-or-sacre text-white"
+                : "bg-creme-sacree border-or-pale text-brun-chaud hover:border-or-sacre/50"
+            }`}
+          >
+            <span className="font-ui text-sm font-normal">EN</span>
+            <span className="font-ui text-[10px] block mt-0.5 opacity-70">English</span>
+          </button>
+          <button
+            onClick={() => setLang("FR")}
+            className={`px-5 py-2.5 rounded-lg border-2 transition-all duration-200 ${
+              lang === "FR"
+                ? "bg-or-sacre border-or-sacre text-white"
+                : "bg-creme-sacree border-or-pale text-brun-chaud hover:border-or-sacre/50"
+            }`}
+          >
+            <span className="font-ui text-sm font-normal">FR</span>
+            <span className="font-ui text-[10px] block mt-0.5 opacity-70">Fran&ccedil;ais</span>
+          </button>
+        </div>
+
+        {/* Title + subtitle */}
         <div className="text-center mb-6">
           <h1 className="font-display text-2xl text-brun-chaud">
-            Bienvenue chez BeeFrequency
+            {T(t.invite.title)}
           </h1>
           <p className="text-brun-mid font-ui text-sm mt-2">
-            Activez votre compte pour acceder a votre espace personnel.
+            {T(t.invite.subtitle)}
           </p>
           <p className="text-or-sacre font-ui text-sm mt-1">
             {inviteData.email}
@@ -133,32 +169,13 @@ export default function InvitePage({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nom */}
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-ui text-brun-mid mb-1"
-            >
-              Votre nom
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
-              placeholder="Prenom Nom"
-              required
-            />
-          </div>
-
-          {/* Mot de passe */}
+          {/* Password */}
           <div>
             <label
               htmlFor="password"
               className="block text-sm font-ui text-brun-mid mb-1"
             >
-              Mot de passe
+              {T(t.invite.passwordLabel)}
             </label>
             <input
               id="password"
@@ -166,19 +183,20 @@ export default function InvitePage({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
-              placeholder="Minimum 8 caracteres"
+              placeholder="••••••••"
               minLength={8}
               required
+              disabled={!lang}
             />
           </div>
 
-          {/* Confirmation */}
+          {/* Confirm password */}
           <div>
             <label
               htmlFor="confirmPassword"
               className="block text-sm font-ui text-brun-mid mb-1"
             >
-              Confirmer le mot de passe
+              {T(t.invite.confirmPassword)}
             </label>
             <input
               id="confirmPassword"
@@ -186,24 +204,25 @@ export default function InvitePage({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-sharp border border-or-pale bg-creme-sacree text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
-              placeholder="Retapez le mot de passe"
+              placeholder="••••••••"
               minLength={8}
               required
+              disabled={!lang}
             />
           </div>
 
-          {/* Erreur */}
+          {/* Error */}
           {error && (
             <p className="text-sm text-red-600 font-ui">{error}</p>
           )}
 
-          {/* Bouton */}
+          {/* Submit */}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !lang}
             className="w-full py-2.5 rounded-sm bg-or-sacre text-creme-sacree font-ui text-sm font-medium hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
-            {submitting ? "Creation du compte..." : "Activer mon compte"}
+            {submitting ? T(t.invite.activating) : T(t.invite.button)}
           </button>
         </form>
       </div>

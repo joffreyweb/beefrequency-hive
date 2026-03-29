@@ -23,20 +23,22 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // For clients, include dayNumber
+  // For clients, include dayNumber + language
   let dayNumber: number | null = null;
+  let language: string | null = null;
   if (user.role === "CLIENT") {
     const client = await prisma.client.findUnique({
       where: { userId: user.id },
-      select: { startDate: true },
+      select: { startDate: true, language: true },
     });
     if (client) {
       dayNumber =
         Math.floor(
           (Date.now() - new Date(client.startDate).getTime()) / 86400000
         ) + 1;
+      language = client.language;
     }
   }
 
-  return NextResponse.json({ user, dayNumber });
+  return NextResponse.json({ user, dayNumber, language });
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 type TabKey = "supports" | "recommendations";
 
@@ -33,23 +35,26 @@ const SUPPORT_ICONS: Record<string, string> = {
   LINK: "\uD83D\uDD17",
 };
 
-const SUPPORT_LABELS: Record<string, string> = {
-  MUSIC: "Music",
-  VIDEO: "Video",
-  PDF: "PDF",
-  LINK: "Link",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  EAU: "Water",
-  COMPLEMENTS: "Supplements",
-  OUTILS: "Tools",
-  SOINS: "Care",
-  APITHERAPIE: "Apitherapy",
-  AUTRE: "Other",
-};
-
 export default function FromJoffreyPage() {
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
+  const SUPPORT_LABELS: Record<string, string> = {
+    MUSIC: lang === "FR" ? "Musique" : "Music",
+    VIDEO: lang === "FR" ? "Vid\u00e9o" : "Video",
+    PDF: "PDF",
+    LINK: lang === "FR" ? "Lien" : "Link",
+  };
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    EAU: T(t.fromJoffrey.categoryWater),
+    COMPLEMENTS: T(t.fromJoffrey.categorySupplements),
+    OUTILS: T(t.fromJoffrey.categoryTools),
+    SOINS: T(t.fromJoffrey.categoryCare),
+    APITHERAPIE: T(t.fromJoffrey.categoryApitherapy),
+    AUTRE: T(t.fromJoffrey.categoryOther),
+  };
+
   const [activeTab, setActiveTab] = useState<TabKey>("supports");
   const [supports, setSupports] = useState<Support[]>([]);
   const [personalRecos, setPersonalRecos] = useState<ClientRecommendation[]>([]);
@@ -85,15 +90,14 @@ export default function FromJoffreyPage() {
   }, [loadData]);
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: "supports", label: "Resources" },
-    { key: "recommendations", label: "Recommendations" },
+    { key: "supports", label: T(t.fromJoffrey.resources) },
+    { key: "recommendations", label: T(t.fromJoffrey.recommendations) },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl text-brun-chaud">From Joffrey</h1>
+      <h1 className="font-display text-2xl text-brun-chaud">{T(t.fromJoffrey.title)}</h1>
 
-      {/* Tab bar */}
       <div className="flex gap-1 bg-cire-chaude rounded-full p-1">
         {tabs.map((tab) => (
           <button
@@ -112,16 +116,15 @@ export default function FromJoffreyPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <p className="text-sm font-ui text-brun-mid/60">Loading...</p>
+          <p className="text-sm font-ui text-brun-mid/60">{T(t.common.loading)}</p>
         </div>
       ) : (
         <>
-          {/* Supports tab */}
           {activeTab === "supports" && (
             <div>
               {supports.length === 0 ? (
                 <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-                  <p className="text-sm font-ui text-brun-mid/60">No resources shared yet.</p>
+                  <p className="text-sm font-ui text-brun-mid/60">{T(t.fromJoffrey.noResources)}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -145,7 +148,7 @@ export default function FromJoffreyPage() {
                         rel="noopener noreferrer"
                         className="mt-auto inline-flex items-center gap-1.5 px-3 py-2 bg-or-sacre text-creme-sacree rounded-sharp text-sm font-ui hover:bg-ambre-vif transition-colors text-center justify-center"
                       >
-                        Access
+                        {T(t.fromJoffrey.access)}
                       </a>
                     </div>
                   ))}
@@ -154,12 +157,11 @@ export default function FromJoffreyPage() {
             </div>
           )}
 
-          {/* Recommendations tab */}
           {activeTab === "recommendations" && (
             <div className="space-y-8">
               {personalRecos.length > 0 && (
                 <section className="space-y-4">
-                  <h2 className="font-display text-lg text-brun-chaud">Selected for you</h2>
+                  <h2 className="font-display text-lg text-brun-chaud">{T(t.fromJoffrey.selectedForYou)}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {personalRecos.map((cr) => {
                       const reco = cr.recommendation;
@@ -169,20 +171,11 @@ export default function FromJoffreyPage() {
                             {CATEGORY_LABELS[reco.category] || reco.category}
                           </span>
                           <h3 className="font-display text-lg text-brun-chaud mb-2">{reco.title}</h3>
-                          {cr.note && (
-                            <p className="italic text-sm text-brun-mid mb-2">{cr.note}</p>
-                          )}
-                          {reco.description && (
-                            <p className="font-ui text-sm text-brun-mid mb-4 flex-1">{reco.description}</p>
-                          )}
+                          {cr.note && <p className="italic text-sm text-brun-mid mb-2">{cr.note}</p>}
+                          {reco.description && <p className="font-ui text-sm text-brun-mid mb-4 flex-1">{reco.description}</p>}
                           {reco.url && (
-                            <a
-                              href={reco.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-auto inline-flex items-center gap-1 text-sm text-or-sacre hover:text-ambre-vif transition-colors font-ui"
-                            >
-                              Discover &rarr;
+                            <a href={reco.url} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center gap-1 text-sm text-or-sacre hover:text-ambre-vif transition-colors font-ui">
+                              {T(t.fromJoffrey.discover)} &rarr;
                             </a>
                           )}
                         </div>
@@ -194,7 +187,7 @@ export default function FromJoffreyPage() {
 
               {globalRecos.length > 0 && (
                 <section className="space-y-4">
-                  <h2 className="font-display text-lg text-brun-chaud">General catalogue</h2>
+                  <h2 className="font-display text-lg text-brun-chaud">{T(t.fromJoffrey.generalCatalogue)}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {globalRecos.map((reco) => (
                       <div key={reco.id} className="bg-cire-chaude border border-or-pale rounded-sm p-5 flex flex-col">
@@ -202,17 +195,10 @@ export default function FromJoffreyPage() {
                           {CATEGORY_LABELS[reco.category] || reco.category}
                         </span>
                         <h3 className="font-display text-lg text-brun-chaud mb-2">{reco.title}</h3>
-                        {reco.description && (
-                          <p className="font-ui text-sm text-brun-mid mb-4 flex-1">{reco.description}</p>
-                        )}
+                        {reco.description && <p className="font-ui text-sm text-brun-mid mb-4 flex-1">{reco.description}</p>}
                         {reco.url && (
-                          <a
-                            href={reco.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-auto inline-flex items-center gap-1 text-sm text-or-sacre hover:text-ambre-vif transition-colors font-ui"
-                          >
-                            Discover &rarr;
+                          <a href={reco.url} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center gap-1 text-sm text-or-sacre hover:text-ambre-vif transition-colors font-ui">
+                            {T(t.fromJoffrey.discover)} &rarr;
                           </a>
                         )}
                       </div>
@@ -223,7 +209,7 @@ export default function FromJoffreyPage() {
 
               {personalRecos.length === 0 && globalRecos.length === 0 && (
                 <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-                  <p className="text-sm font-ui text-brun-mid/60">No recommendations yet.</p>
+                  <p className="text-sm font-ui text-brun-mid/60">{T(t.fromJoffrey.noRecommendations)}</p>
                 </div>
               )}
             </div>

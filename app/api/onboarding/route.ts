@@ -66,10 +66,9 @@ export async function POST(request: Request) {
       intention,
     } = body;
 
-    // Validation des champs requis (intention est optionnelle)
+    // Validation des champs requis
     const requiredFields = {
       firstName,
-      lastName,
       birthDate,
       birthPlace,
       birthCountry,
@@ -82,18 +81,10 @@ export async function POST(request: Request) {
     for (const [key, value] of Object.entries(requiredFields)) {
       if (!value || (typeof value === "string" && !value.trim())) {
         return NextResponse.json(
-          { error: `Le champ ${key} est requis` },
+          { error: `Field ${key} is required` },
           { status: 400 }
         );
       }
-    }
-
-    // Validation de l'intention (minimum 50 caractères si renseignée)
-    if (intention && intention.trim().length > 0 && intention.trim().length < 50) {
-      return NextResponse.json(
-        { error: "L'intention doit contenir au moins 50 caractères" },
-        { status: 400 }
-      );
     }
 
     // Upsert du ClientIntake
@@ -140,7 +131,16 @@ export async function POST(request: Request) {
       data: {
         onboardingCompleted: true,
         ...(hdType ? { hdType } : {}),
+        birthTime: birthTime?.trim() || null,
+        birthCity: birthPlace.trim(),
+        birthCountry: birthCountry.trim(),
       },
+    });
+
+    // Update User name with firstName
+    await prisma.user.update({
+      where: { id: clientResult.session.userId },
+      data: { name: firstName.trim() + (lastName ? " " + lastName.trim() : "") },
     });
 
     // Upsert du ClientAnalysis avec status PENDING

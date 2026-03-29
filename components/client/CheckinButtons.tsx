@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import type { Lang } from "@/lib/translations";
+import { t } from "@/lib/translations";
 
-export default function CheckinButtons() {
+export default function CheckinButtons({ lang = "FR" }: { lang?: Lang }) {
   const [hour, setHour] = useState<number | null>(null);
+  const T = (key: { EN: string; FR: string }) => key[lang];
 
   useEffect(() => {
     setHour(new Date().getHours());
@@ -24,18 +27,18 @@ export default function CheckinButtons() {
           className="bg-cire-chaude border border-or-sacre rounded-sm p-4 hover:bg-or-sacre/5 transition-colors"
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">☀️</span>
-            <span className="font-ui text-sm text-brun-chaud">Morning check-in</span>
+            <span className="text-lg">{"\u2600\uFE0F"}</span>
+            <span className="font-ui text-sm text-brun-chaud">{T(t.home.morningCheckin)}</span>
           </div>
-          <p className="font-ui text-xs text-or-sacre">Available until 1pm</p>
+          <p className="font-ui text-xs text-or-sacre">{T(t.home.morningAvailable)}</p>
         </Link>
       ) : (
         <div className="bg-creme-sacree border border-or-pale/50 rounded-sm p-4 opacity-50">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg grayscale">☀️</span>
-            <span className="font-ui text-sm text-brun-mid/50">Morning check-in</span>
+            <span className="text-lg grayscale">{"\u2600\uFE0F"}</span>
+            <span className="font-ui text-sm text-brun-mid/50">{T(t.home.morningCheckin)}</span>
           </div>
-          <p className="font-ui text-xs text-brun-mid/40">Opens at 5am</p>
+          <p className="font-ui text-xs text-brun-mid/40">{T(t.home.morningOpens)}</p>
         </div>
       )}
 
@@ -46,18 +49,18 @@ export default function CheckinButtons() {
           className="bg-cire-chaude border border-or-sacre rounded-sm p-4 hover:bg-or-sacre/5 transition-colors"
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">🌙</span>
-            <span className="font-ui text-sm text-brun-chaud">Evening check-in</span>
+            <span className="text-lg">{"\uD83C\uDF19"}</span>
+            <span className="font-ui text-sm text-brun-chaud">{T(t.home.eveningCheckin)}</span>
           </div>
-          <p className="font-ui text-xs text-or-sacre">Available until midnight</p>
+          <p className="font-ui text-xs text-or-sacre">{T(t.home.eveningAvailable)}</p>
         </Link>
       ) : (
         <div className="bg-creme-sacree border border-or-pale/50 rounded-sm p-4 opacity-50">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg grayscale">🌙</span>
-            <span className="font-ui text-sm text-brun-mid/50">Evening check-in</span>
+            <span className="text-lg grayscale">{"\uD83C\uDF19"}</span>
+            <span className="font-ui text-sm text-brun-mid/50">{T(t.home.eveningCheckin)}</span>
           </div>
-          <p className="font-ui text-xs text-brun-mid/40">Opens at 4pm</p>
+          <p className="font-ui text-xs text-brun-mid/40">{T(t.home.eveningOpens)}</p>
         </div>
       )}
     </div>

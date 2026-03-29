@@ -5,13 +5,8 @@ import { requireOnboarding } from "@/lib/onboarding-guard";
 import Link from "next/link";
 import DocumentUploadButton from "@/components/client/DocumentUploadButton";
 import CheckinButtons from "@/components/client/CheckinButtons";
-
-
-const sessionTypeLabels: Record<string, string> = {
-  ONLINE: "Online",
-  PRESENTIAL: "In-person",
-  CEREMONY: "Ceremony",
-};
+import type { Lang } from "@/lib/translations";
+import { t } from "@/lib/translations";
 
 export default async function ClientHomePage() {
   const session = await getSession();
@@ -44,15 +39,17 @@ export default async function ClientHomePage() {
 
   if (!client) redirect("/login");
 
+  const lang = (client.language === "EN" ? "EN" : "FR") as Lang;
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
   const dayNumber =
     Math.floor(
       (Date.now() - new Date(client.startDate).getTime()) / 86400000
     ) + 1;
 
-  // Use full name from User table — intake.firstName may be incomplete
-  const displayName = client.user.name || client.intake?.firstName || "You";
+  const displayName = client.intake?.firstName || client.user.name || "You";
 
-  // Wisdom message of the day — cycle through DayMessages
+  // Wisdom message of the day
   const allMessages = await prisma.dayMessage.findMany({
     where: { isActive: true },
     orderBy: { createdAt: "asc" },
@@ -64,16 +61,17 @@ export default async function ClientHomePage() {
       : null;
 
   const nextSession = client.sessions[0] ?? null;
-  const now = Date.now();
-  const isWithin24h =
-    nextSession &&
-    new Date(nextSession.scheduledAt).getTime() - now < 24 * 60 * 60 * 1000;
-
   const todayPractice = client.clientPractices[0] ?? null;
+
+  const sessionTypeLabels: Record<string, Record<Lang, string>> = {
+    ONLINE: { EN: "Online", FR: "En ligne" },
+    PRESENTIAL: { EN: "In-person", FR: "En pr\u00e9sentiel" },
+    CEREMONY: { EN: "Ceremony", FR: "C\u00e9r\u00e9monie" },
+  };
 
   return (
     <div className="space-y-8">
-      {/* a) Wisdom message — prominent, centered */}
+      {/* Wisdom message */}
       {wisdomMessage && (
         <div className="text-center py-6">
           <p className="font-display text-xl sm:text-2xl text-brun-chaud leading-relaxed italic max-w-md mx-auto">
@@ -83,20 +81,20 @@ export default async function ClientHomePage() {
       )}
 
       {/* Check-in buttons */}
-      <CheckinButtons />
+      <CheckinButtons lang={lang} />
 
-      {/* b) First name + Day number */}
+      {/* Name + Day number */}
       <div className="text-center">
         <h1 className="font-display text-2xl text-brun-chaud">
-          {displayName} — <span className="text-or-sacre">Day {dayNumber}</span>
+          {displayName} &mdash; <span className="text-or-sacre">{T(t.home.day)} {dayNumber}</span>
         </h1>
       </div>
 
-      {/* c) Elixirs prescribed */}
+      {/* Elixirs prescribed */}
       {client.elixirPrescriptions.length > 0 && (
         <div>
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-            Your elixirs
+            {T(t.home.yourElixirs)}
           </h2>
           <div className="space-y-3">
             {client.elixirPrescriptions.map((rx: any) => (
@@ -114,62 +112,62 @@ export default async function ClientHomePage() {
         </div>
       )}
 
-      {/* d) Today's practice */}
+      {/* Today's practice */}
       {todayPractice && (
         <Link
           href="/client/pratiques"
           className="block bg-cire-chaude border border-or-pale rounded-sm p-5 hover:border-or-sacre transition-colors"
         >
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
-            Today&apos;s practice
+            {T(t.home.todaysPractice)}
           </h2>
           <p className="font-display text-lg text-brun-chaud">
             {todayPractice.practice.title}
           </p>
           <p className="font-ui text-sm text-or-sacre mt-1">
-            Start &rarr;
+            {T(t.home.start)} &rarr;
           </p>
         </Link>
       )}
 
-      {/* e) Next session */}
+      {/* Next session */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          Next session
+          {T(t.home.nextSession)}
         </h2>
         {nextSession ? (
           <>
             <p className="font-display text-lg text-brun-chaud">
-              {new Date(nextSession.scheduledAt).toLocaleDateString("en-US", {
+              {new Date(nextSession.scheduledAt).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
               })}
             </p>
             <p className="text-sm text-brun-mid mt-1">
-              {new Date(nextSession.scheduledAt).toLocaleTimeString("en-US", {
+              {new Date(nextSession.scheduledAt).toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
-              })}{" "}
-              — {sessionTypeLabels[nextSession.type] ?? nextSession.type}
+              })}
+              {" "}&mdash; {sessionTypeLabels[nextSession.type]?.[lang] ?? nextSession.type}
             </p>
-            {isWithin24h && nextSession.zoomLink && (
+            {nextSession.zoomLink && (
               <a
                 href={nextSession.zoomLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block mt-3 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
               >
-                Join on Zoom
+                {T(t.home.joinZoom)}
               </a>
             )}
           </>
         ) : (
-          <p className="text-brun-mid text-sm font-ui">No session scheduled</p>
+          <p className="text-brun-mid text-sm font-ui">{T(t.home.noSession)}</p>
         )}
       </div>
 
-      {/* f) Share a document — discreet upload button */}
+      {/* Share a document */}
       <DocumentUploadButton />
     </div>
   );

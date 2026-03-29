@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-
-const SLEEP_TYPES = ["Deep", "Light", "Fragmented", "No sleep"];
-const DREAM_OPTIONS = ["Yes", "No", "Blurry"];
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 function getHour() {
   return new Date().getHours();
@@ -12,6 +11,9 @@ function getHour() {
 
 export default function MorningCheckinPage() {
   const router = useRouter();
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
   const [step, setStep] = useState(0);
   const [energy, setEnergy] = useState(5);
   const [sleep, setSleep] = useState(5);
@@ -26,14 +28,26 @@ export default function MorningCheckinPage() {
   const hour = getHour();
   const isOpen = hour >= 5 && hour < 13;
 
-  // Fetch a random wisdom message for the final step
+  const SLEEP_TYPES = [
+    { key: "Deep", label: T(t.morning.sleepDeep) },
+    { key: "Light", label: T(t.morning.sleepLight) },
+    { key: "Fragmented", label: T(t.morning.sleepFragmented) },
+    { key: "No sleep", label: T(t.morning.sleepNone) },
+  ];
+
+  const DREAM_OPTIONS = [
+    { key: "Yes", label: T(t.morning.dreamYes) },
+    { key: "No", label: T(t.morning.dreamNo) },
+    { key: "Blurry", label: T(t.morning.dreamBlurry) },
+  ];
+
   useEffect(() => {
     fetch("/api/auth/me").catch(() => {});
   }, []);
 
-  function toggleSleepType(t: string) {
+  function toggleSleepType(key: string) {
     setSleepTypes((prev) =>
-      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
+      prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
     );
   }
 
@@ -64,14 +78,13 @@ export default function MorningCheckinPage() {
         }),
       });
 
-      // Fetch wisdom message for final screen
       const res = await fetch("/api/day-message");
       if (res.ok) {
         const data = await res.json();
         if (data.text) setWisdomMessage(data.text);
       }
     } catch {
-      // Continue to final step regardless
+      // Continue to final step
     } finally {
       setSaving(false);
       goNext();
@@ -81,13 +94,13 @@ export default function MorningCheckinPage() {
   if (!isOpen) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-        <p className="font-display text-xl text-brun-chaud mb-2">The morning space opens at 5am.</p>
-        <p className="font-ui text-sm text-brun-mid">Come back between 5am and 1pm.</p>
+        <p className="font-display text-xl text-brun-chaud mb-2">{T(t.morning.closedTitle)}</p>
+        <p className="font-ui text-sm text-brun-mid">{T(t.morning.closedSub)}</p>
         <button
           onClick={() => router.push("/client/home")}
           className="mt-8 text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors"
         >
-          &larr; Home
+          &larr; {T(t.morning.home)}
         </button>
       </div>
     );
@@ -110,7 +123,6 @@ export default function MorningCheckinPage() {
         </div>
       )}
 
-      {/* Steps with transition */}
       <div
         key={step}
         className="flex-1 flex flex-col items-center justify-center animate-fade-in"
@@ -121,9 +133,9 @@ export default function MorningCheckinPage() {
         {/* Step 0 — Welcome */}
         {step === 0 && (
           <div className="text-center space-y-6">
-            <h1 className="font-display text-2xl text-brun-chaud">Begin where you are.</h1>
+            <h1 className="font-display text-2xl text-brun-chaud">{T(t.morning.step0)}</h1>
             <button onClick={goNext} className="px-8 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">
-              Start
+              {T(t.morning.start)}
             </button>
           </div>
         )}
@@ -131,22 +143,15 @@ export default function MorningCheckinPage() {
         {/* Step 1 — Energy */}
         {step === 1 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">Energy</h2>
-            <p className="font-ui text-sm text-brun-mid">Without analyzing.</p>
+            <h2 className="font-display text-xl text-brun-chaud">{T(t.morning.step1Title)}</h2>
+            <p className="font-ui text-sm text-brun-mid">{T(t.morning.step1Sub)}</p>
             <div className="space-y-3">
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={energy}
-                onChange={(e) => setEnergy(Number(e.target.value))}
-                className="w-full accent-or-sacre"
-              />
+              <input type="range" min={1} max={10} value={energy} onChange={(e) => setEnergy(Number(e.target.value))} className="w-full accent-or-sacre" />
               <p className="font-display text-3xl text-or-sacre">{energy}/10</p>
             </div>
             <div className="flex gap-4 pt-4">
-              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">Back</button>
-              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">Next</button>
+              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
+              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">{T(t.morning.next)}</button>
             </div>
           </div>
         )}
@@ -154,22 +159,15 @@ export default function MorningCheckinPage() {
         {/* Step 2 — Sleep */}
         {step === 2 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">Sleep</h2>
-            <p className="font-ui text-sm text-brun-mid">Just feel.</p>
+            <h2 className="font-display text-xl text-brun-chaud">{T(t.morning.step2Title)}</h2>
+            <p className="font-ui text-sm text-brun-mid">{T(t.morning.step2Sub)}</p>
             <div className="space-y-3">
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={sleep}
-                onChange={(e) => setSleep(Number(e.target.value))}
-                className="w-full accent-or-sacre"
-              />
+              <input type="range" min={1} max={10} value={sleep} onChange={(e) => setSleep(Number(e.target.value))} className="w-full accent-or-sacre" />
               <p className="font-display text-3xl text-or-sacre">{sleep}/10</p>
             </div>
             <div className="flex gap-4 pt-4">
-              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">Back</button>
-              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">Next</button>
+              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
+              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">{T(t.morning.next)}</button>
             </div>
           </div>
         )}
@@ -177,25 +175,25 @@ export default function MorningCheckinPage() {
         {/* Step 3 — Sleep type */}
         {step === 3 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">Sleep type</h2>
+            <h2 className="font-display text-xl text-brun-chaud">{T(t.morning.step2Title)}</h2>
             <div className="flex flex-wrap justify-center gap-2">
-              {SLEEP_TYPES.map((t) => (
+              {SLEEP_TYPES.map(({ key, label }) => (
                 <button
-                  key={t}
-                  onClick={() => toggleSleepType(t)}
+                  key={key}
+                  onClick={() => toggleSleepType(key)}
                   className={`px-4 py-2 rounded-full text-sm font-ui transition-colors ${
-                    sleepTypes.includes(t)
+                    sleepTypes.includes(key)
                       ? "bg-or-sacre text-white"
                       : "bg-cire-chaude border border-or-pale text-brun-mid"
                   }`}
                 >
-                  {t}
+                  {label}
                 </button>
               ))}
             </div>
             <div className="flex gap-4 pt-4">
-              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">Back</button>
-              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">Next</button>
+              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
+              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">{T(t.morning.next)}</button>
             </div>
           </div>
         )}
@@ -203,19 +201,19 @@ export default function MorningCheckinPage() {
         {/* Step 4 — Dreams */}
         {step === 4 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">Dreams</h2>
+            <h2 className="font-display text-xl text-brun-chaud">{lang === "FR" ? "R\u00eaves" : "Dreams"}</h2>
             <div className="flex justify-center gap-2">
-              {DREAM_OPTIONS.map((d) => (
+              {DREAM_OPTIONS.map(({ key, label }) => (
                 <button
-                  key={d}
-                  onClick={() => setDreamed(d)}
+                  key={key}
+                  onClick={() => setDreamed(key)}
                   className={`px-5 py-2 rounded-full text-sm font-ui transition-colors ${
-                    dreamed === d
+                    dreamed === key
                       ? "bg-or-sacre text-white"
                       : "bg-cire-chaude border border-or-pale text-brun-mid"
                   }`}
                 >
-                  {d}
+                  {label}
                 </button>
               ))}
             </div>
@@ -223,12 +221,13 @@ export default function MorningCheckinPage() {
               <SpeechTextarea
                 value={dreamNotes}
                 onChange={setDreamNotes}
-                placeholder="What do you remember..."
+                placeholder={T(t.morning.dreamPlaceholder)}
+                lang={lang}
               />
             )}
             <div className="flex gap-4 pt-4">
-              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">Back</button>
-              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">Next</button>
+              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
+              <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">{T(t.morning.next)}</button>
             </div>
           </div>
         )}
@@ -236,20 +235,21 @@ export default function MorningCheckinPage() {
         {/* Step 5 — Morning feeling */}
         {step === 5 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">What is present for me this morning.</h2>
+            <h2 className="font-display text-xl text-brun-chaud">{T(t.morning.step5Title)}</h2>
             <SpeechTextarea
               value={morningFeeling}
               onChange={setMorningFeeling}
-              placeholder="No expectations. Just what is here."
+              placeholder={T(t.morning.step5Placeholder)}
+              lang={lang}
             />
             <div className="flex gap-4 pt-4">
-              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">Back</button>
+              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
               >
-                {saving ? "Saving..." : "Save"}
+                {saving ? T(t.morning.saving) : T(t.morning.save)}
               </button>
             </div>
           </div>
@@ -258,8 +258,8 @@ export default function MorningCheckinPage() {
         {/* Step 6 — Done */}
         {step === 6 && (
           <div className="text-center space-y-6 max-w-sm">
-            <h2 className="font-display text-2xl text-brun-chaud">It&apos;s noted.</h2>
-            <p className="font-display text-lg text-brun-mid">Have a beautiful day.</p>
+            <h2 className="font-display text-2xl text-brun-chaud">{T(t.morning.doneTitle)}</h2>
+            <p className="font-display text-lg text-brun-mid">{T(t.morning.doneSub)}</p>
             {wisdomMessage && (
               <p className="font-display text-base text-brun-mid/70 italic pt-4">
                 &ldquo;{wisdomMessage}&rdquo;
@@ -269,7 +269,7 @@ export default function MorningCheckinPage() {
               onClick={() => router.push("/client/home")}
               className="mt-6 px-8 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
             >
-              Home
+              {T(t.morning.home)}
             </button>
           </div>
         )}
@@ -293,10 +293,12 @@ function SpeechTextarea({
   value,
   onChange,
   placeholder,
+  lang,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  lang: string;
 }) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -310,7 +312,7 @@ function SpeechTextarea({
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
     const rec = new SR();
-    rec.lang = "en-US";
+    rec.lang = lang === "FR" ? "fr-FR" : "en-US";
     rec.continuous = true;
     rec.interimResults = false;
     rec.onresult = (e: any) => {

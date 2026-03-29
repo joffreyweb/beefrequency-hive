@@ -4,10 +4,11 @@ import { useState, useRef, useCallback } from "react";
 
 interface MessageInputProps {
   onSend: (content: string) => void | Promise<void>;
+  placeholder?: string;
 }
 
 // Input de message — textarea + bouton envoyer
-export default function MessageInput({ onSend }: MessageInputProps) {
+export default function MessageInput({ onSend, placeholder }: MessageInputProps) {
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -42,7 +43,7 @@ export default function MessageInput({ onSend }: MessageInputProps) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Écrire un message…"
+        placeholder={placeholder || "\u00c9crire un message\u2026"}
         rows={2}
         className="flex-1 px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200 resize-none"
       />

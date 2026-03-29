@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 export default function ClientNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Poll unread messages every 15s
   useEffect(() => {
     function fetchUnread() {
       fetch("/api/messages/unread-count")
@@ -33,19 +36,21 @@ export default function ClientNav() {
     isActive("/client/agenda") ||
     isActive("/client/programme");
   const isJournal = isActive("/client/journal");
-  const isTransmission =
-    isActive("/client/transmission") ||
+  const isPractices =
     isActive("/client/pratiques") ||
+    isActive("/client/transmission");
+  const isMessages = isActive("/client/messages");
+  const isFromJoffrey =
     isActive("/client/from-joffrey") ||
     isActive("/client/supports") ||
     isActive("/client/recommendations");
-  const isMessages = isActive("/client/messages");
 
   const items = [
-    { href: "/client/home", label: "Home", active: isHome, icon: HomeIcon, badge: 0 },
-    { href: "/client/journal", label: "Journal", active: isJournal, icon: JournalIcon, badge: 0 },
-    { href: "/client/transmission", label: "Transmission", active: isTransmission, icon: TransmissionIcon, badge: 0 },
-    { href: "/client/messages", label: "Messages", active: isMessages, icon: MessagesIcon, badge: unreadCount },
+    { href: "/client/home", label: T(t.nav.home), active: isHome, icon: HomeIcon, badge: 0 },
+    { href: "/client/journal", label: T(t.nav.journal), active: isJournal, icon: JournalIcon, badge: 0 },
+    { href: "/client/pratiques", label: T(t.nav.practices), active: isPractices, icon: PracticesIcon, badge: 0 },
+    { href: "/client/messages", label: T(t.nav.messages), active: isMessages, icon: MessagesIcon, badge: unreadCount },
+    { href: "/client/from-joffrey", label: T(t.nav.fromJoffrey), active: isFromJoffrey, icon: FromJoffreyIcon, badge: 0 },
   ];
 
   return (
@@ -81,7 +86,7 @@ export default function ClientNav() {
             <span
               className="font-ui leading-none text-center"
               style={{
-                fontSize: "8px",
+                fontSize: "7px",
                 letterSpacing: "0.03em",
                 color: item.active ? "#B8821E" : "#6B4423",
               }}
@@ -114,6 +119,15 @@ function JournalIcon({ color }: { color: string }) {
   );
 }
 
+function PracticesIcon({ color }: { color: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  );
+}
+
 function MessagesIcon({ color }: { color: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -122,7 +136,7 @@ function MessagesIcon({ color }: { color: string }) {
   );
 }
 
-function TransmissionIcon({ color }: { color: string }) {
+function FromJoffreyIcon({ color }: { color: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 19V5" />

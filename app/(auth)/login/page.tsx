@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t } from "@/lib/translations";
+import type { Lang } from "@/lib/translations";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -9,6 +11,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Detect language from browser or default FR
+  const browserLang =
+    typeof navigator !== "undefined" && navigator.language?.startsWith("en")
+      ? "EN"
+      : "FR";
+  const lang: Lang = browserLang;
+  const T = (key: { EN: string; FR: string }) => key[lang];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,18 +35,17 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Erreur de connexion");
+        setError(data.error || T(t.login.error));
         return;
       }
 
-      // Redirection selon le rôle
       if (data.user.role === "ADMIN") {
         router.push("/admin/dashboard");
       } else {
         router.push("/client/home");
       }
     } catch {
-      setError("Erreur de connexion au serveur");
+      setError(T(t.login.errorServer));
     } finally {
       setLoading(false);
     }
@@ -45,7 +54,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
       <div className="w-full max-w-sm">
-        {/* Logo / Identité */}
+        {/* Logo / Identity */}
         <div className="text-center mb-10">
           <h1 className="font-display text-4xl font-light text-brun-chaud tracking-wide">
             Hive
@@ -54,11 +63,11 @@ export default function LoginPage() {
             BeeFrequency
           </p>
           <p className="font-display text-brun-mid text-sm italic mt-3">
-            From poison to nectar
+            {T(t.login.tagline)}
           </p>
         </div>
 
-        {/* Formulaire */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className="text-red-600 text-sm text-center bg-red-50 py-2 px-3 rounded-sm">
@@ -71,7 +80,7 @@ export default function LoginPage() {
               htmlFor="email"
               className="block text-xs font-ui font-light text-brun-mid uppercase tracking-wider mb-1.5"
             >
-              Email
+              {T(t.login.email)}
             </label>
             <input
               id="email"
@@ -89,7 +98,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-xs font-ui font-light text-brun-mid uppercase tracking-wider mb-1.5"
             >
-              Mot de passe
+              {T(t.login.password)}
             </label>
             <input
               id="password"
@@ -107,7 +116,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-[0.06em] rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50"
           >
-            {loading ? "Connexion..." : "Entrer"}
+            {loading ? T(t.login.loading) : T(t.login.button)}
           </button>
         </form>
       </div>

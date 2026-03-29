@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 export default function DocumentUploadButton() {
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -40,6 +45,11 @@ export default function DocumentUploadButton() {
     }
   }
 
+  const sendLabel = lang === "FR" ? "Envoyer" : "Send";
+  const sendingLabel = lang === "FR" ? "Envoi..." : "Sending...";
+  const cancelLabel = lang === "FR" ? "Annuler" : "Cancel";
+  const successLabel = lang === "FR" ? "Document envoy\u00e9 avec succ\u00e8s." : "Document sent successfully.";
+
   return (
     <div className="text-center space-y-2">
       <input
@@ -58,7 +68,7 @@ export default function DocumentUploadButton() {
       />
 
       {success ? (
-        <p className="text-sm font-ui text-foret">Document sent successfully.</p>
+        <p className="text-sm font-ui text-foret">{successLabel}</p>
       ) : selectedFile ? (
         <div className="flex items-center justify-center gap-3">
           <span className="text-sm font-ui text-brun-chaud truncate max-w-48">
@@ -69,7 +79,7 @@ export default function DocumentUploadButton() {
             disabled={uploading}
             className="text-xs font-ui text-or-sacre hover:text-ambre-vif transition-colors disabled:opacity-50"
           >
-            {uploading ? "Sending..." : "Send"}
+            {uploading ? sendingLabel : sendLabel}
           </button>
           <button
             onClick={() => {
@@ -78,7 +88,7 @@ export default function DocumentUploadButton() {
             }}
             className="text-xs font-ui text-brun-mid/50 hover:text-brun-mid transition-colors"
           >
-            Cancel
+            {cancelLabel}
           </button>
         </div>
       ) : (
@@ -86,7 +96,7 @@ export default function DocumentUploadButton() {
           onClick={() => fileInputRef.current?.click()}
           className="text-sm font-ui text-brun-mid/50 hover:text-or-sacre transition-colors"
         >
-          Share a document &rarr;
+          {T(t.home.shareDocument)} &rarr;
         </button>
       )}
 

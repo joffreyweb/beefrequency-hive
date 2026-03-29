@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 interface ClientInfo {
   name: string;
@@ -17,6 +19,9 @@ interface Reminders {
 }
 
 export default function ClientHeader() {
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [info, setInfo] = useState<ClientInfo | null>(null);
   const [reminders, setReminders] = useState<Reminders | null>(null);
@@ -40,7 +45,6 @@ export default function ClientHeader() {
       .catch(() => {});
   }, []);
 
-  // Load reminders when menu opens
   useEffect(() => {
     if (menuOpen && !reminders) {
       fetch("/api/user/reminders")
@@ -52,7 +56,7 @@ export default function ClientHeader() {
 
   function handleSignOut() {
     fetch("/api/auth/logout", { method: "POST" }).then(() => {
-      window.location.href = "/login";
+      window.location.replace("/login");
     });
   }
 
@@ -83,10 +87,8 @@ export default function ClientHeader() {
           className="h-full flex items-center justify-between"
           style={{ maxWidth: "640px", margin: "0 auto", padding: "0 20px" }}
         >
-          <Link href="/client/home" className="flex items-center gap-1.5">
-            <span className="font-ui text-sm font-light lowercase text-brun-mid">be</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8D5A8" strokeWidth="1" strokeLinejoin="round"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" /></svg>
-            <span className="font-ui text-sm font-light lowercase text-brun-mid">beefrequency</span>
+          <Link href="/client/home" className="font-display text-lg text-brun-chaud tracking-wide">
+            Hive
           </Link>
           <div className="flex items-center gap-2">
             {info && (
@@ -124,7 +126,7 @@ export default function ClientHeader() {
         {/* Close */}
         <div className="flex justify-end p-4">
           <button onClick={() => setMenuOpen(false)} className="text-brun-mid/50 hover:text-brun-chaud text-lg" aria-label="Close">
-            ✕
+            {"\u2715"}
           </button>
         </div>
 
@@ -132,7 +134,7 @@ export default function ClientHeader() {
         {info && (
           <div className="px-6 pb-5">
             <p className="font-display text-xl text-brun-chaud">{info.name}</p>
-            <p className="font-ui text-sm text-or-sacre mt-1">Day {info.dayNumber}</p>
+            <p className="font-ui text-sm text-or-sacre mt-1">{T(t.home.day)} {info.dayNumber}</p>
           </div>
         )}
 
@@ -140,12 +142,12 @@ export default function ClientHeader() {
 
         {/* Reminders */}
         <div className="px-6 py-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-4">Reminders</p>
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-4">{T(t.nav.reminders)}</p>
 
           {/* Morning reminder */}
           <div className="mb-4">
             <div className="flex items-center justify-between">
-              <span className="font-ui text-sm text-brun-chaud">☀️ Morning</span>
+              <span className="font-ui text-sm text-brun-chaud">{"\u2600\uFE0F"} {T(t.home.morningCheckin)}</span>
               <button
                 onClick={() => updateReminder("morningReminderEnabled", !reminders?.morningReminderEnabled)}
                 className={`w-10 h-5 rounded-full transition-colors relative ${
@@ -171,7 +173,7 @@ export default function ClientHeader() {
           {/* Evening reminder */}
           <div>
             <div className="flex items-center justify-between">
-              <span className="font-ui text-sm text-brun-chaud">🌙 Evening</span>
+              <span className="font-ui text-sm text-brun-chaud">{"\uD83C\uDF19"} {T(t.home.eveningCheckin)}</span>
               <button
                 onClick={() => updateReminder("eveningReminderEnabled", !reminders?.eveningReminderEnabled)}
                 className={`w-10 h-5 rounded-full transition-colors relative ${
@@ -193,8 +195,19 @@ export default function ClientHeader() {
               />
             )}
           </div>
+        </div>
 
-          <p className="font-ui text-[10px] text-brun-mid/40 mt-3">Notifications coming soon.</p>
+        <div className="mx-6 border-t border-or-pale" />
+
+        {/* Settings link */}
+        <div className="px-6 py-4">
+          <Link
+            href="/client/settings"
+            onClick={() => setMenuOpen(false)}
+            className="font-ui text-sm text-brun-chaud hover:text-or-sacre transition-colors"
+          >
+            {T(t.settings.title)}
+          </Link>
         </div>
 
         <div className="mx-6 border-t border-or-pale" />
@@ -202,7 +215,7 @@ export default function ClientHeader() {
         {/* Sign out */}
         <div className="px-6 py-5">
           <button onClick={handleSignOut} className="font-ui text-sm text-brun-mid/60 hover:text-brun-chaud transition-colors">
-            Sign out
+            {T(t.nav.signOut)}
           </button>
         </div>
       </div>

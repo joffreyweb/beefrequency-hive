@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 function getHour() {
   return new Date().getHours();
@@ -9,6 +11,9 @@ function getHour() {
 
 export default function EveningCheckinPage() {
   const router = useRouter();
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
   const [moment1, setMoment1] = useState("");
   const [moment2, setMoment2] = useState("");
   const [moment3, setMoment3] = useState("");
@@ -44,13 +49,13 @@ export default function EveningCheckinPage() {
   if (!isOpen) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-        <p className="font-display text-xl text-brun-chaud mb-2">The evening space opens at 4pm.</p>
-        <p className="font-ui text-sm text-brun-mid">Come back between 4pm and midnight.</p>
+        <p className="font-display text-xl text-brun-chaud mb-2">{T(t.evening.closedTitle)}</p>
+        <p className="font-ui text-sm text-brun-mid">{T(t.evening.closedSub)}</p>
         <button
           onClick={() => router.push("/client/home")}
           className="mt-8 text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors"
         >
-          &larr; Home
+          &larr; {T(t.evening.home)}
         </button>
       </div>
     );
@@ -59,13 +64,13 @@ export default function EveningCheckinPage() {
   if (done) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6 space-y-6">
-        <h2 className="font-display text-2xl text-brun-chaud">It&apos;s noted.</h2>
-        <p className="font-display text-lg text-brun-mid">Rest well tonight.</p>
+        <h2 className="font-display text-2xl text-brun-chaud">{T(t.evening.doneTitle)}</h2>
+        <p className="font-display text-lg text-brun-mid">{T(t.evening.doneSub)}</p>
         <button
           onClick={() => router.push("/client/home")}
           className="mt-4 px-8 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
         >
-          Home
+          {T(t.evening.home)}
         </button>
       </div>
     );
@@ -74,33 +79,17 @@ export default function EveningCheckinPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="font-display text-2xl text-brun-chaud">4 true moments</h1>
+        <h1 className="font-display text-2xl text-brun-chaud">{T(t.evening.title)}</h1>
         <p className="font-ui text-sm text-brun-mid mt-2">
-          Light and shadow carry equal value here.
+          {T(t.evening.subtitle)}
         </p>
       </div>
 
       <div className="space-y-5">
-        <SpeechTextarea
-          value={moment1}
-          onChange={setMoment1}
-          placeholder="A moment that touched me..."
-        />
-        <SpeechTextarea
-          value={moment2}
-          onChange={setMoment2}
-          placeholder="Something I received..."
-        />
-        <SpeechTextarea
-          value={moment3}
-          onChange={setMoment3}
-          placeholder="What emerged — joy, anger, doubt, lightness..."
-        />
-        <SpeechTextarea
-          value={moment4}
-          onChange={setMoment4}
-          placeholder="What I notice in myself tonight..."
-        />
+        <SpeechTextarea value={moment1} onChange={setMoment1} placeholder={T(t.evening.placeholder1)} lang={lang} />
+        <SpeechTextarea value={moment2} onChange={setMoment2} placeholder={T(t.evening.placeholder2)} lang={lang} />
+        <SpeechTextarea value={moment3} onChange={setMoment3} placeholder={T(t.evening.placeholder3)} lang={lang} />
+        <SpeechTextarea value={moment4} onChange={setMoment4} placeholder={T(t.evening.placeholder4)} lang={lang} />
       </div>
 
       <button
@@ -108,7 +97,7 @@ export default function EveningCheckinPage() {
         disabled={saving}
         className="w-full py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
       >
-        {saving ? "Saving..." : "Save"}
+        {saving ? T(t.evening.saving) : T(t.evening.save)}
       </button>
     </div>
   );
@@ -118,10 +107,12 @@ function SpeechTextarea({
   value,
   onChange,
   placeholder,
+  lang,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  lang: string;
 }) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -135,7 +126,7 @@ function SpeechTextarea({
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
     const rec = new SR();
-    rec.lang = "en-US";
+    rec.lang = lang === "FR" ? "fr-FR" : "en-US";
     rec.continuous = true;
     rec.interimResults = false;
     rec.onresult = (e: any) => {
