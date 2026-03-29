@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ClientProfileTabs from "./ClientProfileTabs";
+import ClientActions from "./ClientActions";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -49,7 +50,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
-      user: { select: { name: true, email: true } },
+      user: { select: { name: true, email: true, blocked: true } },
       // Entrees de journal non privees uniquement
       journalEntries: {
         where: { isPrivate: false },
@@ -135,6 +136,18 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
   // Style du badge statut
   const statusStyle = statusBadgeStyle(client.status);
 
+  // Token d'invitation actif pour cet email (pour envoi email)
+  const activeInvite = await prisma.inviteToken.findFirst({
+    where: {
+      email: client.user.email,
+      usedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const inviteLink = activeInvite ? `${baseUrl}/register?token=${activeInvite.token}` : null;
+
   // Serialisation des donnees Prisma pour le client component
   const serializedClient = JSON.parse(JSON.stringify(client));
   const serializedMessages = JSON.parse(JSON.stringify(messages));
@@ -200,6 +213,13 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           </Link>
         </div>
       </div>
+
+      {/* Actions : bloquer, supprimer, envoyer email */}
+      <ClientActions
+        clientId={clientId}
+        blocked={client.user.blocked}
+        inviteLink={inviteLink}
+      />
 
       {/* Onglets (client component) */}
       <ClientProfileTabs

@@ -48,6 +48,7 @@ model User {
   password       String
   role           Role
   name           String
+  blocked        Boolean   @default(false)
   lastLoginAt    DateTime? // Dernière connexion — pour "Today's Activity"
   dailyRecapTime String    @default("18:00") // Heure du récapitulatif de journée (HH:mm)
   morningReminderEnabled Boolean @default(false)
@@ -79,6 +80,7 @@ model Client {
   notes                 String?      // ADMIN ONLY — Notes internes Joffrey — jamais exposé côté client
   onboardingCompleted   Boolean      @default(false) // Onboarding formulaire rempli
   hdType                String?      // Type Human Design (GENERATOR, MANIFESTOR, etc.)
+  videoSeuil1Url        String?      // URL vidéo Seuil 1 (onboarding)
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
 
   // Données de naissance étendues

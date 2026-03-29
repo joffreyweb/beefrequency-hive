@@ -55,6 +55,7 @@ export default function ClientNav() {
 
   return (
     <nav
+      data-client-nav
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
         background: "rgba(253, 250, 244, 0.97)",

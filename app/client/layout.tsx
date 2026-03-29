@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import ClientNav from "@/components/client/ClientNav";
 import ClientHeader from "@/components/client/ClientHeader";
 import { LanguageProvider } from "@/lib/LanguageContext";
@@ -13,6 +14,15 @@ export default async function ClientLayout({
 
   if (!session || session.role !== "CLIENT") {
     redirect("/login");
+  }
+
+  // Vérifier si le client est bloqué
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { blocked: true },
+  });
+  if (user?.blocked) {
+    redirect("/blocked");
   }
 
   return (

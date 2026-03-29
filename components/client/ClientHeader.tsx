@@ -74,6 +74,7 @@ export default function ClientHeader() {
   return (
     <>
       <header
+        data-client-header
         className="fixed top-0 left-0 right-0 z-50"
         style={{
           background: "rgba(253, 250, 244, 0.97)",

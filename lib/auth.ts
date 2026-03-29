@@ -11,6 +11,7 @@ export interface JwtPayload {
   userId: string;
   role: "ADMIN" | "CLIENT";
   email: string;
+  blocked?: boolean;
 }
 
 // Convertit la durée string en secondes
