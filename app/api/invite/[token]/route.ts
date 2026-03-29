@@ -63,7 +63,7 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
-    const { name, password, language } = await request.json();
+    const { name, password } = await request.json();
 
     // Validations
     if (!password) {
@@ -139,7 +139,7 @@ export async function POST(
           userId: newUser.id,
           offerType: invite.offerType,
           status: "ACTIVE",
-          language: language === "EN" ? "EN" : "FR",
+          language: invite.language || "FR",
         },
       });
 
