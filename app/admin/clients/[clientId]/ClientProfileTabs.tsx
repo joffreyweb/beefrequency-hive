@@ -52,6 +52,8 @@ interface ClientProfileTabsProps {
   messages: any[];
   unreadDocCount: number;
   dayNumber: number;
+  recentCheckins?: any[];
+  nextSession?: any;
 }
 
 export default function ClientProfileTabs({
@@ -59,6 +61,8 @@ export default function ClientProfileTabs({
   messages,
   unreadDocCount,
   dayNumber,
+  recentCheckins = [],
+  nextSession,
 }: ClientProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [programSubTab, setProgramSubTab] = useState<ProgramSubTab>("elixirs");
@@ -110,7 +114,7 @@ export default function ClientProfileTabs({
 
       {/* Contenu des onglets */}
       {activeTab === "overview" && (
-        <OverviewTab client={client} dayNumber={dayNumber} />
+        <OverviewTab client={client} dayNumber={dayNumber} recentCheckins={recentCheckins} nextSession={nextSession} />
       )}
       {activeTab === "journal" && <JournalTab client={client} />}
       {activeTab === "program" && (
@@ -142,23 +146,89 @@ export default function ClientProfileTabs({
 /* ─────────────────────────────────────────────
    TAB 1 — Vue generale
    ───────────────────────────────────────────── */
-function OverviewTab({ client, dayNumber }: { client: any; dayNumber: number }) {
+function OverviewTab({ client, dayNumber, recentCheckins = [], nextSession }: { client: any; dayNumber: number; recentCheckins?: any[]; nextSession?: any }) {
   // Prescriptions avec stock critique
   const criticalPrescriptions = client.elixirPrescriptions.filter((rx: any) => {
     const stock = computeStockInfo(rx);
     return stock.isLow;
   });
 
+  // Badge prochain RDV — dans moins de 48h ?
+  const nextSessionDate = nextSession ? new Date(nextSession.scheduledAt) : null;
+  const hoursUntilSession = nextSessionDate
+    ? (nextSessionDate.getTime() - Date.now()) / (1000 * 60 * 60)
+    : null;
+  const sessionUrgent = hoursUntilSession !== null && hoursUntilSession <= 48;
+
   return (
     <div className="grid grid-cols-[1.2fr_1fr] gap-6">
       {/* Colonne gauche — Infos client + Notes */}
       <div className="space-y-6">
+        {/* Prochain RDV — en évidence */}
+        <div className={`border rounded-[10px] p-5 ${sessionUrgent ? "bg-or-sacre/10 border-or-sacre" : "bg-cire-chaude border-or-pale"}`}>
+          <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+            Prochain RDV
+          </h2>
+          {nextSession ? (
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="text-sm font-ui text-brun-chaud font-medium">
+                  {new Date(nextSession.scheduledAt).toLocaleDateString("fr-FR", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                  {" · "}
+                  {new Date(nextSession.scheduledAt).toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+                <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
+                  {nextSession.type === "ONLINE" ? "En ligne" : nextSession.type === "PRESENTIAL" ? "Presentiel" : "Ceremonie"}
+                  {" · "}{nextSession.duration} min
+                </p>
+              </div>
+              {sessionUrgent && (
+                <span className="px-2 py-0.5 rounded-full bg-or-sacre text-white text-xs font-ui">
+                  {hoursUntilSession! < 1 ? "Imminent" : `Dans ${Math.round(hoursUntilSession!)}h`}
+                </span>
+              )}
+              {nextSession.zoomLink && (
+                <a href={nextSession.zoomLink} target="_blank" rel="noopener noreferrer" className="text-xs font-ui text-or-sacre hover:text-ambre-vif underline ml-auto">
+                  Zoom
+                </a>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-brun-mid/60 font-ui">Aucun RDV planifie</p>
+          )}
+        </div>
+
         {/* Infos client */}
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
           <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
             Informations
           </h2>
           <div className="space-y-3">
+            {/* Dernière connexion */}
+            <div>
+              <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
+                Derniere connexion
+              </p>
+              <p className="text-sm font-ui text-brun-chaud">
+                {client.user.lastLoginAt
+                  ? new Date(client.user.lastLoginAt).toLocaleDateString("fr-FR", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    }) + " · " + new Date(client.user.lastLoginAt).toLocaleTimeString("fr-FR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Jamais connecte"}
+              </p>
+            </div>
             <div>
               <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
                 Offre
@@ -177,20 +247,6 @@ function OverviewTab({ client, dayNumber }: { client: any; dayNumber: number }) 
                   month: "long",
                   year: "numeric",
                 })}
-              </p>
-            </div>
-            <div>
-              <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
-                Prochaine session
-              </p>
-              <p className="text-sm font-ui text-brun-chaud">
-                {client.nextSessionDate
-                  ? new Date(client.nextSessionDate).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "Non planifiee"}
               </p>
             </div>
             <div>
@@ -239,8 +295,48 @@ function OverviewTab({ client, dayNumber }: { client: any; dayNumber: number }) 
         </div>
       </div>
 
-      {/* Colonne droite — Alertes stock */}
+      {/* Colonne droite — Check-ins + Alertes stock */}
       <div className="space-y-6">
+        {/* Derniers check-ins */}
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
+          <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
+            Derniers check-ins
+          </h2>
+          {recentCheckins.length === 0 ? (
+            <p className="text-sm text-brun-mid/60 font-ui text-center py-4">
+              Aucun check-in enregistre.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {recentCheckins.map((ci: any) => {
+                const hasMorning = ci.energyLevel != null;
+                const hasEvening = ci.gratitudeMoment != null;
+                return (
+                  <div key={ci.id} className="flex items-center justify-between p-2.5 border border-or-pale/30 rounded-lg">
+                    <div>
+                      <p className="text-sm font-ui text-brun-chaud">
+                        {new Date(ci.date).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}
+                      </p>
+                      <div className="flex gap-2 mt-0.5">
+                        <span className={`text-xs font-ui ${hasMorning ? "text-foret" : "text-brun-mid/30"}`}>
+                          {hasMorning ? "\u2600\uFE0F Matin" : "\u2600\uFE0F --"}
+                        </span>
+                        <span className={`text-xs font-ui ${hasEvening ? "text-foret" : "text-brun-mid/30"}`}>
+                          {hasEvening ? "\uD83C\uDF19 Soir" : "\uD83C\uDF19 --"}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-ui px-2 py-0.5 rounded-full ${ci.elixirTaken ? "bg-foret/10 text-foret" : "bg-brun-mid/10 text-brun-mid/50"}`}>
+                      {ci.elixirTaken ? "Elixirs pris" : "Elixirs non"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Alertes stock */}
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
           <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
             Alertes stock

@@ -16,6 +16,8 @@ const STATUS_LABELS: Record<string, string> = {
   ACTIVE: "Actif",
   PAUSED: "En pause",
   COMPLETED: "Termine",
+  DEACTIVATED: "Desactive",
+  ARCHIVED: "Archive",
 };
 
 /** Style du badge statut */
@@ -25,6 +27,10 @@ function statusBadgeStyle(status: string): string {
       return "bg-foret/10 text-foret";
     case "PAUSED":
       return "bg-or-sacre/10 text-or-sacre";
+    case "DEACTIVATED":
+      return "bg-orange-100 text-orange-700";
+    case "ARCHIVED":
+      return "bg-brun-mid/10 text-brun-mid";
     default:
       return "bg-brun-mid/10 text-brun-mid";
   }
@@ -50,7 +56,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
-      user: { select: { name: true, email: true, blocked: true } },
+      user: { select: { name: true, email: true, blocked: true, lastLoginAt: true } },
       // Entrees de journal non privees uniquement
       journalEntries: {
         where: { isPrivate: false },
@@ -106,6 +112,23 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
     notFound();
   }
 
+  // Derniers 5 check-ins avec statut élixir
+  const recentCheckins = await prisma.dailyCheckin.findMany({
+    where: { clientId },
+    orderBy: { date: "desc" },
+    take: 5,
+  });
+
+  // Prochain RDV (session SCHEDULED dans le futur)
+  const nextSession = await prisma.session.findFirst({
+    where: {
+      clientId,
+      status: "SCHEDULED",
+      scheduledAt: { gte: new Date() },
+    },
+    orderBy: { scheduledAt: "asc" },
+  });
+
   // Nombre de documents non lus par l'admin
   const unreadDocCount = client.documents.filter((d) => !d.readByAdmin).length;
 
@@ -151,6 +174,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
   // Serialisation des donnees Prisma pour le client component
   const serializedClient = JSON.parse(JSON.stringify(client));
   const serializedMessages = JSON.parse(JSON.stringify(messages));
+  const serializedCheckins = JSON.parse(JSON.stringify(recentCheckins));
+  const serializedNextSession = nextSession ? JSON.parse(JSON.stringify(nextSession)) : null;
 
   return (
     <div>
@@ -214,10 +239,12 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         </div>
       </div>
 
-      {/* Actions : bloquer, supprimer, envoyer email */}
+      {/* Actions : desactiver, archiver, supprimer, envoyer email */}
       <ClientActions
         clientId={clientId}
+        clientName={client.user.name}
         blocked={client.user.blocked}
+        clientStatus={client.status}
         inviteLink={inviteLink}
       />
 
@@ -227,6 +254,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         messages={serializedMessages}
         unreadDocCount={unreadDocCount}
         dayNumber={dayNumber}
+        recentCheckins={serializedCheckins}
+        nextSession={serializedNextSession}
       />
     </div>
   );

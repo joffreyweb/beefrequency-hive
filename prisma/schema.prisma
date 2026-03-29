@@ -16,6 +16,8 @@ enum ClientStatus {
   ACTIVE
   PAUSED
   COMPLETED
+  DEACTIVATED
+  ARCHIVED
 }
 
 enum OfferType {
@@ -695,4 +697,22 @@ model SabianSymbol {
   sign    String
   symbol  String
   keynote String
+}
+
+// ═══════════════════════════════════════
+// LOG RGPD — Preuve de suppression client
+// ═══════════════════════════════════════
+
+model GdprDeletionLog {
+  id                String   @id @default(uuid())
+  clientId          String   // ID original du client (plus en DB après suppression)
+  clientName        String
+  clientEmail       String
+  dateInscription   DateTime
+  dateSuppression   DateTime @default(now())
+  adminId           String
+  adminName         String
+  motif             String   // Raison de la suppression (texte libre)
+
+  createdAt         DateTime @default(now())
 }
