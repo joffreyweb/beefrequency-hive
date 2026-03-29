@@ -127,8 +127,35 @@ export default function OnboardingPage() {
       {/* Step 1 — Welcome */}
       {step === 1 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_joffrey_transparent.png" alt="" width={80} height={80} className="mb-6" />
+          {/* Logo + hexagon + BeeFrequency */}
+          <div className="relative flex items-center justify-center mb-8">
+            {/* Hexagon outline */}
+            <svg
+              width="160"
+              height="160"
+              viewBox="0 0 160 160"
+              fill="none"
+              className="absolute"
+            >
+              <polygon
+                points="80,8 148,42 148,118 80,152 12,118 12,42"
+                stroke="#E8D5A8"
+                strokeWidth="1"
+                fill="none"
+              />
+            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo_joffrey_transparent.png"
+              alt=""
+              width={100}
+              height={100}
+              className="relative z-10"
+            />
+          </div>
+          <p className="font-caps text-sm text-or-sacre tracking-[0.2em] uppercase mb-8">
+            BeeFrequency
+          </p>
           <h1 className="font-display text-2xl text-brun-chaud mb-4">
             {T(t.onboarding.welcomeTitle)}
           </h1>
@@ -362,12 +389,20 @@ export default function OnboardingPage() {
                     </p>
                   </div>
                   <VideoRecorder seuil="1" onComplete={() => setStep(4)} />
-                  <button
-                    onClick={() => setStep(2)}
-                    className="w-full py-2 text-brun-mid font-ui text-xs uppercase tracking-wider hover:text-brun-chaud transition-colors"
-                  >
-                    {T(t.onboarding.backButton)}
-                  </button>
+                  <div className="flex gap-4 pt-2">
+                    <button
+                      onClick={() => setStep(2)}
+                      className="flex-1 py-2 text-brun-mid font-ui text-xs uppercase tracking-wider hover:text-brun-chaud transition-colors"
+                    >
+                      {T(t.onboarding.backButton)}
+                    </button>
+                    <button
+                      onClick={() => setStep(4)}
+                      className="flex-1 py-2 text-or-sacre font-ui text-xs uppercase tracking-wider hover:text-ambre-vif transition-colors"
+                    >
+                      {T(t.onboarding.continueButton)} &rarr;
+                    </button>
+                  </div>
                 </div>
               )}
 

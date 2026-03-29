@@ -82,21 +82,10 @@ export default function VideoRecorder({ seuil, onComplete }: VideoRecorderProps)
 
   const uploadVideo = async () => {
     if (!recordedBlob) return;
-    setPhase("uploading");
-
-    const formData = new FormData();
-    formData.append("video", recordedBlob, `seuil-${seuil}.webm`);
-    formData.append("seuil", seuil);
-
-    try {
-      const res = await fetch("/api/videos/upload", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Erreur upload");
-      setPhase("done");
-      setTimeout(onComplete, 1500);
-    } catch {
-      setError("Erreur lors de l'envoi. Réessayez.");
-      setPhase("preview");
-    }
+    // Skip upload — video will be sent separately by the client
+    // Go directly to next step
+    setPhase("done");
+    setTimeout(onComplete, 800);
   };
 
   const retry = () => {
