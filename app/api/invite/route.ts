@@ -39,23 +39,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifie s'il y a déjà un token actif non utilisé pour cet email
-    const existingToken = await prisma.inviteToken.findFirst({
+    // Invalide les anciens tokens actifs pour cet email
+    await prisma.inviteToken.updateMany({
       where: {
         email,
         usedAt: null,
         expiresAt: { gt: new Date() },
       },
+      data: {
+        expiresAt: new Date(),
+      },
     });
-    if (existingToken) {
-      // Retourne le token existant plutôt que d'en créer un nouveau
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-      return NextResponse.json({
-        inviteToken: existingToken,
-        inviteLink: `${baseUrl}/register?token=${existingToken.token}`,
-        message: "Un token d'invitation actif existe déjà pour cet email",
-      });
-    }
 
     // Expiration dans 7 jours
     const expiresAt = new Date();
