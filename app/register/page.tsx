@@ -17,12 +17,6 @@ export default function RegisterPage() {
   );
 }
 
-function isInAppBrowser(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  return /WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\//i.test(ua);
-}
-
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,31 +31,21 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [tokenError, setTokenError] = useState("");
-  const [inAppDetected, setInAppDetected] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  // Detect in-app browser before any fetch
+  // V&eacute;rification du token au chargement
   useEffect(() => {
-    if (isInAppBrowser()) {
-      setInAppDetected(true);
-      setVerifying(false);
-      return;
-    }
-  }, []);
-
-  // Vérification du token au chargement — skip if in-app browser
-  useEffect(() => {
-    if (inAppDetected) return;
-
     if (!token) {
-      setTokenError("Lien d'invitation invalide — aucun token fourni.");
+      setTokenError("Lien d'invitation invalide \u2014 aucun token fourni.");
       setVerifying(false);
       return;
     }
 
     async function verifyToken() {
       try {
-        const res = await fetch(`/api/invite/${token}`);
+        const res = await fetch(`/api/invite/${token}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
         const data = await res.json();
 
         if (!res.ok) {
@@ -78,19 +62,19 @@ function RegisterForm() {
     }
 
     verifyToken();
-  }, [token, inAppDetected]);
+  }, [token]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
     if (!firstName.trim() || !lastName.trim()) {
-      setError("Prénom et nom requis");
+      setError("Pr\u00e9nom et nom requis");
       return;
     }
 
     if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères");
+      setError("Le mot de passe doit contenir au moins 8 caract\u00e8res");
       return;
     }
 
@@ -105,6 +89,8 @@ function RegisterForm() {
       const res = await fetch(`/api/invite/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
         body: JSON.stringify({
           name: `${firstName.trim()} ${lastName.trim()}`,
           password,
@@ -126,85 +112,13 @@ function RegisterForm() {
     }
   }
 
-  // In-app browser detected — show "open in Safari" message
-  if (inAppDetected) {
-    const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-    const isEN = typeof navigator !== "undefined" && navigator.language?.startsWith("en");
-
-    function handleCopy() {
-      navigator.clipboard.writeText(currentUrl).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 3000);
-      }).catch(() => {
-        // Fallback: select a hidden input
-      });
-    }
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-6">
-        <div className="w-full max-w-sm text-center space-y-6">
-          <div>
-            <h1 className="font-display text-4xl font-light text-brun-chaud tracking-wide">
-              Hive
-            </h1>
-            <p className="font-caps text-sm text-or-sacre tracking-widest mt-2 uppercase">
-              BeeFrequency
-            </p>
-          </div>
-
-          <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 space-y-4">
-            <p className="font-display text-lg text-brun-chaud leading-relaxed">
-              {isEN
-                ? "To continue, please open this link in Safari"
-                : "Pour continuer, ouvre ce lien dans Safari"}
-            </p>
-
-            <p className="font-ui text-xs text-brun-mid/60 leading-relaxed">
-              {isEN
-                ? "This browser doesn\u2019t support account creation. Copy the link below and paste it in Safari."
-                : "Ce navigateur ne permet pas la cr\u00e9ation de compte. Copie le lien ci-dessous et colle-le dans Safari."}
-            </p>
-
-            {/* Copy link button */}
-            <button
-              onClick={handleCopy}
-              className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-[0.06em] rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
-            >
-              {copied
-                ? (isEN ? "Link copied!" : "Lien copi\u00e9 !")
-                : (isEN ? "Copy link" : "Copier le lien")}
-            </button>
-
-            {/* Visual instruction */}
-            <div className="pt-2 space-y-2">
-              <p className="font-ui text-xs text-brun-mid">
-                {isEN ? "Then:" : "Ensuite :"}
-              </p>
-              <div className="flex items-center gap-3 justify-center">
-                <span className="w-6 h-6 rounded-full bg-or-sacre text-white text-xs flex items-center justify-center font-ui">1</span>
-                <span className="font-ui text-sm text-brun-chaud">
-                  {isEN ? "Open Safari" : "Ouvre Safari"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 justify-center">
-                <span className="w-6 h-6 rounded-full bg-or-sacre text-white text-xs flex items-center justify-center font-ui">2</span>
-                <span className="font-ui text-sm text-brun-chaud">
-                  {isEN ? "Paste the link in the address bar" : "Colle le lien dans la barre d\u2019adresse"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // État de chargement
+  // &Eacute;tat de chargement
   if (verifying) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
+        <meta name="supported-color-schemes" content="light" />
         <p className="font-ui font-light text-brun-mid text-sm">
-          Vérification de votre invitation...
+          V&eacute;rification de votre invitation...
         </p>
       </div>
     );
@@ -214,6 +128,7 @@ function RegisterForm() {
   if (tokenError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
+        <meta name="supported-color-schemes" content="light" />
         <div className="w-full max-w-sm text-center">
           <div className="mb-10">
             <h1 className="font-display text-4xl font-light text-brun-chaud tracking-wide">
@@ -230,7 +145,7 @@ function RegisterForm() {
             href="/login"
             className="inline-block mt-6 font-ui text-xs text-or-sacre uppercase tracking-wider hover:text-ambre-vif transition-colors"
           >
-            Retour à la connexion
+            Retour &agrave; la connexion
           </a>
         </div>
       </div>
@@ -239,8 +154,9 @@ function RegisterForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
+      <meta name="supported-color-schemes" content="light" />
       <div className="w-full max-w-sm">
-        {/* Logo / Identité */}
+        {/* Logo / Identit&eacute; */}
         <div className="text-center mb-10">
           <h1 className="font-display text-4xl font-light text-brun-chaud tracking-wide">
             Hive
@@ -249,7 +165,7 @@ function RegisterForm() {
             BeeFrequency
           </p>
           <p className="font-display text-brun-mid text-sm italic mt-3">
-            Créez votre compte
+            Cr&eacute;ez votre compte
           </p>
         </div>
 
@@ -271,7 +187,7 @@ function RegisterForm() {
               htmlFor="firstName"
               className="block text-xs font-ui font-light text-brun-mid uppercase tracking-wider mb-1.5"
             >
-              Prénom
+              Pr&eacute;nom
             </label>
             <input
               id="firstName"
@@ -280,7 +196,7 @@ function RegisterForm() {
               onChange={(e) => setFirstName(e.target.value)}
               required
               className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200"
-              placeholder="Votre prénom"
+              placeholder="Votre pr&eacute;nom"
             />
           </div>
 
@@ -343,7 +259,7 @@ function RegisterForm() {
             disabled={loading}
             className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-[0.06em] rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50"
           >
-            {loading ? "Création du compte..." : "Créer mon compte"}
+            {loading ? "Cr\u00e9ation du compte..." : "Cr\u00e9er mon compte"}
           </button>
         </form>
       </div>
