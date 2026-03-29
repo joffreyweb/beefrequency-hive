@@ -62,8 +62,11 @@ export default function LoginPage() {
           <p className="font-caps text-sm text-or-sacre tracking-widest mt-2 uppercase">
             BeeFrequency
           </p>
-          <p className="font-display text-brun-mid text-sm italic mt-3">
+          <p className="font-display text-brun-chaud text-lg mt-3">
             {T(t.login.tagline)}
+          </p>
+          <p className="font-ui text-brun-mid text-sm font-light mt-1">
+            {T(t.login.subtitle)}
           </p>
         </div>
 

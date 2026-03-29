@@ -42,7 +42,8 @@ export const t = {
 
   // === LOGIN PAGE ===
   login: {
-    tagline: { EN: "From poison to nectar", FR: "Du poison au nectar" },
+    tagline: { EN: "Welcome back.", FR: "Bienvenue." },
+    subtitle: { EN: "Your space is waiting.", FR: "Votre espace vous attend." },
     email: { EN: "Email", FR: "Email" },
     password: { EN: "Password", FR: "Mot de passe" },
     button: { EN: "Enter", FR: "Entrer" },
@@ -198,8 +199,8 @@ Les donn\u00e9es personnelles collect\u00e9es (vid\u00e9os, journal, donn\u00e9e
   // === HOME / DASHBOARD ===
   home: {
     day: { EN: "Day", FR: "Jour" },
-    morningCheckin: { EN: "Morning", FR: "Matin" },
-    eveningCheckin: { EN: "Evening", FR: "Soir" },
+    morningCheckin: { EN: "Good morning. How do you arrive today?", FR: "Bonjour. Comment arrives-tu ce matin ?" },
+    eveningCheckin: { EN: "Before you rest. What stays with you today?", FR: "Avant de te reposer. Qu\u2019est-ce qui reste avec toi aujourd\u2019hui ?" },
     morningAvailable: { EN: "Available until 1pm", FR: "Disponible jusqu\u2019\u00e0 13h" },
     eveningAvailable: { EN: "Available until midnight", FR: "Disponible jusqu\u2019\u00e0 minuit" },
     morningOpens: { EN: "Opens at 5am", FR: "Ouvre \u00e0 5h" },
