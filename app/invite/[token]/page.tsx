@@ -11,6 +11,12 @@ interface InviteData {
   language?: string;
 }
 
+function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\//i.test(ua);
+}
+
 export default function InvitePage({
   params,
 }: {
@@ -22,6 +28,8 @@ export default function InvitePage({
   const [inviteData, setInviteData] = useState<InviteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [inApp, setInApp] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Language selection — FIRST GESTURE
   const [lang, setLang] = useState<Lang | null>(null);
@@ -31,8 +39,17 @@ export default function InvitePage({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Verify token on mount
+  // Detect in-app browser
   useEffect(() => {
+    if (isInAppBrowser()) {
+      setInApp(true);
+      setLoading(false);
+    }
+  }, []);
+
+  // Verify token on mount — skip if in-app browser
+  useEffect(() => {
+    if (inApp) return;
     async function verifyToken() {
       try {
         const res = await fetch(`/api/invite/${token}`);
@@ -56,7 +73,7 @@ export default function InvitePage({
     }
 
     verifyToken();
-  }, [token]);
+  }, [token, inApp]);
 
   const T = (key: { EN: string; FR: string }) => key[lang || "FR"];
 
@@ -97,6 +114,61 @@ export default function InvitePage({
       setError(t.invite.errorServer[lang || "FR"]);
       setSubmitting(false);
     }
+  }
+
+  // In-app browser detected
+  if (inApp) {
+    const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+    const isEN = typeof navigator !== "undefined" && navigator.language?.startsWith("en");
+
+    function handleCopy() {
+      navigator.clipboard.writeText(currentUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      }).catch(() => {});
+    }
+
+    return (
+      <div className="min-h-screen bg-creme-sacree flex items-center justify-center px-6">
+        <div className="w-full max-w-sm text-center space-y-6">
+          <div>
+            <h1 className="font-display text-4xl font-light text-brun-chaud tracking-wide">Hive</h1>
+            <p className="font-caps text-sm text-or-sacre tracking-widest mt-2 uppercase">BeeFrequency</p>
+          </div>
+          <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 space-y-4">
+            <p className="font-display text-lg text-brun-chaud leading-relaxed">
+              {isEN
+                ? "To continue, please open this link in Safari"
+                : "Pour continuer, ouvre ce lien dans Safari"}
+            </p>
+            <p className="font-ui text-xs text-brun-mid/60 leading-relaxed">
+              {isEN
+                ? "This browser doesn\u2019t support account creation. Copy the link below and paste it in Safari."
+                : "Ce navigateur ne permet pas la cr\u00e9ation de compte. Copie le lien ci-dessous et colle-le dans Safari."}
+            </p>
+            <button
+              onClick={handleCopy}
+              className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-[0.06em] rounded-sharp hover:bg-ambre-vif transition-colors"
+            >
+              {copied
+                ? (isEN ? "Link copied!" : "Lien copi\u00e9 !")
+                : (isEN ? "Copy link" : "Copier le lien")}
+            </button>
+            <div className="pt-2 space-y-2">
+              <p className="font-ui text-xs text-brun-mid">{isEN ? "Then:" : "Ensuite :"}</p>
+              <div className="flex items-center gap-3 justify-center">
+                <span className="w-6 h-6 rounded-full bg-or-sacre text-white text-xs flex items-center justify-center font-ui">1</span>
+                <span className="font-ui text-sm text-brun-chaud">{isEN ? "Open Safari" : "Ouvre Safari"}</span>
+              </div>
+              <div className="flex items-center gap-3 justify-center">
+                <span className="w-6 h-6 rounded-full bg-or-sacre text-white text-xs flex items-center justify-center font-ui">2</span>
+                <span className="font-ui text-sm text-brun-chaud">{isEN ? "Paste the link in the address bar" : "Colle le lien dans la barre d\u2019adresse"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Loading state

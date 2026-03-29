@@ -17,6 +17,12 @@ export default function RegisterPage() {
   );
 }
 
+function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\//i.test(ua);
+}
+
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,9 +37,22 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [tokenError, setTokenError] = useState("");
+  const [inAppDetected, setInAppDetected] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Vérification du token au chargement
+  // Detect in-app browser before any fetch
   useEffect(() => {
+    if (isInAppBrowser()) {
+      setInAppDetected(true);
+      setVerifying(false);
+      return;
+    }
+  }, []);
+
+  // Vérification du token au chargement — skip if in-app browser
+  useEffect(() => {
+    if (inAppDetected) return;
+
     if (!token) {
       setTokenError("Lien d'invitation invalide — aucun token fourni.");
       setVerifying(false);
@@ -59,7 +78,7 @@ function RegisterForm() {
     }
 
     verifyToken();
-  }, [token]);
+  }, [token, inAppDetected]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,6 +124,79 @@ function RegisterForm() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // In-app browser detected — show "open in Safari" message
+  if (inAppDetected) {
+    const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+    const isEN = typeof navigator !== "undefined" && navigator.language?.startsWith("en");
+
+    function handleCopy() {
+      navigator.clipboard.writeText(currentUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      }).catch(() => {
+        // Fallback: select a hidden input
+      });
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-6">
+        <div className="w-full max-w-sm text-center space-y-6">
+          <div>
+            <h1 className="font-display text-4xl font-light text-brun-chaud tracking-wide">
+              Hive
+            </h1>
+            <p className="font-caps text-sm text-or-sacre tracking-widest mt-2 uppercase">
+              BeeFrequency
+            </p>
+          </div>
+
+          <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 space-y-4">
+            <p className="font-display text-lg text-brun-chaud leading-relaxed">
+              {isEN
+                ? "To continue, please open this link in Safari"
+                : "Pour continuer, ouvre ce lien dans Safari"}
+            </p>
+
+            <p className="font-ui text-xs text-brun-mid/60 leading-relaxed">
+              {isEN
+                ? "This browser doesn\u2019t support account creation. Copy the link below and paste it in Safari."
+                : "Ce navigateur ne permet pas la cr\u00e9ation de compte. Copie le lien ci-dessous et colle-le dans Safari."}
+            </p>
+
+            {/* Copy link button */}
+            <button
+              onClick={handleCopy}
+              className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-[0.06em] rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
+            >
+              {copied
+                ? (isEN ? "Link copied!" : "Lien copi\u00e9 !")
+                : (isEN ? "Copy link" : "Copier le lien")}
+            </button>
+
+            {/* Visual instruction */}
+            <div className="pt-2 space-y-2">
+              <p className="font-ui text-xs text-brun-mid">
+                {isEN ? "Then:" : "Ensuite :"}
+              </p>
+              <div className="flex items-center gap-3 justify-center">
+                <span className="w-6 h-6 rounded-full bg-or-sacre text-white text-xs flex items-center justify-center font-ui">1</span>
+                <span className="font-ui text-sm text-brun-chaud">
+                  {isEN ? "Open Safari" : "Ouvre Safari"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 justify-center">
+                <span className="w-6 h-6 rounded-full bg-or-sacre text-white text-xs flex items-center justify-center font-ui">2</span>
+                <span className="font-ui text-sm text-brun-chaud">
+                  {isEN ? "Paste the link in the address bar" : "Colle le lien dans la barre d\u2019adresse"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // État de chargement
