@@ -4,5 +4,14 @@ export default function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      {/* Hide parent ClientHeader and ClientNav during onboarding */}
+      <style>{`
+        header, nav { display: none !important; }
+        main { padding-top: 0 !important; padding-bottom: 0 !important; }
+      `}</style>
+      {children}
+    </>
+  );
 }

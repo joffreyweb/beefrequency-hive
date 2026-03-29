@@ -132,14 +132,14 @@ export default function OnboardingPage() {
             <div className="relative flex items-center justify-center">
               {/* Hexagon outline */}
               <svg
-                width="160"
-                height="160"
-                viewBox="0 0 160 160"
+                width="180"
+                height="180"
+                viewBox="0 0 180 180"
                 fill="none"
                 className="absolute"
               >
                 <polygon
-                  points="80,8 148,42 148,118 80,152 12,118 12,42"
+                  points="90,8 166,47 166,133 90,172 14,133 14,47"
                   stroke="#E8D5A8"
                   strokeWidth="1"
                   fill="none"
@@ -149,7 +149,7 @@ export default function OnboardingPage() {
               <img
                 src="/logo_joffrey_transparent.png"
                 alt=""
-                className="relative z-10 w-24 h-24"
+                className="relative z-10 w-32 h-32"
               />
             </div>
             <p className="font-caps text-xs text-or-sacre tracking-[0.25em] uppercase mt-3">
