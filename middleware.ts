@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // Routes publiques qui ne nécessitent pas d'auth
-const publicPaths = ["/login", "/register", "/invite", "/api/auth/login"];
+const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth/login"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
