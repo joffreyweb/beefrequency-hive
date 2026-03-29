@@ -127,36 +127,52 @@ export default function OnboardingPage() {
       {/* Step 1 — Welcome */}
       {step === 1 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          {/* Logo + hexagon + BeeFrequency */}
-          <div className="flex flex-col items-center">
-            <div className="relative flex items-center justify-center">
-              {/* Hexagon outline */}
-              <svg
-                width="180"
-                height="180"
-                viewBox="0 0 180 180"
-                fill="none"
-                className="absolute"
-              >
-                <polygon
-                  points="90,8 166,47 166,133 90,172 14,133 14,47"
-                  stroke="#E8D5A8"
-                  strokeWidth="1"
-                  fill="none"
-                />
-              </svg>
+          {/* Logo block — Welcome Screen */}
+          <div className="flex flex-col items-center w-full mb-9 mt-4">
+
+            {/* Symbole uniquement — crop left 38% du logo paysage */}
+            <div className="w-40 h-40 flex items-center justify-center overflow-hidden mb-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo_joffrey_transparent.png"
-                alt=""
-                className="relative z-10 w-32 h-32"
+                alt="BeeFrequency"
+                style={{
+                  width: '421px',
+                  maxWidth: 'none',
+                  height: 'auto',
+                  marginLeft: '0px',
+                  objectFit: 'cover',
+                  objectPosition: 'left center',
+                }}
               />
             </div>
-            <p className="font-caps text-xs text-or-sacre tracking-[0.25em] uppercase mt-3">
-              BEEFREQUENCY
-            </p>
+
+            {/* BE · hexagone · FREQUENCY */}
+            <div className="flex items-center justify-center gap-2">
+              <span style={{
+                fontFamily: "'Cormorant SC', serif",
+                fontSize: '11px',
+                letterSpacing: '0.22em',
+                color: '#B8821E',
+                fontWeight: 400,
+              }}>BE</span>
+
+              <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
+                <path d="M5.5 1L10 3.5V8.5L5.5 11L1 8.5V3.5L5.5 1Z"
+                      stroke="#B8821E" strokeWidth="0.8" fill="none"/>
+              </svg>
+
+              <span style={{
+                fontFamily: "'Cormorant SC', serif",
+                fontSize: '11px',
+                letterSpacing: '0.22em',
+                color: '#B8821E',
+                fontWeight: 400,
+              }}>FREQUENCY</span>
+            </div>
+
           </div>
-          <h1 className="font-display text-2xl text-brun-chaud mt-8 mb-4">
+          <h1 className="font-display text-2xl text-brun-chaud mb-4">
             {T(t.onboarding.welcomeTitle)}
           </h1>
           <p className="font-display text-lg text-brun-mid leading-relaxed mb-10 max-w-sm">
