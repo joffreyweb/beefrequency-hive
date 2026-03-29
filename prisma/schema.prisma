@@ -85,6 +85,14 @@ model Client {
   videoSeuil1Url        String?      // URL vidéo Seuil 1 (onboarding)
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
 
+  // Suivi parcours — étapes
+  colisEnvoye           Boolean      @default(false)
+  colisEnvoyeAt         DateTime?
+  produitsRecus         Boolean      @default(false)
+  produitsRecusAt       DateTime?
+  detoxStartDate        DateTime?    // Début détox (10 jours)
+  programmeStartDate    DateTime?    // Début programme 90 jours (remplace startDate pour le calcul)
+
   // Données de naissance étendues
   birthTime             String?      // Format HH:MM
   birthCity             String?
@@ -120,6 +128,7 @@ model Client {
   clientPhases          ClientPhase[]
   dailyCheckins         DailyCheckin[]
   openWebuiQueue        OpenWebuiQueue[]
+  sessionChangeRequests SessionChangeRequest[]
 }
 
 model JournalEntry {
@@ -164,6 +173,8 @@ model ElixirPrescription {
   notes          String?
 
   createdAt DateTime @default(now())
+
+  checkinElixirs CheckinElixir[]
 }
 
 model Protocol {
@@ -191,10 +202,16 @@ model Session {
   zoomLink       String?       // Lien Zoom pour les sessions en ligne
   notes          String?       // Notes privées — Joffrey uniquement
   checklistItems String?       // JSON array de checklist items [{text, done}]
-  recapDone      Boolean       @default(false) // Récap de fin de journée fait
+  recapDone          Boolean       @default(false) // Récap de fin de journée fait
+  fixedSlotDay       Int?          // Jour fixe de la semaine (0-6) choisi à l'inscription
+  fixedSlotTime      String?       // Heure fixe "HH:mm"
+  changesUsed        Int           @default(0) // Nombre de changements utilisés (max 1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  changeRequests  SessionChangeRequest[]
+  reminders       SessionReminder[]
 }
 
 model Message {
@@ -654,6 +671,8 @@ model DailyCheckin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  checkinElixirs CheckinElixir[]
+
   @@unique([clientId, date])
 }
 
@@ -688,6 +707,70 @@ model OpenWebuiQueue {
   createdAt   DateTime  @default(now())
   processedAt DateTime?
   client      Client    @relation(fields: [clientId], references: [id])
+}
+
+// ═══════════════════════════════════════
+// MODULE — ELIXIRS CHECK-IN (suivi par élixir)
+// ═══════════════════════════════════════
+
+model CheckinElixir {
+  id                   String             @id @default(uuid())
+  dailyCheckinId       String
+  dailyCheckin         DailyCheckin       @relation(fields: [dailyCheckinId], references: [id], onDelete: Cascade)
+  elixirPrescriptionId String
+  elixirPrescription   ElixirPrescription @relation(fields: [elixirPrescriptionId], references: [id], onDelete: Cascade)
+  taken                Boolean            @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([dailyCheckinId, elixirPrescriptionId])
+}
+
+// ═══════════════════════════════════════
+// MODULE — SESSIONS AVANCÉES
+// ═══════════════════════════════════════
+
+// Créneaux disponibles de l'admin
+model AdminSlot {
+  id          String   @id @default(uuid())
+  dayOfWeek   Int      // 0=Dimanche, 1=Lundi, ... 6=Samedi
+  startTime   String   // "HH:mm"
+  endTime     String   // "HH:mm"
+  isActive    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Demande de changement de créneau (max 1 par client sur 3 mois)
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model SessionChangeRequest {
+  id              String              @id @default(uuid())
+  clientId        String
+  client          Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sessionId       String
+  session         Session             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  requestedDate   DateTime            // Nouvelle date souhaitée
+  reason          String?
+  status          ChangeRequestStatus @default(PENDING)
+  adminResponse   String?
+  resolvedAt      DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+// Rappels de session
+model SessionReminder {
+  id        String   @id @default(uuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type      String   // "EMAIL" | "PWA"
+  sentAt    DateTime @default(now())
 }
 
 // 360 Symboles Sabiens (Dane Rudhyar)

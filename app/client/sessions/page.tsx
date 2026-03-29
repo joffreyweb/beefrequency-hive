@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireOnboarding } from "@/lib/onboarding-guard";
+import SessionChangeButton from "@/components/client/SessionChangeButton";
 
 // Labels lisibles pour les types de session
 const TYPE_LABELS: Record<string, string> = {
@@ -37,6 +38,7 @@ export default async function ClientSessionsPage() {
           status: true,
           zoomLink: true,
           createdAt: true,
+          changesUsed: true,
           // notes, checklistItems, recapDone exclues — privées
         },
       },
@@ -190,6 +192,11 @@ export default async function ClientSessionsPage() {
             — {TYPE_LABELS[nextSession.type] || nextSession.type} ·{" "}
             {nextSession.duration} min
           </p>
+          <SessionChangeButton
+            sessionId={nextSession.id}
+            changesUsed={nextSession.changesUsed}
+            lang={client.language}
+          />
           {/* Bouton Zoom — visible 30 min avant jusqu'à 2h après le début */}
           {nextSession.zoomLink && (() => {
             const sessionTime = new Date(nextSession.scheduledAt).getTime();

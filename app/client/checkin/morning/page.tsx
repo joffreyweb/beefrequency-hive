@@ -24,6 +24,8 @@ export default function MorningCheckinPage() {
   const [saving, setSaving] = useState(false);
   const [wisdomMessage, setWisdomMessage] = useState("");
   const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const [elixirs, setElixirs] = useState<{ id: string; name: string; dosage: string | null }[]>([]);
+  const [elixirsTaken, setElixirsTaken] = useState<Record<string, boolean>>({});
 
   const hour = getHour();
   const isOpen = hour >= 5 && hour < 13;
@@ -43,6 +45,18 @@ export default function MorningCheckinPage() {
 
   useEffect(() => {
     fetch("/api/auth/me").catch(() => {});
+    // Charger les elixirs assignes au client
+    fetch("/api/client/elixirs")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.elixirs?.length) {
+          setElixirs(data.elixirs);
+          const initial: Record<string, boolean> = {};
+          data.elixirs.forEach((e: any) => { initial[e.id] = false; });
+          setElixirsTaken(initial);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   function toggleSleepType(key: string) {
@@ -61,10 +75,16 @@ export default function MorningCheckinPage() {
     setStep((s) => s - 1);
   }
 
+  const hasElixirs = elixirs.length > 0;
+  // Total steps: 0-5 base + (6 elixirs if has) + final done
+  const totalSteps = hasElixirs ? 8 : 7;
+  const elixirStep = hasElixirs ? 6 : -1;
+  const doneStep = hasElixirs ? 7 : 6;
+
   async function handleSave() {
     setSaving(true);
     try {
-      await fetch("/api/daily-checkin", {
+      const checkinRes = await fetch("/api/daily-checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,8 +95,27 @@ export default function MorningCheckinPage() {
           dreamed: dreamed === "Yes" ? "OUI" : dreamed === "No" ? "NON" : "SAIS_PAS",
           dreamNotes: dreamNotes.trim() || null,
           morningGratitude: morningFeeling.trim() || null,
+          elixirTaken: Object.values(elixirsTaken).some(Boolean),
         }),
       });
+
+      // Sauvegarder le detail par elixir si applicable
+      if (hasElixirs && checkinRes.ok) {
+        const checkinData = await checkinRes.json();
+        if (checkinData.checkin?.id) {
+          await fetch("/api/checkin-elixirs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dailyCheckinId: checkinData.checkin.id,
+              elixirs: Object.entries(elixirsTaken).map(([id, taken]) => ({
+                elixirPrescriptionId: id,
+                taken,
+              })),
+            }),
+          }).catch(() => {});
+        }
+      }
 
       const res = await fetch("/api/day-message");
       if (res.ok) {
@@ -109,9 +148,9 @@ export default function MorningCheckinPage() {
   return (
     <div className="min-h-[60vh] flex flex-col">
       {/* Progress dots */}
-      {step < 7 && (
+      {step < doneStep && (
         <div className="flex items-center justify-center gap-2 mb-8">
-          {[0, 1, 2, 3, 4, 5, 6].map((s) => (
+          {Array.from({ length: totalSteps }, (_, s) => s).map((s) => (
             <div
               key={s}
               className="w-2 h-2 rounded-full transition-colors duration-200"
@@ -244,6 +283,50 @@ export default function MorningCheckinPage() {
             />
             <div className="flex gap-4 pt-4">
               <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
+              {hasElixirs ? (
+                <button onClick={goNext} className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors">
+                  {T(t.morning.next)}
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
+                >
+                  {saving ? T(t.morning.saving) : T(t.morning.save)}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 6 — Elixirs (conditional) */}
+        {step === elixirStep && hasElixirs && (
+          <div className="w-full max-w-sm space-y-6 text-center">
+            <h2 className="font-display text-xl text-brun-chaud">
+              {lang === "FR" ? "Tes elixirs du jour" : "Your elixirs today"}
+            </h2>
+            <p className="font-ui text-sm text-brun-mid">
+              {lang === "FR" ? "Coche ceux que tu as pris ce matin" : "Check the ones you took this morning"}
+            </p>
+            <div className="space-y-2 text-left">
+              {elixirs.map((elixir) => (
+                <label key={elixir.id} className="flex items-center gap-3 p-3 bg-cire-chaude border border-or-pale/50 rounded-lg cursor-pointer hover:border-or-sacre transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={elixirsTaken[elixir.id] || false}
+                    onChange={() => setElixirsTaken((prev) => ({ ...prev, [elixir.id]: !prev[elixir.id] }))}
+                    className="w-5 h-5 accent-or-sacre"
+                  />
+                  <div>
+                    <p className="font-ui text-sm text-brun-chaud">{elixir.name}</p>
+                    {elixir.dosage && <p className="font-ui text-xs text-brun-mid/60">{elixir.dosage}</p>}
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-4 pt-4">
+              <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -255,8 +338,8 @@ export default function MorningCheckinPage() {
           </div>
         )}
 
-        {/* Step 6 — Done */}
-        {step === 6 && (
+        {/* Done step */}
+        {step === doneStep && (
           <div className="text-center space-y-6 max-w-sm">
             <h2 className="font-display text-2xl text-brun-chaud">{T(t.morning.doneTitle)}</h2>
             <p className="font-display text-lg text-brun-mid">{T(t.morning.doneSub)}</p>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
+import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -238,6 +239,19 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           </Link>
         </div>
       </div>
+
+      {/* Bandeau parcours */}
+      <ParcoursStatusBanner
+        clientId={clientId}
+        onboardingCompleted={client.onboardingCompleted}
+        colisEnvoye={client.colisEnvoye}
+        colisEnvoyeAt={client.colisEnvoyeAt ? client.colisEnvoyeAt.toISOString() : null}
+        produitsRecus={client.produitsRecus}
+        produitsRecusAt={client.produitsRecusAt ? client.produitsRecusAt.toISOString() : null}
+        detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
+        programmeStartDate={client.programmeStartDate ? client.programmeStartDate.toISOString() : null}
+        startDate={client.startDate.toISOString()}
+      />
 
       {/* Actions : desactiver, archiver, supprimer, envoyer email */}
       <ClientActions
