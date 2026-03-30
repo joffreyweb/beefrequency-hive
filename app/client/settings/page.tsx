@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
 import type { Lang } from "@/lib/translations";
+import MySessionsSection from "@/components/client/MySessionsSection";
 
 export default function ClientSettingsPage() {
   const { lang, setLang } = useLanguage();
@@ -76,6 +77,9 @@ export default function ClientSettingsPage() {
           {lang === "FR" ? "Enregistr\u00e9 !" : "Saved!"}
         </p>
       )}
+
+      {/* Mes seances */}
+      <MySessionsSection lang={lang} />
     </div>
   );
 }

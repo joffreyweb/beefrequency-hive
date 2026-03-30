@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
 
-  const { clientId, scheduledAt, durationMin, title, notes, sendEmail } = await request.json();
+  const { clientId, scheduledAt, durationMin, title, notes, sendEmail, useFromPack } = await request.json();
 
   if (!clientId || !scheduledAt) {
     return NextResponse.json({ error: "clientId et scheduledAt requis" }, { status: 400 });
@@ -71,6 +71,31 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Lier au pack si demande
+  let sessionPackId: string | null = null;
+  if (useFromPack !== false) {
+    const pack = await prisma.sessionPack.findFirst({
+      where: { clientId },
+      orderBy: { paidAt: "desc" },
+    });
+    if (pack) {
+      const usedCount = await prisma.appointment.count({
+        where: { sessionPackId: pack.id, status: { not: "CANCELLED" } },
+      });
+      // Lier seulement s'il reste des seances
+      const totalAll = await prisma.sessionPack.aggregate({
+        where: { clientId },
+        _sum: { totalSessions: true },
+      });
+      const totalUsed = await prisma.appointment.count({
+        where: { clientId, sessionPackId: { not: null }, status: { not: "CANCELLED" } },
+      });
+      if ((totalAll._sum.totalSessions || 0) > totalUsed) {
+        sessionPackId = pack.id;
+      }
+    }
+  }
+
   const appointment = await prisma.appointment.create({
     data: {
       clientId,
@@ -81,6 +106,7 @@ export async function POST(request: NextRequest) {
       zoomJoinUrl,
       zoomStartUrl,
       notes: notes || null,
+      sessionPackId,
     },
     include: { client: { include: { user: { select: { name: true, email: true } } } } },
   });

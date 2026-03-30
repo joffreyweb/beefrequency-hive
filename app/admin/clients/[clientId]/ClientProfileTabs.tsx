@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import SessionPacksSection from "@/components/admin/SessionPacksSection";
 import ClientNotes from "@/components/admin/ClientNotes";
 import SupportSection from "@/components/admin/SupportSection";
 import RecommendationSection from "@/components/admin/RecommendationSection";
@@ -43,7 +44,8 @@ type TabKey =
   | "messages"
   | "recommendations"
   | "cartes"
-  | "questionnaires";
+  | "questionnaires"
+  | "seances";
 
 // Sous-onglets du programme
 type ProgramSubTab = "elixirs" | "protocols" | "practices";
@@ -80,6 +82,7 @@ export default function ClientProfileTabs({
     { key: "program", label: "Programme", badge: 0 },
     { key: "parcours", label: "Parcours", badge: 0 },
     { key: "sessions", label: "Sessions", badge: 0 },
+    { key: "seances", label: "Seances", badge: 0 },
     { key: "analysis", label: "Analyse", badge: 0 },
     { key: "documents", label: "Documents", badge: unreadDocCount },
     { key: "messages", label: "Messages", badge: unreadMsgCount },
@@ -143,6 +146,9 @@ export default function ClientProfileTabs({
       )}
       {activeTab === "questionnaires" && (
         <QuestionnairesTab client={client} />
+      )}
+      {activeTab === "seances" && (
+        <SessionPacksSection clientId={client.id} />
       )}
     </div>
   );

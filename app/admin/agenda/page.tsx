@@ -39,7 +39,7 @@ export default function AgendaPage() {
 
   // Modal state
   const [modal, setModal] = useState<{ date: string; time: string } | null>(null);
-  const [form, setForm] = useState({ clientId: "", durationMin: "60", notes: "" });
+  const [form, setForm] = useState({ clientId: "", durationMin: "60", notes: "", useFromPack: true });
   const [creating, setCreating] = useState(false);
   const [createResult, setCreateResult] = useState("");
 
@@ -66,7 +66,7 @@ export default function AgendaPage() {
       date: slotStart.split("T")[0],
       time: slotStart,
     });
-    setForm({ clientId: "", durationMin: "60", notes: "" });
+    setForm({ clientId: "", durationMin: "60", notes: "", useFromPack: true });
     setCreateResult("");
   }
 
@@ -84,6 +84,7 @@ export default function AgendaPage() {
           durationMin: Number(form.durationMin) || 60,
           notes: form.notes || null,
           sendEmail: true,
+          useFromPack: form.useFromPack,
         }),
       });
       if (res.ok) {
@@ -224,8 +225,8 @@ function CreateAppointmentModal({
 }: {
   dateTime: string;
   knownClients: ClientOption[];
-  form: { clientId: string; durationMin: string; notes: string };
-  setForm: (f: { clientId: string; durationMin: string; notes: string }) => void;
+  form: { clientId: string; durationMin: string; notes: string; useFromPack: boolean };
+  setForm: (f: { clientId: string; durationMin: string; notes: string; useFromPack: boolean }) => void;
   creating: boolean;
   createResult: string;
   onCreate: () => void;
@@ -302,6 +303,18 @@ function CreateAppointmentModal({
               placeholder="Notes pour Joffrey uniquement..."
               className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-xs font-ui text-brun-mid cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.useFromPack}
+                onChange={(e) => setForm({ ...form, useFromPack: e.target.checked })}
+                className="accent-or-sacre"
+              />
+              Decompter du pack prepaye
+            </label>
           </div>
         </div>
 

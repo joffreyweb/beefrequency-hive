@@ -131,6 +131,7 @@ model Client {
   sessionChangeRequests  SessionChangeRequest[]
   questionnaireResponses QuestionnaireResponse[]
   appointments           Appointment[]
+  sessionPacks           SessionPack[]
 }
 
 model JournalEntry {
@@ -852,9 +853,25 @@ model Appointment {
   notes         String?  @db.Text // ADMIN ONLY
   reminderSent  Boolean  @default(false)
   kdriveFileId  String?
+  sessionPackId String?
+  sessionPack   SessionPack? @relation(fields: [sessionPackId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Packs de seances prepayees
+model SessionPack {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  totalSessions Int      // Nombre de seances prepayees
+  paidAt        DateTime // Date du paiement
+  amount        Float?   // Montant — JAMAIS expose cote client
+  notes         String?  // Notes internes admin
+  createdAt     DateTime @default(now())
+
+  appointments Appointment[]
 }
 
 // Token pour auto-booking client (lien unique sans login)

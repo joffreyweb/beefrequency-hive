@@ -68,6 +68,13 @@ export default async function AdminDashboard() {
           clientPhases: {
             orderBy: { startDate: "asc" },
           },
+          sessionPacks: {
+            select: { totalSessions: true },
+          },
+          appointments: {
+            where: { sessionPackId: { not: null }, status: { not: "CANCELLED" } },
+            select: { id: true },
+          },
         },
         orderBy: { startDate: "asc" },
       }),
@@ -141,6 +148,9 @@ export default async function AdminDashboard() {
         date: nextSession.scheduledAt.toISOString(),
         zoomLink: nextSession.zoomLink,
       } : null,
+      packTotal: c.sessionPacks.reduce((sum, p) => sum + p.totalSessions, 0),
+      packUsed: c.appointments.length,
+      packRemaining: c.sessionPacks.reduce((sum, p) => sum + p.totalSessions, 0) - c.appointments.length,
     };
   });
 
@@ -259,6 +269,19 @@ export default async function AdminDashboard() {
                       <p className="text-brun-mid/30">-</p>
                     )}
                   </div>
+
+                  {/* Session pack count */}
+                  {client.packTotal > 0 && (
+                    <div>
+                      <p className="text-brun-mid/60 mb-1">Seances</p>
+                      <p className={`font-medium ${client.packRemaining <= 0 ? "text-red-600" : client.packRemaining <= 2 ? "text-orange-500" : "text-brun-chaud"}`}>
+                        {client.packRemaining} restantes / {client.packTotal}
+                      </p>
+                      {client.packRemaining <= 0 && (
+                        <p className="text-[10px] text-red-500 font-ui">Pack epuise</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
