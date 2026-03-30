@@ -130,6 +130,7 @@ model Client {
   openWebuiQueue        OpenWebuiQueue[]
   sessionChangeRequests  SessionChangeRequest[]
   questionnaireResponses QuestionnaireResponse[]
+  appointments           Appointment[]
 }
 
 model JournalEntry {
@@ -831,4 +832,38 @@ model QuestionnaireResponse {
   createdAt DateTime @default(now())
 
   @@unique([questionnaireId, clientId])
+}
+
+// ═══════════════════════════════════════
+// MODULE — RENDEZ-VOUS (Zoom + CalDAV + kDrive)
+// ═══════════════════════════════════════
+
+model Appointment {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title         String   @default("Session BeeFrequency")
+  scheduledAt   DateTime
+  durationMin   Int      @default(60)
+  zoomMeetingId String?
+  zoomJoinUrl   String?
+  zoomStartUrl  String?  // ADMIN ONLY — jamais expose cote client
+  status        String   @default("CONFIRMED") // CONFIRMED | CANCELLED | RESCHEDULED
+  notes         String?  @db.Text // ADMIN ONLY
+  reminderSent  Boolean  @default(false)
+  kdriveFileId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Token pour auto-booking client (lien unique sans login)
+model BookingToken {
+  id        String   @id @default(cuid())
+  clientId  String
+  token     String   @unique @default(uuid())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
 }

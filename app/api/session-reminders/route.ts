@@ -73,5 +73,58 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ sent, total: sessions.length });
+  // ── Rappels Appointments (nouveau systeme RDV) ──
+  const in47h = new Date(now.getTime() + 47 * 60 * 60 * 1000);
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      status: "CONFIRMED",
+      reminderSent: false,
+      scheduledAt: { gte: in47h, lte: in48h },
+    },
+    include: {
+      client: { include: { user: { select: { email: true, name: true } } } },
+    },
+  });
+
+  let appointmentsSent = 0;
+
+  for (const appt of appointments) {
+    try {
+      const lang = appt.client.language === "EN" ? "EN" : "FR";
+      const dateStr = new Date(appt.scheduledAt).toLocaleDateString(
+        lang === "FR" ? "fr-FR" : "en-US",
+        { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }
+      );
+
+      const subject = lang === "EN"
+        ? `Reminder: your session tomorrow`
+        : `Rappel : ta session demain`;
+
+      const body = lang === "EN"
+        ? `Hello ${appt.client.user.name?.split(" ")[0] || ""},\n\nReminder: your session is scheduled for ${dateStr}.\n\n${appt.zoomJoinUrl ? `Join: ${appt.zoomJoinUrl}\n\n` : ""}See you soon,\nJoffrey`
+        : `Bonjour ${appt.client.user.name?.split(" ")[0] || ""},\n\nRappel : ta session est prevue le ${dateStr}.\n\n${appt.zoomJoinUrl ? `Rejoindre : ${appt.zoomJoinUrl}\n\n` : ""}A demain,\nJoffrey`;
+
+      const { transporter } = await import("@/lib/mailer");
+      await transporter.sendMail({
+        from: `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`,
+        to: appt.client.user.email,
+        subject,
+        text: body,
+      });
+
+      await prisma.appointment.update({
+        where: { id: appt.id },
+        data: { reminderSent: true },
+      });
+
+      appointmentsSent++;
+    } catch (err) {
+      console.error(`[appointment-reminder] Erreur pour ${appt.id}:`, err);
+    }
+  }
+
+  return NextResponse.json({
+    sessions: { sent, total: sessions.length },
+    appointments: { sent: appointmentsSent, total: appointments.length },
+  });
 }
