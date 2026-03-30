@@ -21,7 +21,6 @@ jobs:
             git pull origin main
             npm install
             npx prisma generate
-            npx prisma migrate resolve --applied 20260329195719_add_blocked_and_video_seuil1 || true
             npx prisma migrate deploy
             npm run build
             sudo fuser -k 3001/tcp || true
