@@ -311,45 +311,45 @@ export default async function AdminDashboard() {
 
         {/* Actions en attente */}
         <DashboardActions initialActions={serializedActions} />
+      </div>
 
-        {/* Questionnaires en attente */}
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 mt-6">
-          <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-            Questionnaires en attente {pendingQuestionnaires.length > 0 && `(${pendingQuestionnaires.length})`}
-          </h2>
-          {pendingQuestionnaires.length === 0 ? (
-            <p className="text-sm text-brun-mid/60 font-ui text-center py-3">
-              Aucun questionnaire en attente
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {pendingQuestionnaires.map((pq) => {
-                const hours = Math.round((Date.now() - new Date(pq.createdAt).getTime()) / (1000 * 60 * 60));
-                const isOverdue = hours > 48;
-                return (
-                  <a
-                    key={pq.id}
-                    href={`/admin/clients/${pq.clientId}`}
-                    className="flex items-center justify-between p-3 border border-or-pale/40 rounded-lg hover:border-or-sacre transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-ui text-brun-chaud">{pq.client.user.name}</p>
-                      <p className="text-xs font-ui text-brun-mid/50">
-                        {pq.questionnaire.type === "PRE_START" ? "Pre-Start" : "Follow-Up"} — {pq.questionnaire.title}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isOverdue && <span className="w-2 h-2 rounded-full bg-red-500" title="Plus de 48h" />}
-                      <span className="text-xs font-ui text-brun-mid/40">
-                        {hours < 24 ? `${hours}h` : `${Math.round(hours / 24)}j`}
-                      </span>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          )}
-        </div>
+      {/* Questionnaires en attente — section independante sous la grille */}
+      <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
+        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+          Questionnaires en attente {pendingQuestionnaires.length > 0 && `(${pendingQuestionnaires.length})`}
+        </h2>
+        {pendingQuestionnaires.length === 0 ? (
+          <p className="text-sm text-brun-mid/60 font-ui text-center py-3">
+            Aucun questionnaire en attente
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {pendingQuestionnaires.map((pq) => {
+              const hours = Math.round((Date.now() - new Date(pq.createdAt).getTime()) / (1000 * 60 * 60));
+              const isOverdue = hours > 48;
+              return (
+                <a
+                  key={pq.id}
+                  href={`/admin/clients/${pq.clientId}`}
+                  className="flex items-center justify-between p-3 border border-or-pale/40 rounded-lg hover:border-or-sacre transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-ui text-brun-chaud">{pq.client.user.name}</p>
+                    <p className="text-xs font-ui text-brun-mid/50">
+                      {pq.questionnaire.type === "PRE_START" ? "Pre-Start" : "Follow-Up"} — {pq.questionnaire.title}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isOverdue && <span className="w-2 h-2 rounded-full bg-red-500" title="Plus de 48h" />}
+                    <span className="text-xs font-ui text-brun-mid/40">
+                      {hours < 24 ? `${hours}h` : `${Math.round(hours / 24)}j`}
+                    </span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
