@@ -313,11 +313,15 @@ export default async function AdminDashboard() {
         <DashboardActions initialActions={serializedActions} />
 
         {/* Questionnaires en attente */}
-        {pendingQuestionnaires.length > 0 && (
-          <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 mt-6">
-            <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-              Questionnaires en attente ({pendingQuestionnaires.length})
-            </h2>
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 mt-6">
+          <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+            Questionnaires en attente {pendingQuestionnaires.length > 0 && `(${pendingQuestionnaires.length})`}
+          </h2>
+          {pendingQuestionnaires.length === 0 ? (
+            <p className="text-sm text-brun-mid/60 font-ui text-center py-3">
+              Aucun questionnaire en attente
+            </p>
+          ) : (
             <div className="space-y-2">
               {pendingQuestionnaires.map((pq) => {
                 const hours = Math.round((Date.now() - new Date(pq.createdAt).getTime()) / (1000 * 60 * 60));
@@ -344,8 +348,8 @@ export default async function AdminDashboard() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

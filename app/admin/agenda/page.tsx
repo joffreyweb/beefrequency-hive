@@ -20,20 +20,34 @@ interface Slot {
   available: boolean;
 }
 
+interface ClientOption {
+  id: string;
+  user: { name: string; email: string };
+}
+
 const DAYS_FR = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
 export default function AgendaPage() {
   const [weekStart, setWeekStart] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - d.getDay() + 1); // Monday
+    d.setDate(d.getDate() - d.getDay() + 1);
     d.setHours(0, 0, 0, 0);
     return d;
   });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [slots, setSlots] = useState<Record<string, Slot[]>>({});
-  const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
+
+  // Modal state
+  const [modal, setModal] = useState<{ date: string; time: string } | null>(null);
+  const [form, setForm] = useState({ clientId: "", durationMin: "60", notes: "" });
+  const [creating, setCreating] = useState(false);
+  const [createResult, setCreateResult] = useState("");
 
   useEffect(() => {
+    fetchData();
+  }, [weekStart]);
+
+  function fetchData() {
     const month = weekStart.toISOString().slice(0, 7);
     fetch(`/api/admin/appointments?month=${month}`)
       .then((r) => r.json())
@@ -45,37 +59,74 @@ export default function AgendaPage() {
       .then((r) => r.json())
       .then((d) => setSlots(d.slots || {}))
       .catch(() => {});
-  }, [weekStart]);
+  }
+
+  function openModal(slotStart: string) {
+    setModal({
+      date: slotStart.split("T")[0],
+      time: slotStart,
+    });
+    setForm({ clientId: "", durationMin: "60", notes: "" });
+    setCreateResult("");
+  }
+
+  async function handleCreate() {
+    if (!form.clientId || !modal) return;
+    setCreating(true);
+    setCreateResult("");
+    try {
+      const res = await fetch("/api/admin/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: form.clientId,
+          scheduledAt: modal.time,
+          durationMin: Number(form.durationMin) || 60,
+          notes: form.notes || null,
+          sendEmail: true,
+        }),
+      });
+      if (res.ok) {
+        setCreateResult("ok");
+        setModal(null);
+        fetchData();
+      } else {
+        const data = await res.json();
+        setCreateResult(data.error || "Erreur");
+      }
+    } catch {
+      setCreateResult("Erreur de connexion");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   function prevWeek() {
-    setWeekStart((w) => {
-      const d = new Date(w);
-      d.setDate(d.getDate() - 7);
-      return d;
-    });
+    setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; });
   }
-
   function nextWeek() {
-    setWeekStart((w) => {
-      const d = new Date(w);
-      d.setDate(d.getDate() + 7);
-      return d;
-    });
+    setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; });
   }
 
-  // Build 7 days from weekStart
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    return d;
+    const d = new Date(weekStart); d.setDate(d.getDate() + i); return d;
   });
 
-  // Map appointments by date key
   const apptsByDate: Record<string, Appointment[]> = {};
   appointments.forEach((a) => {
     const key = a.scheduledAt.split("T")[0];
     if (!apptsByDate[key]) apptsByDate[key] = [];
     apptsByDate[key].push(a);
+  });
+
+  // Extract unique clients from appointments for the dropdown
+  const knownClients: ClientOption[] = [];
+  const seen = new Set<string>();
+  appointments.forEach((a) => {
+    if (!seen.has(a.clientId)) {
+      seen.add(a.clientId);
+      knownClients.push({ id: a.clientId, user: a.client.user } as ClientOption);
+    }
   });
 
   return (
@@ -129,25 +180,150 @@ export default function AgendaPage() {
                 </Link>
               ))}
 
-              {/* Available slots (only show hours, clickable) */}
-              {!isWeekend && daySlots.filter((s) => s.available).length > 0 && dayAppts.length === 0 && (
-                <div className="space-y-0.5 mt-1">
-                  {daySlots.filter((s) => s.available).slice(0, 4).map((s) => (
-                    <div
-                      key={s.start}
-                      className="text-[10px] font-ui text-foret/40 text-center py-0.5 rounded bg-foret/5 cursor-default"
-                    >
-                      {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  ))}
-                  {daySlots.filter((s) => s.available).length > 4 && (
-                    <p className="text-[9px] text-brun-mid/30 text-center">+{daySlots.filter((s) => s.available).length - 4}</p>
-                  )}
-                </div>
-              )}
+              {/* Available slots — clickable to create RDV */}
+              {!isWeekend && daySlots.filter((s) => s.available).map((s) => (
+                <button
+                  key={s.start}
+                  onClick={() => openModal(s.start)}
+                  className="w-full text-[10px] font-ui text-foret/50 text-center py-1 rounded bg-foret/5 hover:bg-foret/15 hover:text-foret transition-colors mb-0.5 cursor-pointer"
+                >
+                  {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                </button>
+              ))}
             </div>
           );
         })}
+      </div>
+
+      {/* Modal creation RDV */}
+      {modal && (
+        <CreateAppointmentModal
+          dateTime={modal.time}
+          knownClients={knownClients}
+          form={form}
+          setForm={setForm}
+          creating={creating}
+          createResult={createResult}
+          onCreate={handleCreate}
+          onClose={() => setModal(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateAppointmentModal({
+  dateTime,
+  knownClients,
+  form,
+  setForm,
+  creating,
+  createResult,
+  onCreate,
+  onClose,
+}: {
+  dateTime: string;
+  knownClients: ClientOption[];
+  form: { clientId: string; durationMin: string; notes: string };
+  setForm: (f: { clientId: string; durationMin: string; notes: string }) => void;
+  creating: boolean;
+  createResult: string;
+  onCreate: () => void;
+  onClose: () => void;
+}) {
+  const [allClients, setAllClients] = useState<ClientOption[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/clients-list")
+      .then((r) => r.json())
+      .then((data) => {
+        setAllClients((data.clients || []).map((c: any) => ({ id: c.id, user: c.user })));
+        setLoadingClients(false);
+      })
+      .catch(() => {
+        setAllClients(knownClients);
+        setLoadingClients(false);
+      });
+  }, []);
+
+  const d = new Date(dateTime);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-creme-sacree border border-or-pale rounded-[10px] p-6 w-full max-w-md shadow-xl">
+        <h3 className="font-display text-lg text-brun-chaud mb-1">Nouveau RDV</h3>
+        <p className="text-sm font-ui text-brun-mid mb-4">
+          {d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+          {" a "}
+          {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-ui text-brun-mid/60 mb-1">Client</label>
+            {loadingClients ? (
+              <p className="text-xs font-ui text-brun-mid/40">Chargement...</p>
+            ) : (
+              <select
+                value={form.clientId}
+                onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+                className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
+              >
+                <option value="">Choisir un client...</option>
+                {allClients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.user.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-ui text-brun-mid/60 mb-1">Duree (min)</label>
+            <select
+              value={form.durationMin}
+              onChange={(e) => setForm({ ...form, durationMin: e.target.value })}
+              className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
+            >
+              <option value="30">30 min</option>
+              <option value="45">45 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+              <option value="120">120 min</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-ui text-brun-mid/60 mb-1">Notes internes</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2}
+              placeholder="Notes pour Joffrey uniquement..."
+              className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none"
+            />
+          </div>
+        </div>
+
+        {createResult && createResult !== "ok" && (
+          <p className="text-xs font-ui text-red-600 mt-3">{createResult}</p>
+        )}
+
+        <div className="flex gap-3 justify-end mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-or-pale text-brun-mid text-xs font-ui uppercase rounded-sharp hover:bg-cire-chaude transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onCreate}
+            disabled={creating || !form.clientId}
+            className="px-4 py-2 bg-or-sacre text-white text-xs font-ui uppercase rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
+          >
+            {creating ? "Creation..." : "Confirmer le RDV"}
+          </button>
+        </div>
       </div>
     </div>
   );
