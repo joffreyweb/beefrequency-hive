@@ -69,6 +69,12 @@ export default function Sidebar({
             badge={pendingActionsCount}
           />
           <NavItem
+            href="/admin/agenda"
+            label="Agenda"
+            emoji={"\uD83D\uDCC5"}
+            active={isActive("/admin/agenda")}
+          />
+          <NavItem
             href="/admin/clients"
             label="La Ruche"
             emoji={"\uD83D\uDC1D"}
