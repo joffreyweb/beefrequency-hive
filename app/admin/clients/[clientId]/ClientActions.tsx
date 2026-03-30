@@ -26,6 +26,13 @@ export default function ClientActions({
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deleteMotif, setDeleteMotif] = useState("");
 
+  // Normaliser pour comparaison insensible accents + casse + espaces
+  function normalize(s: string): string {
+    return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+  }
+  const nameMatch = normalize(deleteConfirmName) === normalize(clientName) && normalize(deleteConfirmName).length > 0;
+  const canDelete = nameMatch && deleteMotif.trim().length > 0 && loading !== "delete";
+
   async function changeStatus(newStatus: string) {
     setLoading("status");
     try {
@@ -44,9 +51,7 @@ export default function ClientActions({
   }
 
   async function handleDelete() {
-    if (deleteConfirmName.trim().toLowerCase() !== clientName.trim().toLowerCase()) {
-      return;
-    }
+    if (!canDelete) return;
     setLoading("delete");
     try {
       const res = await fetch(`/api/admin/clients/${clientId}`, {
@@ -230,7 +235,7 @@ export default function ClientActions({
                 />
                 <div className="mb-4">
                   <label className="block text-xs font-ui text-brun-mid/60 uppercase tracking-wider mb-1">
-                    Motif de suppression (RGPD)
+                    Motif de suppression (RGPD) *
                   </label>
                   <textarea
                     value={deleteMotif}
@@ -248,10 +253,7 @@ export default function ClientActions({
                   </button>
                   <button
                     onClick={handleDelete}
-                    disabled={
-                      loading === "delete" ||
-                      deleteConfirmName.trim().toLowerCase() !== clientName.trim().toLowerCase()
-                    }
+                    disabled={!canDelete}
                     className="px-4 py-2 bg-red-600 text-white text-xs font-ui uppercase rounded-sharp hover:bg-red-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     {loading === "delete" ? "Suppression..." : "Supprimer definitivement"}
