@@ -40,5 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Swiss Ephemeris data files
-ephe/
+# Swiss Ephemeris data files — tracked in repo (3.5MB, needed for HD/astro calculations)

@@ -1047,7 +1047,7 @@ function CartesTab({ client }: { client: any }) {
 
   async function handleRegenerate() {
     setRegenerating(true);
-    setStatus("Generating...");
+    setStatus("Generation en cours...");
     try {
       const res = await fetch("/api/admin/generate-cartes", {
         method: "POST",
@@ -1055,13 +1055,38 @@ function CartesTab({ client }: { client: any }) {
         body: JSON.stringify({ clientId: client.id }),
       });
       if (res.ok) {
-        setStatus("Generation started. Refresh in a few moments.");
+        setStatus("Generation lancee — actualisation auto dans 30s...");
+        // Poll pour rafraichir quand la generation est terminee
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          try {
+            const check = await fetch(`/api/admin/clients/${client.id}/cartes-status`);
+            if (check.ok) {
+              const data = await check.json();
+              if (data.generated) {
+                clearInterval(poll);
+                setStatus("Cartes generees — rechargement...");
+                window.location.reload();
+              } else if (data.error) {
+                clearInterval(poll);
+                setRegenerating(false);
+                setStatus("Erreur : " + data.error);
+              }
+            }
+          } catch { /* ignore poll errors */ }
+          if (attempts >= 12) { // 60s max
+            clearInterval(poll);
+            setRegenerating(false);
+            setStatus("Generation en cours... Rafraichir manuellement.");
+          }
+        }, 5000);
       } else {
-        setStatus("Error starting generation.");
+        setStatus("Erreur au lancement.");
+        setRegenerating(false);
       }
     } catch {
-      setStatus("Error.");
-    } finally {
+      setStatus("Erreur de connexion.");
       setRegenerating(false);
     }
   }

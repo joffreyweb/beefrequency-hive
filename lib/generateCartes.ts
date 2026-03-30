@@ -120,6 +120,19 @@ export async function generateAllCartes(clientId: string) {
 
     console.log(`All cards generated for ${client.user.name}`);
   } catch (error) {
-    console.error("Error generating cards:", error);
+    console.error("Error generating cards for client", clientId, ":", error);
+    // Sauvegarder l'erreur pour feedback admin
+    try {
+      await prisma.client.update({
+        where: { id: clientId },
+        data: {
+          hdFullData: { error: String(error) } as any,
+          cartesGeneratedAt: null,
+        },
+      });
+    } catch {
+      // Ignore DB error during error handling
+    }
+    throw error; // Re-throw pour que le .catch() dans la route logge aussi
   }
 }
