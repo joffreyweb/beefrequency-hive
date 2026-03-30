@@ -128,7 +128,8 @@ model Client {
   clientPhases          ClientPhase[]
   dailyCheckins         DailyCheckin[]
   openWebuiQueue        OpenWebuiQueue[]
-  sessionChangeRequests SessionChangeRequest[]
+  sessionChangeRequests  SessionChangeRequest[]
+  questionnaireResponses QuestionnaireResponse[]
 }
 
 model JournalEntry {
@@ -798,4 +799,36 @@ model GdprDeletionLog {
   motif             String   // Raison de la suppression (texte libre)
 
   createdAt         DateTime @default(now())
+}
+
+// ═══════════════════════════════════════
+// MODULE — QUESTIONNAIRES (Pre-Start + Follow-Up)
+// ═══════════════════════════════════════
+
+model Questionnaire {
+  id        String   @id @default(cuid())
+  type      String   // "PRE_START" | "FOLLOW_UP"
+  title     String
+  questions Json     // Array: [{id, type, question, questionFr, options?, required}]
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  responses QuestionnaireResponse[]
+}
+
+model QuestionnaireResponse {
+  id              String         @id @default(cuid())
+  questionnaireId String
+  questionnaire   Questionnaire  @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  answers         Json?          // Réponses du client — null tant que PENDING
+  submittedAt     DateTime?
+  status          String         @default("PENDING") // PENDING | SUBMITTED
+
+  createdAt DateTime @default(now())
+
+  @@unique([questionnaireId, clientId])
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ClientNotes from "@/components/admin/ClientNotes";
 import SupportSection from "@/components/admin/SupportSection";
 import RecommendationSection from "@/components/admin/RecommendationSection";
@@ -42,7 +42,8 @@ type TabKey =
   | "documents"
   | "messages"
   | "recommendations"
-  | "cartes";
+  | "cartes"
+  | "questionnaires";
 
 // Sous-onglets du programme
 type ProgramSubTab = "elixirs" | "protocols" | "practices";
@@ -84,6 +85,7 @@ export default function ClientProfileTabs({
     { key: "messages", label: "Messages", badge: unreadMsgCount },
     { key: "recommendations", label: "Recommandations", badge: 0 },
     { key: "cartes", label: "Cartes", badge: client.cartesGeneratedAt ? 0 : -1 },
+    { key: "questionnaires", label: "Questionnaires", badge: 0 },
   ];
 
   return (
@@ -138,6 +140,9 @@ export default function ClientProfileTabs({
       )}
       {activeTab === "cartes" && (
         <CartesTab client={client} />
+      )}
+      {activeTab === "questionnaires" && (
+        <QuestionnairesTab client={client} />
       )}
     </div>
   );
@@ -1267,5 +1272,146 @@ function LanguageSelector({ clientId, currentLanguage }: { clientId: string; cur
       <option value="EN">English</option>
       <option value="FR">Français</option>
     </select>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   TAB — Questionnaires
+   ───────────────────────────────────────────── */
+function QuestionnairesTab({ client }: { client: any }) {
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+  const [responses, setResponses] = useState<any[]>([]);
+  const [loading, setLoading] = useState("");
+  const [sendResult, setSendResult] = useState("");
+
+  useEffect(() => {
+    // Charger les questionnaires disponibles
+    fetch("/api/admin/questionnaires")
+      .then((r) => r.json())
+      .then((d) => setQuestionnaires(d.questionnaires?.filter((q: any) => q.isActive) || []))
+      .catch(() => {});
+    // Charger les reponses du client
+    fetchResponses();
+  }, []);
+
+  async function fetchResponses() {
+    // On charge via chaque questionnaire qui a des reponses pour ce client
+    const res = await fetch("/api/admin/questionnaires");
+    if (!res.ok) return;
+    const data = await res.json();
+    const allResponses: any[] = [];
+    for (const q of data.questionnaires || []) {
+      const detail = await fetch(`/api/admin/questionnaires/${q.id}`);
+      if (detail.ok) {
+        const d = await detail.json();
+        const clientResp = d.questionnaire.responses?.find((r: any) => r.clientId === client.id);
+        if (clientResp) {
+          allResponses.push({ ...clientResp, questionnaire: { id: q.id, title: q.title, type: q.type, questions: q.questions } });
+        }
+      }
+    }
+    setResponses(allResponses);
+  }
+
+  async function handleSend(questionnaireId: string) {
+    setLoading(questionnaireId);
+    setSendResult("");
+    try {
+      const res = await fetch(`/api/admin/clients/${client.id}/send-questionnaire`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionnaireId }),
+      });
+      if (res.ok) {
+        setSendResult("Questionnaire envoye");
+        fetchResponses();
+      } else {
+        setSendResult("Erreur envoi");
+      }
+    } finally {
+      setLoading("");
+    }
+  }
+
+  const preStartQ = questionnaires.filter((q) => q.type === "PRE_START");
+  const followUpQ = questionnaires.filter((q) => q.type === "FOLLOW_UP");
+
+  function ResponseSection({ type, label }: { type: string; label: string }) {
+    const available = questionnaires.filter((q) => q.type === type);
+    const clientResponses = responses.filter((r) => r.questionnaire?.type === type);
+
+    return (
+      <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
+        <h3 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">{label}</h3>
+
+        {/* Reponses existantes */}
+        {clientResponses.map((resp: any) => {
+          const isPending = resp.status === "PENDING";
+          const createdAt = new Date(resp.createdAt);
+          const isOverdue = isPending && (Date.now() - createdAt.getTime() > 48 * 60 * 60 * 1000);
+
+          return (
+            <div key={resp.id} className="mb-4 p-4 border border-or-pale/50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-ui text-brun-chaud">{resp.questionnaire.title}</p>
+                <div className="flex items-center gap-2">
+                  {isPending && isOverdue && (
+                    <span className="w-2 h-2 rounded-full bg-red-500" title="En attente depuis plus de 48h" />
+                  )}
+                  <span className={`text-xs font-ui px-2 py-0.5 rounded-sharp ${isPending ? "bg-or-sacre/10 text-or-sacre" : "bg-foret/10 text-foret"}`}>
+                    {isPending ? "En attente" : "Soumis"}
+                  </span>
+                </div>
+              </div>
+              {resp.submittedAt && (
+                <p className="text-xs font-ui text-brun-mid/50 mb-2">
+                  Soumis le {new Date(resp.submittedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+              {/* Afficher les reponses si soumises */}
+              {resp.status === "SUBMITTED" && resp.answers && (
+                <div className="space-y-2 mt-3 border-t border-or-pale/30 pt-3">
+                  {(resp.questionnaire.questions || []).map((q: any, i: number) => {
+                    const answer = resp.answers[q.id];
+                    return (
+                      <div key={q.id || i}>
+                        <p className="text-xs font-ui text-brun-mid/60">{q.questionFr || q.question}</p>
+                        <p className="text-sm font-ui text-brun-chaud">
+                          {Array.isArray(answer) ? answer.join(", ") : answer || "—"}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Boutons envoi */}
+        {available.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {available.map((q) => (
+              <button
+                key={q.id}
+                onClick={() => handleSend(q.id)}
+                disabled={loading === q.id}
+                className="px-3 py-1.5 bg-or-sacre text-white text-xs font-ui uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
+              >
+                {loading === q.id ? "Envoi..." : `Envoyer "${q.title}"`}
+              </button>
+            ))}
+          </div>
+        )}
+        {sendResult && <p className="text-xs font-ui text-foret mt-2">{sendResult}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <ResponseSection type="PRE_START" label="Pre-Start" />
+      <ResponseSection type="FOLLOW_UP" label="Follow-Up" />
+    </div>
   );
 }

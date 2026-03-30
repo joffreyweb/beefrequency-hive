@@ -31,7 +31,7 @@ export default async function AdminDashboard() {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const [activeClientsCount, todaySessions, pendingActions, allPrescriptions, activeClients, unreadMessages] =
+  const [activeClientsCount, todaySessions, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires] =
     await Promise.all([
       prisma.client.count({ where: { status: "ACTIVE" } }),
       prisma.session.findMany({
@@ -72,6 +72,14 @@ export default async function AdminDashboard() {
         orderBy: { startDate: "asc" },
       }),
       prisma.message.count({ where: { readAt: null, receiver: { role: "ADMIN" } } }),
+      prisma.questionnaireResponse.findMany({
+        where: { status: "PENDING" },
+        include: {
+          client: { include: { user: { select: { name: true } } } },
+          questionnaire: { select: { title: true, type: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      }),
     ]);
 
   pendingActions.sort((a, b) => {
@@ -303,6 +311,41 @@ export default async function AdminDashboard() {
 
         {/* Actions en attente */}
         <DashboardActions initialActions={serializedActions} />
+
+        {/* Questionnaires en attente */}
+        {pendingQuestionnaires.length > 0 && (
+          <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 mt-6">
+            <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+              Questionnaires en attente ({pendingQuestionnaires.length})
+            </h2>
+            <div className="space-y-2">
+              {pendingQuestionnaires.map((pq) => {
+                const hours = Math.round((Date.now() - new Date(pq.createdAt).getTime()) / (1000 * 60 * 60));
+                const isOverdue = hours > 48;
+                return (
+                  <a
+                    key={pq.id}
+                    href={`/admin/clients/${pq.clientId}`}
+                    className="flex items-center justify-between p-3 border border-or-pale/40 rounded-lg hover:border-or-sacre transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-ui text-brun-chaud">{pq.client.user.name}</p>
+                      <p className="text-xs font-ui text-brun-mid/50">
+                        {pq.questionnaire.type === "PRE_START" ? "Pre-Start" : "Follow-Up"} — {pq.questionnaire.title}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isOverdue && <span className="w-2 h-2 rounded-full bg-red-500" title="Plus de 48h" />}
+                      <span className="text-xs font-ui text-brun-mid/40">
+                        {hours < 24 ? `${hours}h` : `${Math.round(hours / 24)}j`}
+                      </span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

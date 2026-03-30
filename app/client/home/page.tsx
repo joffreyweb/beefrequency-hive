@@ -14,6 +14,26 @@ export default async function ClientHomePage() {
 
   await requireOnboarding();
 
+  // Verifier questionnaire Pre-Start pending
+  const clientForCheck = await prisma.client.findUnique({
+    where: { userId: session.userId },
+    select: { id: true },
+  });
+  let pendingQuestionnaire: { id: string; title: string } | null = null;
+  if (clientForCheck) {
+    const pendingResp = await prisma.questionnaireResponse.findFirst({
+      where: {
+        clientId: clientForCheck.id,
+        status: "PENDING",
+        questionnaire: { type: "PRE_START" },
+      },
+      include: { questionnaire: { select: { title: true } } },
+    });
+    if (pendingResp) {
+      pendingQuestionnaire = { id: pendingResp.id, title: pendingResp.questionnaire.title };
+    }
+  }
+
   const client = await prisma.client.findUnique({
     where: { userId: session.userId },
     include: {
@@ -71,6 +91,21 @@ export default async function ClientHomePage() {
 
   return (
     <div className="space-y-8">
+      {/* Pre-Start questionnaire blocker */}
+      {pendingQuestionnaire && (
+        <div className="bg-or-sacre/10 border-2 border-or-sacre rounded-sm p-5 text-center">
+          <p className="font-display text-lg text-brun-chaud mb-2">
+            {T({ EN: "Complete your intake form to access your program", FR: "Complete ton questionnaire d'evaluation pour acceder a ton programme" })}
+          </p>
+          <Link
+            href={`/client/questionnaire/${pendingQuestionnaire.id}`}
+            className="inline-block mt-2 px-6 py-2.5 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
+          >
+            {T({ EN: "Start questionnaire", FR: "Commencer le questionnaire" })}
+          </Link>
+        </div>
+      )}
+
       {/* Wisdom message */}
       {wisdomMessage && (
         <div className="text-center py-6">
