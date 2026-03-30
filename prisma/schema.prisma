@@ -84,6 +84,7 @@ model Client {
   hdType                String?      // Type Human Design (GENERATOR, MANIFESTOR, etc.)
   videoSeuil1Url        String?      // URL vidéo Seuil 1 (onboarding)
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
+  isLegacy              Boolean      @default(false) // Client Legacy — admin only, skip onboarding
 
   // Suivi parcours — étapes
   colisEnvoye           Boolean      @default(false)

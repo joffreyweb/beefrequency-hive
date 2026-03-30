@@ -32,24 +32,13 @@ export default async function ClientsListPage() {
     startDate: client.startDate.toISOString(),
     analysisStatus: client.analysis?.status ?? null,
     pendingCount: client._count.pendingActions,
+    isLegacy: (client as any).isLegacy || false,
   }));
 
   return (
     <div>
       {/* En-tête avec titre et barre de recherche */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-2xl font-light text-brun-chaud">
-          La Ruche
-        </h1>
-        <Link
-          href="/admin/clients/new"
-          className="px-4 py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-[10px] hover:bg-ambre-vif transition-colors duration-150"
-        >
-          Inviter un client
-        </Link>
-      </div>
-
-      {/* Grille de clients (composant client pour la recherche) */}
+      {/* Grille de clients avec modal invite integre */}
       <ClientsGrid clients={serializedClients} />
     </div>
   );

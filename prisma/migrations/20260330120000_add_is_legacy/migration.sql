@@ -1,0 +1,1 @@
+ALTER TABLE "Client" ADD COLUMN "isLegacy" BOOLEAN NOT NULL DEFAULT false;

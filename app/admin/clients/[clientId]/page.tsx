@@ -209,6 +209,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
               {STATUS_LABELS[client.status]}
             </span>
             <span className="text-xs font-ui text-brun-mid/50">J+{dayNumber}</span>
+            {client.isLegacy && (
+              <span className="text-[9px] font-ui px-1.5 py-0.5 rounded-full bg-brun-mid/10 text-brun-mid">Legacy</span>
+            )}
           </div>
           <div className="flex items-center gap-4 mt-1">
             <p className="text-xs font-ui text-brun-mid/60">{client.user.email}</p>
