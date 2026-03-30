@@ -16,9 +16,12 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd /var/www/hive
+            git checkout -- .
+            git clean -fd
             git pull origin main
             npm install
+            npx prisma generate
             npx prisma migrate deploy
             npm run build
             sudo fuser -k 3001/tcp || true
-            pm2 restart hive
+            pm2 restart hive --update-env
