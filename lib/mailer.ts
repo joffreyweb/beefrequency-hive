@@ -1,12 +1,24 @@
 import nodemailer from "nodemailer";
 
+const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+
+// Diagnostic log au premier chargement
+console.log("[mailer] SMTP config:", {
+  host: process.env.SMTP_HOST || "(missing)",
+  port: process.env.SMTP_PORT || "465",
+  secure: process.env.SMTP_SECURE || "(missing)",
+  user: process.env.SMTP_USER || "(missing)",
+  passExists: !!smtpPass,
+  passVar: process.env.SMTP_PASS ? "SMTP_PASS" : process.env.SMTP_PASSWORD ? "SMTP_PASSWORD" : "(none)",
+});
+
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 465,
   secure: process.env.SMTP_SECURE === "true",
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    pass: smtpPass,
   },
 });
 
