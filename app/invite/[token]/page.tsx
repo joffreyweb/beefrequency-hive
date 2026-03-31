@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (element: HTMLElement, options: Record<string, unknown>) => void;
+    };
+  }
+}
 
 interface InviteData {
   email: string;
@@ -30,6 +39,23 @@ export default function InvitePage({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  const renderTurnstile = useCallback(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.turnstile &&
+      turnstileRef.current &&
+      turnstileRef.current.childElementCount === 0
+    ) {
+      window.turnstile.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "",
+        callback: (token: string) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(""),
+      });
+    }
+  }, []);
 
   // Verify token on mount
   useEffect(() => {
@@ -86,7 +112,7 @@ export default function InvitePage({
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         cache: "no-store",
-        body: JSON.stringify({ password, language: L }),
+        body: JSON.stringify({ password, language: L, turnstileToken }),
       });
 
       const data = await res.json();
@@ -224,15 +250,24 @@ export default function InvitePage({
             <p className="text-sm text-red-600 font-ui">{error}</p>
           )}
 
+          {/* Cloudflare Turnstile */}
+          <div ref={turnstileRef} className="flex justify-center" />
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || !lang}
+            disabled={submitting || !lang || !turnstileToken}
             className="w-full py-2.5 rounded-sm bg-or-sacre text-creme-sacree font-ui text-sm font-medium hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
             {submitting ? T(t.invite.activating) : T(t.invite.button)}
           </button>
         </form>
+
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad"
+          strategy="afterInteractive"
+          onReady={renderTurnstile}
+        />
       </div>
     </div>
   );

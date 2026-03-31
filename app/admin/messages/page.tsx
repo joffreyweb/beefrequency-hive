@@ -31,6 +31,13 @@ interface Message {
   };
 }
 
+interface ClientOption {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+}
+
 // Messagerie admin — liste des fils à gauche, conversation à droite
 export default function AdminMessagesPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -39,6 +46,13 @@ export default function AdminMessagesPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // New conversation modal
+  const [showNewConvo, setShowNewConvo] = useState(false);
+  const [allClients, setAllClients] = useState<ClientOption[]>([]);
+  const [newConvoClientId, setNewConvoClientId] = useState("");
+  const [newConvoMessage, setNewConvoMessage] = useState("");
+  const [sendingNew, setSendingNew] = useState(false);
 
   // Scroll automatique vers le bas quand les messages changent
   const scrollToBottom = useCallback(() => {
@@ -132,6 +146,54 @@ export default function AdminMessagesPage() {
     return () => clearInterval(interval);
   }, [activeClientId, fetchThreads, fetchMessages, markAsRead]);
 
+  // Charge la liste des clients pour le modal "Nouvelle conversation"
+  const fetchClients = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/clients");
+      const data = await res.json();
+      if (res.ok && data.clients) {
+        setAllClients(
+          data.clients.map((c: { id: string; user: { id: string; name: string; email: string } }) => ({
+            id: c.id,
+            userId: c.user.id,
+            userName: c.user.name,
+            userEmail: c.user.email,
+          }))
+        );
+      }
+    } catch {
+      // Erreur silencieuse
+    }
+  }, []);
+
+  // Ouvre le modal nouvelle conversation
+  const openNewConvo = () => {
+    setNewConvoClientId("");
+    setNewConvoMessage("");
+    fetchClients();
+    setShowNewConvo(true);
+  };
+
+  // Envoie le premier message de la nouvelle conversation
+  const handleSendNewConvo = async () => {
+    if (!newConvoClientId || !newConvoMessage.trim()) return;
+    setSendingNew(true);
+
+    const res = await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ receiverId: newConvoClientId, content: newConvoMessage.trim() }),
+    });
+
+    if (res.ok) {
+      setShowNewConvo(false);
+      await fetchThreads();
+      setActiveClientId(newConvoClientId);
+      await fetchMessages();
+    }
+    setSendingNew(false);
+  };
+
   // Envoi d'un message
   const handleSend = async (content: string) => {
     if (!activeClientId) return;
@@ -169,9 +231,17 @@ export default function AdminMessagesPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-light text-brun-chaud mb-6">
-        Messagerie
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-display text-3xl font-light text-brun-chaud">
+          Messagerie
+        </h1>
+        <button
+          onClick={openNewConvo}
+          className="px-4 py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-[10px] hover:bg-ambre-vif transition-colors"
+        >
+          Nouvelle conversation
+        </button>
+      </div>
 
       <div className="flex gap-6 h-[calc(100vh-12rem)]">
         {/* Liste des fils — colonne gauche */}
@@ -283,6 +353,69 @@ export default function AdminMessagesPage() {
           )}
         </div>
       </div>
+
+      {/* Modal — Nouvelle conversation */}
+      {showNewConvo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-creme-sacree border border-or-pale rounded-[10px] p-6 w-full max-w-md shadow-xl">
+            <h3 className="font-display text-lg text-brun-chaud mb-4">
+              Nouvelle conversation
+            </h3>
+
+            <div className="space-y-4">
+              {/* Sélecteur client */}
+              <div>
+                <label className="block text-xs font-ui text-brun-mid/60 mb-1">
+                  Client
+                </label>
+                <select
+                  value={newConvoClientId}
+                  onChange={(e) => setNewConvoClientId(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud focus:outline-none focus:border-or-sacre transition-colors"
+                >
+                  <option value="">Sélectionner un client…</option>
+                  {allClients.map((c) => (
+                    <option key={c.userId} value={c.userId}>
+                      {c.userName} — {c.userEmail}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="block text-xs font-ui text-brun-mid/60 mb-1">
+                  Message
+                </label>
+                <textarea
+                  value={newConvoMessage}
+                  onChange={(e) => setNewConvoMessage(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none focus:outline-none focus:border-or-sacre transition-colors"
+                  placeholder="Votre message…"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  onClick={() => setShowNewConvo(false)}
+                  className="px-4 py-2 border border-or-pale text-brun-mid text-xs font-ui uppercase rounded-sharp hover:bg-cire-chaude transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSendNewConvo}
+                  disabled={sendingNew || !newConvoClientId || !newConvoMessage.trim()}
+                  className="px-4 py-2 bg-or-sacre text-white text-xs font-ui uppercase rounded-sharp hover:bg-ambre-vif disabled:opacity-50 transition-colors"
+                >
+                  {sendingNew ? "Envoi…" : "Envoyer"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

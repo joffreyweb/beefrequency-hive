@@ -42,10 +42,19 @@ export async function GET(
       );
     }
 
+    // Vérifie si l'utilisateur existe déjà (pré-créé par admin)
+    const existingUser = await prisma.user.findUnique({
+      where: { email: invite.email },
+      select: { name: true },
+    });
+
     return NextResponse.json({
       email: invite.email,
       offerType: invite.offerType,
       language: invite.language,
+      existingUser: existingUser
+        ? { name: existingUser.name }
+        : null,
     });
   } catch (err) {
     console.error("[invite GET] erreur:", err);
@@ -63,7 +72,37 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
-    const { name, password } = await request.json();
+    const { name, password, turnstileToken } = await request.json();
+
+    // Vérification Turnstile (si configuré)
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    if (turnstileSecret) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          { error: "Verification CAPTCHA requise" },
+          { status: 400 }
+        );
+      }
+
+      const verifyRes = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            secret: turnstileSecret,
+            response: turnstileToken,
+          }),
+        }
+      );
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return NextResponse.json(
+          { error: "Verification CAPTCHA echouee" },
+          { status: 403 }
+        );
+      }
+    }
 
     // Validations
     if (!password) {
@@ -108,49 +147,78 @@ export async function POST(
       );
     }
 
-    // Verifie qu'aucun utilisateur n'existe deja avec cet email
-    const existingUser = await prisma.user.findUnique({
-      where: { email: invite.email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "Un compte existe deja avec cet email" },
-        { status: 409 }
-      );
-    }
-
     // Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Creation du User + Client dans une transaction
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email: invite.email.toLowerCase().trim(),
-          password: hashedPassword,
-          role: "CLIENT",
-          name: name?.trim() || invite.email.split("@")[0],
-        },
-      });
-
-      await tx.client.create({
-        data: {
-          userId: newUser.id,
-          offerType: invite.offerType,
-          status: "ACTIVE",
-          language: invite.language || "FR",
-        },
-      });
-
-      // Marque le token comme utilise
-      await tx.inviteToken.update({
-        where: { id: invite.id },
-        data: { usedAt: new Date() },
-      });
-
-      return newUser;
+    // Vérifie si un utilisateur existe déjà (créé par admin via create-client)
+    const existingUser = await prisma.user.findUnique({
+      where: { email: invite.email },
+      include: { client: true },
     });
+
+    let user;
+
+    if (existingUser) {
+      // L'utilisateur existe déjà (pré-créé par l'admin) → on met à jour le mot de passe
+      user = await prisma.$transaction(async (tx) => {
+        const updated = await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            password: hashedPassword,
+            ...(name?.trim() ? { name: name.trim() } : {}),
+          },
+        });
+
+        // S'assurer que le Client record existe
+        if (!existingUser.client) {
+          await tx.client.create({
+            data: {
+              userId: existingUser.id,
+              offerType: invite.offerType,
+              status: "ACTIVE",
+              language: invite.language || "FR",
+            },
+          });
+        }
+
+        // Marque le token comme utilisé
+        await tx.inviteToken.update({
+          where: { id: invite.id },
+          data: { usedAt: new Date() },
+        });
+
+        return updated;
+      });
+    } else {
+      // Nouveau compte — création complète
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: invite.email.toLowerCase().trim(),
+            password: hashedPassword,
+            role: "CLIENT",
+            name: name?.trim() || invite.email.split("@")[0],
+          },
+        });
+
+        await tx.client.create({
+          data: {
+            userId: newUser.id,
+            offerType: invite.offerType,
+            status: "ACTIVE",
+            language: invite.language || "FR",
+          },
+        });
+
+        // Marque le token comme utilisé
+        await tx.inviteToken.update({
+          where: { id: invite.id },
+          data: { usedAt: new Date() },
+        });
+
+        return newUser;
+      });
+    }
 
     // Generation du JWT et set du cookie
     const jwt = await signToken({

@@ -1,7 +1,16 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Script from "next/script";
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (element: HTMLElement, options: Record<string, unknown>) => void;
+    };
+  }
+}
 
 const t = {
   FR: {
@@ -10,6 +19,7 @@ const t = {
     invalidLink: "Lien d'invitation invalide — aucun token fourni.",
     backToLogin: "Retour à la connexion",
     createAccount: "Créez votre compte",
+    setPassword: "Définir votre mot de passe",
     firstName: "Prénom",
     firstNamePlaceholder: "Votre prénom",
     lastName: "Nom",
@@ -17,7 +27,9 @@ const t = {
     password: "Mot de passe",
     confirmPassword: "Confirmer le mot de passe",
     submit: "Créer mon compte",
+    submitActivate: "Activer mon compte",
     submitting: "Création du compte...",
+    submittingActivate: "Activation...",
     errFirstLastRequired: "Prénom et nom requis",
     errPasswordMin: "Le mot de passe doit contenir au moins 8 caractères",
     errPasswordMismatch: "Les mots de passe ne correspondent pas",
@@ -30,6 +42,7 @@ const t = {
     invalidLink: "Invalid invitation link — no token provided.",
     backToLogin: "Back to login",
     createAccount: "Create your account",
+    setPassword: "Set your password",
     firstName: "First name",
     firstNamePlaceholder: "Your first name",
     lastName: "Last name",
@@ -37,7 +50,9 @@ const t = {
     password: "Password",
     confirmPassword: "Confirm password",
     submit: "Create my account",
+    submitActivate: "Activate my account",
     submitting: "Creating account...",
+    submittingActivate: "Activating...",
     errFirstLastRequired: "First and last name required",
     errPasswordMin: "Password must be at least 8 characters",
     errPasswordMismatch: "Passwords do not match",
@@ -77,6 +92,24 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [tokenError, setTokenError] = useState("");
+  const [isExistingUser, setIsExistingUser] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  const renderTurnstile = useCallback(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.turnstile &&
+      turnstileRef.current &&
+      turnstileRef.current.childElementCount === 0
+    ) {
+      window.turnstile.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "",
+        callback: (token: string) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(""),
+      });
+    }
+  }, []);
 
   const i = t[lang];
 
@@ -104,6 +137,13 @@ function RegisterForm() {
         setEmail(data.email);
         if (data.language === "EN" || data.language === "FR") {
           setLang(data.language);
+        }
+        // Si l'utilisateur existe déjà (pré-créé par admin), pré-remplir le nom
+        if (data.existingUser?.name) {
+          setIsExistingUser(true);
+          const parts = data.existingUser.name.split(" ");
+          setFirstName(parts[0] || "");
+          setLastName(parts.slice(1).join(" ") || "");
         }
       } catch (err) {
         console.error("[register] verifyToken failed:", err);
@@ -146,6 +186,7 @@ function RegisterForm() {
         body: JSON.stringify({
           name: `${firstName.trim()} ${lastName.trim()}`,
           password,
+          turnstileToken,
         }),
       });
 
@@ -218,7 +259,7 @@ function RegisterForm() {
             BeeFrequency
           </p>
           <p className="font-display text-brun-mid text-sm italic mt-3">
-            {i.createAccount}
+            {isExistingUser ? i.setPassword : i.createAccount}
           </p>
         </div>
 
@@ -248,7 +289,8 @@ function RegisterForm() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200"
+              readOnly={isExistingUser}
+              className={`w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200 ${isExistingUser ? "opacity-60 cursor-not-allowed" : ""}`}
               placeholder={i.firstNamePlaceholder}
             />
           </div>
@@ -266,7 +308,8 @@ function RegisterForm() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200"
+              readOnly={isExistingUser}
+              className={`w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200 ${isExistingUser ? "opacity-60 cursor-not-allowed" : ""}`}
               placeholder={i.lastNamePlaceholder}
             />
           </div>
@@ -307,14 +350,25 @@ function RegisterForm() {
             />
           </div>
 
+          {/* Cloudflare Turnstile */}
+          <div ref={turnstileRef} className="flex justify-center" />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !turnstileToken}
             className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-[0.06em] rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50"
           >
-            {loading ? i.submitting : i.submit}
+            {loading
+              ? (isExistingUser ? i.submittingActivate : i.submitting)
+              : (isExistingUser ? i.submitActivate : i.submit)}
           </button>
         </form>
+
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad"
+          strategy="afterInteractive"
+          onReady={renderTurnstile}
+        />
       </div>
     </div>
   );

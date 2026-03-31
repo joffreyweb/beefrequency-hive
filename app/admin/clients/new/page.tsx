@@ -5,14 +5,22 @@ import Link from "next/link";
 
 // Options d'offres disponibles
 const OFFER_OPTIONS = [
-  { value: "HIVE_EXPERIENCE", label: "Hive Experience" },
-  { value: "THE_PASSAGE", label: "The Passage" },
-  { value: "SOUVERAINETE", label: "Souveraineté" },
+  { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire" },
+  { value: "SESSION_SEUIL", label: "Session Seuil" },
+  { value: "LE_NECTAR_CYCLE", label: "Le Nectar Cycle (600€)" },
+  { value: "LE_PASSAGE_1_1", label: "Le Passage 1:1 (3900€)" },
+  { value: "LES_CYCLES_DE_LA_RUCHE", label: "Les Cycles de la Ruche (1200€)" },
+  { value: "CEREMONIE_RESET", label: "Cérémonie Reset (150€)" },
+  { value: "LA_RUCHE_VIVANTE", label: "La Ruche Vivante (75€)" },
+  { value: "SOUVERAINETE", label: "Souveraineté (15000€)" },
+  { value: "LA_CHAMBRE_DE_LA_REINE", label: "La Chambre de la Reine" },
+  { value: "SOS_URGENCE_VIP", label: "SOS Urgence VIP" },
+  { value: "LE_FIL_DE_LA_RUCHE", label: "Le Fil de la Ruche" },
 ];
 
 export default function InviteClientPage() {
   const [email, setEmail] = useState("");
-  const [offerType, setOfferType] = useState("HIVE_EXPERIENCE");
+  const [offerType, setOfferType] = useState("CONVERSATION_EXPLORATOIRE");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [inviteLink, setInviteLink] = useState("");

@@ -20,7 +20,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Validation du type d'offre
-    const validOffers = ["HIVE_EXPERIENCE", "THE_PASSAGE", "SOUVERAINETE"];
+    const validOffers = [
+      "CONVERSATION_EXPLORATOIRE", "SESSION_SEUIL", "LE_NECTAR_CYCLE",
+      "LE_PASSAGE_1_1", "LES_CYCLES_DE_LA_RUCHE", "CEREMONIE_RESET",
+      "LA_RUCHE_VIVANTE", "SOUVERAINETE", "LA_CHAMBRE_DE_LA_REINE",
+      "SOS_URGENCE_VIP", "LE_FIL_DE_LA_RUCHE",
+      "HIVE_EXPERIENCE", "THE_PASSAGE", // Legacy
+    ];
     if (!validOffers.includes(offerType)) {
       return NextResponse.json(
         { error: "Type d'offre invalide" },

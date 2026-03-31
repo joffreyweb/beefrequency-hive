@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   const client = await prisma.client.create({
     data: {
       userId: user.id,
-      offerType: offerType || "HIVE_EXPERIENCE",
+      offerType: offerType || "CONVERSATION_EXPLORATOIRE",
       language: language || "FR",
       isLegacy: isLegacy || false,
       startDate: clientStartDate,
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   const inviteToken = await prisma.inviteToken.create({
     data: {
       email,
-      offerType: offerType || "HIVE_EXPERIENCE",
+      offerType: offerType || "CONVERSATION_EXPLORATOIRE",
       language: language || "FR",
       role: "CLIENT",
       expiresAt,
