@@ -106,12 +106,12 @@ export const t = {
       FR: "Comment je me sens en arrivant ici.",
     },
     videoQ2: {
-      EN: "What is present in me right now.",
-      FR: "Ce qui est pr\u00e9sent en moi pour l\u2019instant.",
+      EN: "What is present in me.",
+      FR: "Ce qui est pr\u00e9sent en moi.",
     },
     videoQ3: {
-      EN: "What I want to transform.",
-      FR: "Ce que j\u2019ai envie de transformer.",
+      EN: "What I want to release.",
+      FR: "Ce que j\u2019ai envie de d\u00e9poser.",
     },
 
     // Step 4 - Charter

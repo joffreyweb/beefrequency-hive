@@ -11,15 +11,12 @@ interface Props {
   onComplete: () => void;
 }
 
-type SubStep = "intro" | "scroll" | "sign";
-
 export default function CharteEngagement({ lang, clientFirstName, clientName, onComplete }: Props) {
-  const [subStep, setSubStep] = useState<SubStep>("intro");
   const [checks, setChecks] = useState({ c1: false, c2: false, c3: false });
   const [signature, setSignature] = useState(clientFirstName);
   const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [timerDone, setTimerDone] = useState(false);
 
   const T = (key: { EN: string; FR: string }) => key[lang];
@@ -31,34 +28,31 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
 
   // 10-second minimum timer for charter reading
   useEffect(() => {
-    if (subStep === "scroll") {
-      const timer = setTimeout(() => setTimerDone(true), 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [subStep]);
+    const timer = setTimeout(() => setTimerDone(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Scroll detection
   useEffect(() => {
-    if (subStep !== "scroll") return;
     const el = scrollRef.current;
     if (!el) return;
     const checkScrolled = () => {
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
-        setScrolled(true);
+        setScrolledToBottom(true);
       }
     };
     checkScrolled();
     el.addEventListener("scroll", checkScrolled);
     return () => el.removeEventListener("scroll", checkScrolled);
-  }, [subStep]);
+  }, []);
 
   const allChecked = checks.c1 && checks.c2 && checks.c3;
-  const canShowButton = scrolled && timerDone;
+  const canSubmit = allChecked && scrolledToBottom && timerDone;
 
   const charterText = lang === "FR" ? t.charterFR : t.charterEN;
 
   async function handleSubmit() {
-    if (!allChecked || submitting) return;
+    if (!canSubmit || submitting) return;
     setSubmitting(true);
     try {
       await fetch("/api/onboarding/charte", {
@@ -75,72 +69,39 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
     }
   }
 
-  // Sub-step A — Intro
-  if (subStep === "intro") {
-    return (
-      <div className="flex flex-col items-center justify-center text-center py-12 space-y-8">
-        <p className="font-display text-xl text-brun-chaud leading-relaxed whitespace-pre-line max-w-sm">
-          {T(t.onboarding.charterIntroText)}
-        </p>
-        <button
-          onClick={() => setSubStep("scroll")}
-          className="px-8 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors"
-        >
-          {T(t.onboarding.continueButton)}
-        </button>
-      </div>
-    );
-  }
-
-  // Sub-step B — Scroll charter
-  if (subStep === "scroll") {
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="font-display text-2xl text-brun-chaud">
-            Convention & Engagement
-          </h2>
-        </div>
-
-        <div
-          ref={scrollRef}
-          className="h-80 overflow-y-auto border border-or-pale rounded-sm bg-cire-chaude p-5 text-sm font-ui text-brun-chaud space-y-4 leading-relaxed"
-        >
-          {charterText.split("\n\n").map((paragraph, i) => {
-            // Check if paragraph looks like a heading (numbered or title)
-            const isHeading = /^(\d+\.|Convention|Purpose|Objet)/.test(paragraph.trim());
-            return (
-              <p key={i} className={isHeading ? "font-display text-base text-brun-chaud" : ""}>
-                {paragraph}
-              </p>
-            );
-          })}
-          <p className="text-brun-mid/60 text-xs pt-4">&mdash; Joffrey Deleplanque &middot; BeeFrequency</p>
-        </div>
-
-        {!canShowButton && (
-          <p className="text-xs text-brun-mid/60 font-ui text-center animate-pulse">
-            &darr; {lang === "FR" ? "Fais d\u00e9filer jusqu\u2019en bas pour continuer" : "Scroll to the bottom to continue"}
-          </p>
-        )}
-
-        <button
-          onClick={() => setSubStep("sign")}
-          disabled={!canShowButton}
-          className={`w-full py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-all duration-300 ${
-            canShowButton ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          {T(t.onboarding.charterScrollButton)}
-        </button>
-      </div>
-    );
-  }
-
-  // Sub-step C — Checkboxes + signature
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
+      {/* Title */}
+      <div className="text-center">
+        <h2 className="font-display text-2xl text-brun-chaud">
+          Convention & Engagement
+        </h2>
+      </div>
+
+      {/* Scrollable charter text */}
+      <div
+        ref={scrollRef}
+        className="h-72 overflow-y-auto border border-or-pale rounded-sm bg-cire-chaude p-5 text-sm font-ui text-brun-chaud space-y-4 leading-relaxed"
+      >
+        {charterText.split("\n\n").map((paragraph, i) => {
+          const isHeading = /^(\d+\.|Convention|Purpose|Objet)/.test(paragraph.trim());
+          return (
+            <p key={i} className={isHeading ? "font-display text-base text-brun-chaud" : ""}>
+              {paragraph}
+            </p>
+          );
+        })}
+        <p className="text-brun-mid/60 text-xs pt-4">&mdash; Joffrey Deleplanque &middot; BeeFrequency</p>
+      </div>
+
+      {!scrolledToBottom && (
+        <p className="text-xs text-brun-mid/60 font-ui text-center animate-pulse">
+          &darr; {lang === "FR" ? "Fais défiler jusqu\u2019en bas pour continuer" : "Scroll to the bottom to continue"}
+        </p>
+      )}
+
+      {/* Checkboxes — directly below charter */}
+      <div className="space-y-3 pt-2">
         {[
           { key: "c1", text: T(t.onboarding.charterCheck1) },
           { key: "c2", text: T(t.onboarding.charterCheck2) },
@@ -158,22 +119,20 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
         ))}
       </div>
 
-      {/* Signature */}
+      {/* Signature — auto-filled with first name */}
       <div className="text-center py-2">
         <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-2">
           {T(t.onboarding.charterSignedBy)}
         </p>
-        <input
-          type="text"
-          value={signature}
-          onChange={(e) => setSignature(e.target.value)}
-          className="text-center font-display text-2xl text-brun-chaud italic bg-transparent border-b border-or-pale focus:border-or-sacre focus:outline-none w-full max-w-xs mx-auto"
-        />
+        <p className="font-display text-2xl text-brun-chaud italic">
+          {signature || clientFirstName}
+        </p>
       </div>
 
+      {/* Submit */}
       <button
         onClick={handleSubmit}
-        disabled={!allChecked || submitting}
+        disabled={!canSubmit || submitting}
         className="w-full py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-widest rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {submitting ? T(t.onboarding.charterSigning) : T(t.onboarding.charterCommitButton)}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
 import VideoRecorder from "@/components/video/VideoRecorder";
 import CharteEngagement from "@/components/onboarding/CharteEngagement";
+import { COUNTRIES, getCountryName, filterCities } from "@/lib/countries";
 
 interface FormData {
   firstName: string;
@@ -97,7 +98,7 @@ export default function OnboardingPage() {
           birthDate: form.birthDate,
           birthTime: form.birthTimeUnknown ? null : form.birthTime || null,
           birthPlace: form.birthPlace.trim(),
-          birthCountry: form.birthCountry.trim(),
+          birthCountry: getCountryName(COUNTRIES.find((c) => c.code === form.birthCountry) || COUNTRIES[0], lang),
           postalAddress: form.postalAddress.trim(),
           addressLine2: form.addressLine2.trim() || null,
           city: form.city.trim(),
@@ -272,41 +273,32 @@ export default function OnboardingPage() {
                     </label>
                   </div>
 
-                  <Field
-                    label={T(t.onboarding.birthCity)}
-                    value={form.birthPlace}
-                    onChange={(v) => update("birthPlace", v)}
-                    required
-                  />
-
                   <div>
                     <label className="block text-sm font-ui text-brun-chaud mb-1">
                       {T(t.onboarding.birthCountry)} <span className="text-or-sacre">*</span>
                     </label>
                     <select
                       value={form.birthCountry}
-                      onChange={(e) => update("birthCountry", e.target.value)}
+                      onChange={(e) => { update("birthCountry", e.target.value); update("birthPlace", ""); }}
                       className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
                     >
-                      <option value="">Select...</option>
-                      <option value="France">France</option>
-                      <option value="Belgium">Belgium</option>
-                      <option value="Switzerland">Switzerland</option>
-                      <option value="Luxembourg">Luxembourg</option>
-                      <option value="Canada">Canada</option>
-                      <option value="Spain">Spain</option>
-                      <option value="United Kingdom">United Kingdom</option>
-                      <option value="Germany">Germany</option>
-                      <option value="Netherlands">Netherlands</option>
-                      <option value="Italy">Italy</option>
-                      <option value="Portugal">Portugal</option>
-                      <option value="Morocco">Morocco</option>
-                      <option value="Algeria">Algeria</option>
-                      <option value="Tunisia">Tunisia</option>
-                      <option value="United States">United States</option>
-                      <option value="Other">Other</option>
+                      <option value="">{T({ EN: "Select a country…", FR: "Sélectionner un pays…" })}</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {getCountryName(c, lang)}
+                        </option>
+                      ))}
                     </select>
                   </div>
+
+                  <CityAutocomplete
+                    label={T(t.onboarding.birthCity)}
+                    countryCode={form.birthCountry}
+                    value={form.birthPlace}
+                    onChange={(v) => update("birthPlace", v)}
+                    lang={lang}
+                    required
+                  />
 
                   {/* Delivery address */}
                   <div className="pt-4">
@@ -352,19 +344,11 @@ export default function OnboardingPage() {
                       onChange={(e) => update("country", e.target.value)}
                       className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
                     >
-                      <option value="France">France</option>
-                      <option value="Belgium">Belgium</option>
-                      <option value="Switzerland">Switzerland</option>
-                      <option value="Luxembourg">Luxembourg</option>
-                      <option value="Canada">Canada</option>
-                      <option value="Spain">Spain</option>
-                      <option value="United Kingdom">United Kingdom</option>
-                      <option value="Germany">Germany</option>
-                      <option value="Netherlands">Netherlands</option>
-                      <option value="Italy">Italy</option>
-                      <option value="Portugal">Portugal</option>
-                      <option value="United States">United States</option>
-                      <option value="Other">Other</option>
+                      {COUNTRIES.filter((c) => c.code !== "XX").map((c) => (
+                        <option key={c.code} value={getCountryName(c, lang)}>
+                          {getCountryName(c, lang)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -464,6 +448,73 @@ function Field({
         disabled={disabled}
         className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors disabled:opacity-40 disabled:bg-cire-chaude"
       />
+    </div>
+  );
+}
+
+function CityAutocomplete({
+  label,
+  countryCode,
+  value,
+  onChange,
+  lang,
+  required,
+}: {
+  label: string;
+  countryCode: string;
+  value: string;
+  onChange: (v: string) => void;
+  lang: "FR" | "EN";
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!countryCode || !open) { setSuggestions([]); return; }
+    setSuggestions(filterCities(countryCode, value));
+  }, [countryCode, value, open]);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <label className="block text-sm font-ui text-brun-chaud mb-1">
+        {label} {required && <span className="text-or-sacre">*</span>}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder={lang === "FR" ? "Commence à taper…" : "Start typing…"}
+        className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
+      />
+      {open && suggestions.length > 0 && (
+        <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-or-pale rounded-sharp shadow-lg max-h-48 overflow-y-auto">
+          {suggestions.map((city) => (
+            <li key={city}>
+              <button
+                type="button"
+                onClick={() => { onChange(city); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-sm font-ui text-brun-chaud hover:bg-creme-sacree transition-colors"
+              >
+                {city}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
