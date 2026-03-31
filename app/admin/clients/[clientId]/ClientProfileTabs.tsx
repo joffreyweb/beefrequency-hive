@@ -15,6 +15,7 @@ import TimezoneSelector from "@/components/admin/TimezoneSelector";
 import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
 import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
 import ParcoursSection from "@/components/admin/ParcoursSection";
+import DetoxSection from "@/components/admin/DetoxSection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -48,7 +49,7 @@ type TabKey =
   | "seances";
 
 // Sous-onglets du programme
-type ProgramSubTab = "elixirs" | "protocols" | "practices";
+type ProgramSubTab = "detox" | "elixirs" | "protocols" | "practices";
 
 interface ClientProfileTabsProps {
   client: any;
@@ -68,7 +69,7 @@ export default function ClientProfileTabs({
   nextSession,
 }: ClientProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [programSubTab, setProgramSubTab] = useState<ProgramSubTab>("elixirs");
+  const [programSubTab, setProgramSubTab] = useState<ProgramSubTab>("detox");
 
   // Nombre de messages non lus (recus par l'admin, non lus)
   const unreadMsgCount = messages.filter(
@@ -470,6 +471,7 @@ function ProgramTab({
   setSubTab: (t: ProgramSubTab) => void;
 }) {
   const subTabs: { key: ProgramSubTab; label: string }[] = [
+    { key: "detox", label: "Détox" },
     { key: "elixirs", label: "Elixirs" },
     { key: "protocols", label: "Protocoles" },
     { key: "practices", label: "Pratiques" },
@@ -495,6 +497,7 @@ function ProgramTab({
       </div>
 
       {/* Contenu du sous-onglet */}
+      {subTab === "detox" && <DetoxSection clientId={client.id} />}
       {subTab === "elixirs" && <ElixirsSubTab client={client} />}
       {subTab === "protocols" && <ProtocolsSubTab client={client} />}
       {subTab === "practices" && (

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ClientNav from "@/components/client/ClientNav";
 import ClientHeader from "@/components/client/ClientHeader";
+import PreStartGuard from "@/components/client/PreStartGuard";
 import { LanguageProvider } from "@/lib/LanguageContext";
 
 export default async function ClientLayout({
@@ -30,7 +31,7 @@ export default async function ClientLayout({
       <div className="min-h-screen bg-creme-sacree flex flex-col">
         <ClientHeader />
         <main className="flex-1 max-w-lg w-full mx-auto px-4 pt-16 pb-24">
-          {children}
+          <PreStartGuard>{children}</PreStartGuard>
         </main>
         <ClientNav />
       </div>

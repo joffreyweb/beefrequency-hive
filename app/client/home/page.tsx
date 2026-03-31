@@ -5,6 +5,8 @@ import { requireOnboarding } from "@/lib/onboarding-guard";
 import Link from "next/link";
 import DocumentUploadButton from "@/components/client/DocumentUploadButton";
 import CheckinButtons from "@/components/client/CheckinButtons";
+import ElixirReceivedBanner from "@/components/client/ElixirReceivedBanner";
+import TimelineWidget from "@/components/client/TimelineWidget";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
 
@@ -106,6 +108,9 @@ export default async function ClientHomePage() {
         </div>
       )}
 
+      {/* Élixirs reçus banner */}
+      <ElixirReceivedBanner />
+
       {/* Wisdom message */}
       {wisdomMessage && (
         <div className="text-center py-6">
@@ -124,6 +129,9 @@ export default async function ClientHomePage() {
           {displayName} &mdash; <span className="text-or-sacre">{T(t.home.day)} {dayNumber}</span>
         </h1>
       </div>
+
+      {/* Timeline widget */}
+      <TimelineWidget />
 
       {/* Elixirs prescribed */}
       {client.elixirPrescriptions.length > 0 && (

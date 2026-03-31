@@ -144,6 +144,7 @@ model Client {
   questionnaireResponses QuestionnaireResponse[]
   appointments           Appointment[]
   sessionPacks           SessionPack[]
+  detoxDays              DetoxDay[]
 }
 
 model JournalEntry {
@@ -895,4 +896,26 @@ model BookingToken {
   usedAt    DateTime?
 
   createdAt DateTime @default(now())
+}
+
+// ═══════════════════════════════════════
+// MODULE — PROGRAMME DÉTOX (10 jours)
+// ADMIN ONLY — jamais exposé côté client
+// ═══════════════════════════════════════
+
+model DetoxDay {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  dayNumber     Int      // 1 à 10
+  date          DateTime @db.Date // Date calendrier du jour
+  elixirDone    Boolean  @default(false)
+  protocolDone  Boolean  @default(false)
+  pratiqueDone  Boolean  @default(false)
+  notes         String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, dayNumber])
 }
