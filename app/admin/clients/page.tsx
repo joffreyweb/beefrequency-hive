@@ -27,6 +27,7 @@ export default async function ClientsListPage() {
     include: {
       user: { select: { name: true, email: true } },
       analysis: { select: { status: true } },
+      questionnaireEntry: { select: { status: true } },
       _count: { select: { pendingActions: { where: { completedAt: null } } } },
     },
   });
@@ -44,6 +45,7 @@ export default async function ClientsListPage() {
     analysisStatus: client.analysis?.status ?? null,
     pendingCount: client._count.pendingActions,
     isLegacy: (client as any).isLegacy || false,
+    questionnaireStatus: client.questionnaireEntry?.status ?? null,
   }));
 
   return (

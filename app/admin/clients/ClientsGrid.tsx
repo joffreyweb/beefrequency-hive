@@ -16,6 +16,7 @@ interface SerializedClient {
   analysisStatus: string | null;
   pendingCount: number;
   isLegacy?: boolean;
+  questionnaireStatus?: string | null;
 }
 
 function getInitials(name: string): string {
@@ -151,6 +152,17 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                 <p className="text-[10px] font-ui text-brun-mid mt-1">
                   Day {dayNumber} · {client.offerLabel} · {client.language}
                 </p>
+                {client.questionnaireStatus && (
+                  <span className={`text-[9px] font-ui mt-1 inline-block px-1.5 py-0.5 rounded-full ${
+                    client.questionnaireStatus === "SUBMITTED"
+                      ? "bg-foret/10 text-foret"
+                      : client.questionnaireStatus === "IN_PROGRESS"
+                        ? "bg-or-sacre/10 text-or-sacre"
+                        : "bg-brun-mid/10 text-brun-mid"
+                  }`}>
+                    Q: {client.questionnaireStatus === "SUBMITTED" ? "Soumis ✓" : client.questionnaireStatus === "IN_PROGRESS" ? "En cours" : "En attente"}
+                  </span>
+                )}
               </Link>
             );
           })}

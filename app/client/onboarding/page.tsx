@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
-import VideoRecorder from "@/components/video/VideoRecorder";
 import CharteEngagement from "@/components/onboarding/CharteEngagement";
+import SeuilOneFlow from "@/components/onboarding/SeuilOneFlow";
 import { COUNTRIES, getCountryName, filterCities } from "@/lib/countries";
 
 interface FormData {
@@ -59,8 +59,15 @@ export default function OnboardingPage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => {
-        if (data.user?.email) {
-          setForm((prev) => ({ ...prev, email: data.user.email }));
+        if (data.user) {
+          const updates: Partial<FormData> = {};
+          if (data.user.email) updates.email = data.user.email;
+          // Pré-remplir le prénom depuis le nom saisi par l'admin
+          if (data.user.name) {
+            const firstName = data.user.name.split(" ")[0];
+            if (firstName) updates.firstName = firstName;
+          }
+          setForm((prev) => ({ ...prev, ...updates }));
         }
       })
       .catch(() => {});
@@ -115,7 +122,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      router.push("/client/home");
+      router.push("/client/questionnaire-entry");
     } catch {
       setError("Something went wrong");
     } finally {
@@ -366,7 +373,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 3 — Video Seuil 1 */}
+              {/* Step 3 — Video Seuil 1 (double vidéo + audio) */}
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
@@ -377,32 +384,12 @@ export default function OnboardingPage() {
                       {T(t.onboarding.videoInstruction)}
                     </p>
                   </div>
-                  <div className="bg-cire-chaude border border-or-pale rounded-sm p-4 space-y-2">
-                    <p className="font-ui text-sm text-brun-chaud">
-                      {T(t.onboarding.videoQ1)}
-                    </p>
-                    <p className="font-ui text-sm text-brun-chaud">
-                      {T(t.onboarding.videoQ2)}
-                    </p>
-                    <p className="font-ui text-sm text-brun-chaud">
-                      {T(t.onboarding.videoQ3)}
+                  <div className="bg-cire-chaude border border-or-pale rounded-sm p-4">
+                    <p className="font-display text-sm text-brun-chaud leading-relaxed italic">
+                      {T(t.onboarding.videoDescription)}
                     </p>
                   </div>
-                  <VideoRecorder seuil="1" onComplete={() => setStep(4)} />
-                  <div className="flex gap-4 pt-2">
-                    <button
-                      onClick={() => setStep(2)}
-                      className="flex-1 py-2 text-brun-mid font-ui text-xs uppercase tracking-wider hover:text-brun-chaud transition-colors"
-                    >
-                      {T(t.onboarding.backButton)}
-                    </button>
-                    <button
-                      onClick={() => setStep(4)}
-                      className="flex-1 py-2 text-or-sacre font-ui text-xs uppercase tracking-wider hover:text-ambre-vif transition-colors"
-                    >
-                      {T(t.onboarding.continueButton)} &rarr;
-                    </button>
-                  </div>
+                  <SeuilOneFlow lang={lang} onComplete={() => setStep(4)} />
                 </div>
               )}
 

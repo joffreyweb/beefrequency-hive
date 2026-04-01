@@ -101,17 +101,9 @@ export const t = {
       EN: "Record a short video. 60 seconds max.",
       FR: "Enregistre une courte vid\u00e9o. 60 secondes max.",
     },
-    videoQ1: {
-      EN: "How I feel arriving here.",
-      FR: "Comment je me sens en arrivant ici.",
-    },
-    videoQ2: {
-      EN: "What is present in me.",
-      FR: "Ce qui est pr\u00e9sent en moi.",
-    },
-    videoQ3: {
-      EN: "What I want to release.",
-      FR: "Ce que j\u2019ai envie de d\u00e9poser.",
+    videoDescription: {
+      EN: "Take a moment to settle in. Simply let what is here express itself. This video opens something. It is a starting point.",
+      FR: "Prends un moment pour te poser. Laisse simplement ce qui est l\u00e0 s\u2019exprimer. Cette vid\u00e9o ouvre quelque chose. C\u2019est un point de d\u00e9part.",
     },
 
     // Step 4 - Charter

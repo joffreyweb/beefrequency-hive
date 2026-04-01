@@ -5,9 +5,9 @@ import { useState, useRef, useCallback } from "react";
 const QUESTIONS = {
   "1": [
     "Où j'en suis aujourd'hui.",
-    "Comment je me sens en arrivant ici.",
+    "Ce que je ressens en arrivant ici.",
     "Ce qui est vraiment présent en moi.",
-    "Ce que j'ai envie de déposer.",
+    "Ce que j'ai envie de transformer.",
   ],
   "2": [
     "Ce qui a déjà bougé en moi.",

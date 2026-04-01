@@ -39,6 +39,11 @@ export async function POST(request: NextRequest) {
         where: { userId },
         data: { videoSeuil1Url: `/uploads/videos/${videoPath}` },
       });
+    } else if (seuil === "1b") {
+      await prisma.client.updateMany({
+        where: { userId },
+        data: { videoSeuil1BUrl: `/uploads/videos/${videoPath}` },
+      });
     }
 
     return NextResponse.json({ success: true, path: videoPath });

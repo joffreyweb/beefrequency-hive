@@ -34,9 +34,9 @@ interface AuthUser {
 
 // Badge selon le type de pratique
 const TYPE_BADGES: Record<string, { emoji: string; label: string }> = {
-  BREATHING: { emoji: "🫁", label: "Breathing" },
-  VIDEO: { emoji: "🎬", label: "Video" },
-  MEDITATION: { emoji: "🧘", label: "Meditation" },
+  BREATHING: { emoji: "🫁", label: "Respiration" },
+  VIDEO: { emoji: "🎬", label: "Vidéo" },
+  MEDITATION: { emoji: "🧘", label: "Méditation" },
 };
 
 /**
@@ -57,7 +57,7 @@ function isToday(dateStr: string | null): boolean {
  * Formater une date en format lisible français.
  */
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -163,7 +163,7 @@ export default function ClientPratiquesPage() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-brun-mid font-ui text-sm">
-          Loading your practices...
+          Chargement de tes pratiques...
         </div>
       </div>
     );
@@ -177,7 +177,7 @@ export default function ClientPratiquesPage() {
           onClick={loadData}
           className="px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity"
         >
-          Retry
+          Réessayer
         </button>
       </div>
     );
@@ -211,25 +211,25 @@ export default function ClientPratiquesPage() {
       <div>
         {/* Titre de la page */}
         <h1 className="font-display text-2xl text-brun-chaud mb-8">
-          Practices
+          Pratiques
         </h1>
 
         {/* Day of journey */}
         {dayNumber !== null && (
           <p className="font-ui text-sm text-brun-mid mb-6">
-            Day {dayNumber} of your journey
+            Jour {dayNumber} de ton parcours
           </p>
         )}
 
         {/* Section Aujourd'hui */}
         <section className="mb-10">
           <h2 className="font-display text-lg text-brun-chaud mb-4">
-            Today
+            Aujourd&apos;hui
           </h2>
 
           {todayPractices.length === 0 ? (
             <p className="font-ui text-sm text-brun-mid">
-              No practices assigned yet.
+              Aucune pratique assignée pour le moment.
             </p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -253,10 +253,10 @@ export default function ClientPratiquesPage() {
 }
 
 const LIBRARY_CATEGORIES = [
-  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Breathwork" },
-  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Reset" },
-  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Anxiety" },
-  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Stress" },
+  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Respiration" },
+  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Méditation" },
+  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Mouvement" },
+  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Rituel" },
 ];
 
 interface LibPractice {
@@ -294,7 +294,7 @@ function LibrarySection() {
 
   return (
     <section>
-      <h2 className="font-display text-lg text-brun-chaud mb-4">Library</h2>
+      <h2 className="font-display text-lg text-brun-chaud mb-4">Bibliothèque</h2>
       <div className="grid grid-cols-2 gap-3 mb-4">
         {LIBRARY_CATEGORIES.map((cat) => (
           <button
@@ -315,9 +315,9 @@ function LibrarySection() {
       {selectedCat && (
         <div className="mt-2">
           {libLoading ? (
-            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Loading...</p>
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Chargement...</p>
           ) : libPractices.length === 0 ? (
-            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Nothing here yet.</p>
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Rien ici pour le moment.</p>
           ) : (
             <div className="space-y-3">
               {libPractices.map((p) => (
@@ -370,11 +370,11 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
 
       {/* Stats */}
       <div className="font-ui text-xs text-brun-mid/70 flex items-center gap-2 flex-wrap">
-        <span>Completed {completedCount} time{completedCount !== 1 ? "s" : ""}</span>
+        <span>Complété {completedCount} fois</span>
         {lastCompletedAt && (
           <>
             <span>·</span>
-            <span>Last: {formatDate(lastCompletedAt)}</span>
+            <span>Dernier : {formatDate(lastCompletedAt)}</span>
           </>
         )}
       </div>
@@ -391,7 +391,7 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
         onClick={onStart}
         className="mt-auto px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity self-start"
       >
-        {completedToday ? "Redo" : "Start"}
+        {completedToday ? "Refaire" : "Commencer"}
       </button>
     </div>
   );

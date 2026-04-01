@@ -93,7 +93,8 @@ model Client {
   notes                 String?      // ADMIN ONLY — Notes internes Joffrey — jamais exposé côté client
   onboardingCompleted   Boolean      @default(false) // Onboarding formulaire rempli
   hdType                String?      // Type Human Design (GENERATOR, MANIFESTOR, etc.)
-  videoSeuil1Url        String?      // URL vidéo Seuil 1 (onboarding)
+  videoSeuil1Url        String?      // URL vidéo Seuil 1A — Point de départ
+  videoSeuil1BUrl       String?      // URL vidéo Seuil 1B — Et si tout était possible
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
   isLegacy              Boolean      @default(false) // Client Legacy — admin only, skip onboarding
 
@@ -145,6 +146,7 @@ model Client {
   appointments           Appointment[]
   sessionPacks           SessionPack[]
   detoxDays              DetoxDay[]
+  questionnaireEntry     QuestionnaireEntry?
 }
 
 model JournalEntry {
@@ -154,6 +156,8 @@ model JournalEntry {
   content   String
   isPrivate Boolean @default(false) // true = visible uniquement par le client
   mood      String?
+  entryType String  @default("text") // text | photo | audio
+  mediaUrl  String? // URL du fichier photo/audio (kDrive ou local)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -918,4 +922,20 @@ model DetoxDay {
   updatedAt DateTime @updatedAt
 
   @@unique([clientId, dayNumber])
+}
+
+// ═══════════════════════════════════════
+// MODULE — QUESTIONNAIRE D'ENTRÉE (8 sections)
+// ═══════════════════════════════════════
+
+model QuestionnaireEntry {
+  id           String    @id @default(cuid())
+  clientId     String    @unique
+  client       Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  status       String    @default("PENDING") // PENDING | IN_PROGRESS | SUBMITTED
+  sectionsDone Int       @default(0) // 0 à 8
+  responses    Json?     // Toutes les réponses { section1: {...}, section2: {...}, ... }
+  submittedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

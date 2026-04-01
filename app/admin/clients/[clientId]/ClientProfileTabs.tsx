@@ -16,6 +16,7 @@ import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
 import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
 import ParcoursSection from "@/components/admin/ParcoursSection";
 import DetoxSection from "@/components/admin/DetoxSection";
+import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -1001,13 +1002,97 @@ function MessagesTab({
       </section>
 
       {/* Messages parcours */}
-      <section>
-        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+      <JourneyMessageSection clientId={client.id} clientUserId={client.userId} />
+    </div>
+  );
+}
+
+function JourneyMessageSection({ clientId, clientUserId }: { clientId: string; clientUserId: string }) {
+  const [showModal, setShowModal] = useState(false);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [key, setKey] = useState(0);
+
+  async function handleSend() {
+    if (!message.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receiverId: clientUserId, content: message.trim(), tag: "JOURNEY" }),
+      });
+      if (res.ok) {
+        setSent(true);
+        setMessage("");
+        setKey((k) => k + 1);
+        setTimeout(() => { setShowModal(false); setSent(false); }, 1200);
+      }
+    } catch {
+      // Silencieux
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider">
           Messages parcours
         </h2>
-        <JourneyMessagesLog clientId={client.id} />
-      </section>
-    </div>
+        <button
+          onClick={() => { setShowModal(true); setSent(false); setMessage(""); }}
+          className="px-3 py-1.5 bg-or-sacre text-white font-ui text-[10px] uppercase tracking-wider rounded-full hover:bg-ambre-vif transition-colors"
+        >
+          Envoyer un message parcours
+        </button>
+      </div>
+
+      <JourneyMessagesLog clientId={clientId} key={key} />
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-creme-sacree border border-or-pale rounded-[10px] p-6 w-full max-w-md shadow-xl">
+            <h3 className="font-display text-lg text-brun-chaud mb-4">
+              Message parcours
+            </h3>
+            {sent ? (
+              <div className="text-center py-4">
+                <p className="font-ui text-sm text-foret">Message envoyé ✓</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none focus:outline-none focus:border-or-sacre transition-colors"
+                  placeholder="Ton message parcours…"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 border border-or-pale text-brun-mid text-xs font-ui uppercase rounded-sharp hover:bg-cire-chaude transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={sending || !message.trim()}
+                    className="px-4 py-2 bg-or-sacre text-white text-xs font-ui uppercase rounded-sharp hover:bg-ambre-vif disabled:opacity-50 transition-colors"
+                  >
+                    {sending ? "Envoi…" : "Envoyer"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1299,6 +1384,8 @@ function QuestionnairesTab({ client }: { client: any }) {
       .then((r) => r.json())
       .then((d) => setQuestionnaires(d.questionnaires?.filter((q: any) => q.isActive) || []))
       .catch(() => {});
+
+  // Note: QuestionnaireEntrySection is rendered at the top of the return JSX below
     // Charger les reponses du client
     fetchResponses();
   }, []);
@@ -1418,7 +1505,11 @@ function QuestionnairesTab({ client }: { client: any }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Questionnaire d'entrée (8 sections) */}
+      <QuestionnaireEntrySection clientId={client.id} />
+
+      {/* Questionnaires classiques */}
       <ResponseSection type="PRE_START" label="Pre-Start" />
       <ResponseSection type="FOLLOW_UP" label="Follow-Up" />
     </div>

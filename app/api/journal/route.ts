@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { content, isPrivate, mood } = body;
+    const { content, isPrivate, mood, entryType } = body;
 
     if (!content || !content.trim()) {
       return NextResponse.json(
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
         content: content.trim(),
         isPrivate: Boolean(isPrivate),
         mood: mood?.trim() || null,
+        entryType: entryType || "text",
       },
     });
 
