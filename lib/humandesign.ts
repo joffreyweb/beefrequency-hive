@@ -97,7 +97,7 @@ export async function calculateHumanDesign(birthDate: Date, lat: number, lng: nu
 
   const julday = sweph.julday(
     birthDate.getUTCFullYear(), birthDate.getUTCMonth() + 1, birthDate.getUTCDate(),
-    birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, sweph.SE_GREG_CAL
+    birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, 1 /* SE_GREG_CAL */
   );
 
   // Design date: 88 solar degrees before birth

@@ -77,7 +77,7 @@ export async function calculateBirthChart(birthDate: Date, lat: number, lng: num
 
   const julday = sweph.julday(
     birthDate.getUTCFullYear(), birthDate.getUTCMonth() + 1, birthDate.getUTCDate(),
-    birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, sweph.SE_GREG_CAL
+    birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, 1 /* SE_GREG_CAL */
   );
 
   const housesResult = sweph.houses(julday, lat, lng, "O");
@@ -129,12 +129,12 @@ export async function calculateProgressions(birthDate: Date, age: number, lat: n
 export async function calculateSolarReturn(birthDate: Date, lat: number, lng: number) {
   const sweph = getSweph();
   const natalJd = sweph.julday(birthDate.getUTCFullYear(), birthDate.getUTCMonth() + 1, birthDate.getUTCDate(),
-    birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, sweph.SE_GREG_CAL);
+    birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, 1 /* SE_GREG_CAL */);
   const natalSunDeg = sweph.calc_ut(natalJd, sweph.SE_SUN, sweph.SEFLG_SWIEPH).data[0];
 
   const currentYear = new Date().getFullYear();
   const approxDate = new Date(Date.UTC(currentYear, birthDate.getMonth(), birthDate.getDate()));
-  let jd = sweph.julday(approxDate.getUTCFullYear(), approxDate.getUTCMonth() + 1, approxDate.getUTCDate(), 12, sweph.SE_GREG_CAL);
+  let jd = sweph.julday(approxDate.getUTCFullYear(), approxDate.getUTCMonth() + 1, approxDate.getUTCDate(), 12, 1 /* SE_GREG_CAL */);
 
   for (let i = 0; i < 30; i++) {
     const sunPos = sweph.calc_ut(jd, sweph.SE_SUN, sweph.SEFLG_SWIEPH);
@@ -145,7 +145,7 @@ export async function calculateSolarReturn(birthDate: Date, lat: number, lng: nu
     jd -= diff / 0.9856;
   }
 
-  const result = sweph.revjul(jd, sweph.SE_GREG_CAL);
+  const result = sweph.revjul(jd, 1 /* SE_GREG_CAL */);
   const hours = Math.floor(result.hour);
   const minutes = Math.round((result.hour - hours) * 60);
   const srDate = new Date(Date.UTC(result.year, result.month - 1, result.day, hours, minutes));
