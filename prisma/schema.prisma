@@ -866,6 +866,7 @@ model Appointment {
   zoomMeetingId String?
   zoomJoinUrl   String?
   zoomStartUrl  String?  // ADMIN ONLY — jamais expose cote client
+  meetingType   String   @default("zoom") // zoom | presentiel
   status        String   @default("CONFIRMED") // CONFIRMED | CANCELLED | RESCHEDULED
   notes         String?  @db.Text // ADMIN ONLY
   reminderSent  Boolean  @default(false)

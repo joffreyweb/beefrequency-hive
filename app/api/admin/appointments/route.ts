@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
 
-  const { clientId, scheduledAt, durationMin, title, notes, sendEmail, useFromPack } = await request.json();
+  const { clientId, scheduledAt, durationMin, title, notes, sendEmail, useFromPack, meetingType } = await request.json();
 
   if (!clientId || !scheduledAt) {
     return NextResponse.json({ error: "clientId et scheduledAt requis" }, { status: 400 });
@@ -54,12 +54,14 @@ export async function POST(request: NextRequest) {
   const dur = durationMin || 60;
   const meetingTitle = title || "Session BeeFrequency";
 
-  // Creer reunion Zoom
+  const type = meetingType === "presentiel" ? "presentiel" : "zoom";
+
+  // Creer reunion Zoom (uniquement si type zoom)
   let zoomMeetingId: string | null = null;
   let zoomJoinUrl: string | null = null;
   let zoomStartUrl: string | null = null;
 
-  if (isZoomConfigured()) {
+  if (type === "zoom" && isZoomConfigured()) {
     try {
       const zoom = await createZoomMeeting(meetingTitle, dateTime, dur);
       zoomMeetingId = zoom.meetingId;
@@ -105,6 +107,7 @@ export async function POST(request: NextRequest) {
       zoomMeetingId,
       zoomJoinUrl,
       zoomStartUrl,
+      meetingType: type,
       notes: notes || null,
       sessionPackId,
     },
@@ -125,11 +128,17 @@ export async function POST(request: NextRequest) {
 
       const subject = lang === "EN"
         ? "Your session is confirmed"
-        : "Ta session est confirmee";
+        : "Ta session est confirmée";
 
-      const body = lang === "EN"
-        ? `Hello ${client.user.name?.split(" ")[0] || ""},\n\nYour session is confirmed:\n\nDate: ${dateStr}\nTime: ${timeStr}\nDuration: ${dur} min${zoomJoinUrl ? `\nJoin: ${zoomJoinUrl}` : ""}\n\nSee you soon,\nJoffrey`
-        : `Bonjour ${client.user.name?.split(" ")[0] || ""},\n\nTa session est confirmee :\n\nDate : ${dateStr}\nHeure : ${timeStr}\nDuree : ${dur} min${zoomJoinUrl ? `\nRejoindre : ${zoomJoinUrl}` : ""}\n\nA bientot,\nJoffrey`;
+      const firstName = client.user.name?.split(" ")[0] || "";
+      const isPresential = type === "presentiel";
+
+      let body: string;
+      if (lang === "EN") {
+        body = `Hello ${firstName},\n\nYour ${isPresential ? "in-person" : ""} session is confirmed:\n\nDate: ${dateStr}\nTime: ${timeStr}\nDuration: ${dur} min${!isPresential && zoomJoinUrl ? `\nJoin: ${zoomJoinUrl}` : ""}\n\nSee you soon,\nJoffrey`;
+      } else {
+        body = `Bonjour ${firstName},\n\nTon rendez-vous ${isPresential ? "en présentiel" : ""} est confirmé :\n\nDate : ${dateStr}\nHeure : ${timeStr}\nDurée : ${dur} min${!isPresential && zoomJoinUrl ? `\nRejoindre : ${zoomJoinUrl}` : ""}\n\nÀ bientôt,\nJoffrey`;
+      }
 
       await transporter.sendMail({
         from: `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`,

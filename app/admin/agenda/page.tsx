@@ -39,7 +39,7 @@ export default function AgendaPage() {
 
   // Modal state
   const [modal, setModal] = useState<{ date: string; time: string } | null>(null);
-  const [form, setForm] = useState({ clientId: "", durationMin: "60", notes: "", useFromPack: true });
+  const [form, setForm] = useState({ clientId: "", durationMin: "60", notes: "", useFromPack: true, meetingType: "zoom" as "zoom" | "presentiel" });
   const [creating, setCreating] = useState(false);
   const [createResult, setCreateResult] = useState("");
 
@@ -66,7 +66,7 @@ export default function AgendaPage() {
       date: slotStart.split("T")[0],
       time: slotStart,
     });
-    setForm({ clientId: "", durationMin: "60", notes: "", useFromPack: true });
+    setForm({ clientId: "", durationMin: "60", notes: "", useFromPack: true, meetingType: "zoom" });
     setCreateResult("");
   }
 
@@ -85,6 +85,7 @@ export default function AgendaPage() {
           notes: form.notes || null,
           sendEmail: true,
           useFromPack: form.useFromPack,
+          meetingType: form.meetingType,
         }),
       });
       if (res.ok) {
@@ -225,8 +226,8 @@ function CreateAppointmentModal({
 }: {
   dateTime: string;
   knownClients: ClientOption[];
-  form: { clientId: string; durationMin: string; notes: string; useFromPack: boolean };
-  setForm: (f: { clientId: string; durationMin: string; notes: string; useFromPack: boolean }) => void;
+  form: { clientId: string; durationMin: string; notes: string; useFromPack: boolean; meetingType: "zoom" | "presentiel" };
+  setForm: (f: { clientId: string; durationMin: string; notes: string; useFromPack: boolean; meetingType: "zoom" | "presentiel" }) => void;
   creating: boolean;
   createResult: string;
   onCreate: () => void;
@@ -277,6 +278,35 @@ function CreateAppointmentModal({
                 ))}
               </select>
             )}
+          </div>
+
+          {/* Type de RDV */}
+          <div>
+            <label className="block text-xs font-ui text-brun-mid/60 mb-2">Type de RDV</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="meetingType"
+                  value="zoom"
+                  checked={form.meetingType === "zoom"}
+                  onChange={() => setForm({ ...form, meetingType: "zoom" })}
+                  className="accent-or-sacre"
+                />
+                <span className="text-sm font-ui text-brun-chaud">Zoom</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="meetingType"
+                  value="presentiel"
+                  checked={form.meetingType === "presentiel"}
+                  onChange={() => setForm({ ...form, meetingType: "presentiel" })}
+                  className="accent-or-sacre"
+                />
+                <span className="text-sm font-ui text-brun-chaud">Présentiel</span>
+              </label>
+            </div>
           </div>
 
           <div>
