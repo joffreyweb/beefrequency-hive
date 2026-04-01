@@ -81,7 +81,9 @@ export async function calculateBirthChart(birthDate: Date, lat: number, lng: num
   );
 
   const housesResult = sweph.houses(julday, lat, lng, "O");
-  const cusps: number[] = Array.from(housesResult.data.cusps).slice(1, 13) as number[];
+  // houses returns { data: { houses: [...], points: [...] } }
+  const rawHouses: number[] = Array.from(housesResult.data.houses || housesResult.data.cusps || []);
+  const cusps: number[] = rawHouses.length > 12 ? rawHouses.slice(1, 13) : rawHouses.slice(0, 12);
 
   // Literal planet IDs (sweph.SE_* may be undefined in some builds)
   const PLANETS: Record<string, number> = {
