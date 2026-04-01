@@ -83,17 +83,18 @@ export async function calculateBirthChart(birthDate: Date, lat: number, lng: num
   const housesResult = sweph.houses(julday, lat, lng, "O");
   const cusps: number[] = Array.from(housesResult.data.cusps).slice(1, 13) as number[];
 
+  // Literal planet IDs (sweph.SE_* may be undefined in some builds)
   const PLANETS: Record<string, number> = {
-    Sun: sweph.SE_SUN, Moon: sweph.SE_MOON, Mercury: sweph.SE_MERCURY,
-    Venus: sweph.SE_VENUS, Mars: sweph.SE_MARS, Jupiter: sweph.SE_JUPITER,
-    Saturn: sweph.SE_SATURN, Uranus: sweph.SE_URANUS, Neptune: sweph.SE_NEPTUNE,
-    Pluto: sweph.SE_PLUTO, NorthNode: sweph.SE_TRUE_NODE, Chiron: sweph.SE_CHIRON,
-    Lilith: sweph.SE_MEAN_APOG,
+    Sun: 0, Moon: 1, Mercury: 2, Venus: 3, Mars: 4, Jupiter: 5,
+    Saturn: 6, Uranus: 7, Neptune: 8, Pluto: 9,
+    NorthNode: 11 /* SE_TRUE_NODE */, Chiron: 15,
+    Lilith: 12 /* SE_MEAN_APOG */,
   };
+  const SEFLG_SWIEPH = 2; // Swiss Ephemeris flag
 
   const positions: Record<string, PlanetPos> = {};
   for (const [name, id] of Object.entries(PLANETS)) {
-    const pos = sweph.calc_ut(julday, id, sweph.SEFLG_SWIEPH);
+    const pos = sweph.calc_ut(julday, id, SEFLG_SWIEPH);
     const deg = pos.data[0];
     positions[name] = {
       degree: deg,
@@ -130,14 +131,14 @@ export async function calculateSolarReturn(birthDate: Date, lat: number, lng: nu
   const sweph = getSweph();
   const natalJd = sweph.julday(birthDate.getUTCFullYear(), birthDate.getUTCMonth() + 1, birthDate.getUTCDate(),
     birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, 1 /* SE_GREG_CAL */);
-  const natalSunDeg = sweph.calc_ut(natalJd, sweph.SE_SUN, sweph.SEFLG_SWIEPH).data[0];
+  const natalSunDeg = sweph.calc_ut(natalJd, 0 /* SE_SUN */, 2 /* SEFLG_SWIEPH */).data[0];
 
   const currentYear = new Date().getFullYear();
   const approxDate = new Date(Date.UTC(currentYear, birthDate.getMonth(), birthDate.getDate()));
   let jd = sweph.julday(approxDate.getUTCFullYear(), approxDate.getUTCMonth() + 1, approxDate.getUTCDate(), 12, 1 /* SE_GREG_CAL */);
 
   for (let i = 0; i < 30; i++) {
-    const sunPos = sweph.calc_ut(jd, sweph.SE_SUN, sweph.SEFLG_SWIEPH);
+    const sunPos = sweph.calc_ut(jd, 0 /* SE_SUN */, 2 /* SEFLG_SWIEPH */);
     let diff = sunPos.data[0] - natalSunDeg;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;

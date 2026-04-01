@@ -100,12 +100,16 @@ export async function calculateHumanDesign(birthDate: Date, lat: number, lng: nu
     birthDate.getUTCHours() + birthDate.getUTCMinutes() / 60, 1 /* SE_GREG_CAL */
   );
 
+  // Literal constants (sweph.SE_* may be undefined in some builds)
+  const SE_SUN = 0;
+  const SEFLG_SWIEPH = 2;
+
   // Design date: 88 solar degrees before birth
-  const birthSun = sweph.calc_ut(julday, sweph.SE_SUN, sweph.SEFLG_SWIEPH);
+  const birthSun = sweph.calc_ut(julday, SE_SUN, SEFLG_SWIEPH);
   const targetDeg = ((birthSun.data[0] - 88) + 360) % 360;
   let designJd = julday - 88;
   for (let i = 0; i < 20; i++) {
-    const sunPos = sweph.calc_ut(designJd, sweph.SE_SUN, sweph.SEFLG_SWIEPH);
+    const sunPos = sweph.calc_ut(designJd, SE_SUN, SEFLG_SWIEPH);
     let diff = sunPos.data[0] - targetDeg;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
@@ -113,19 +117,17 @@ export async function calculateHumanDesign(birthDate: Date, lat: number, lng: nu
     designJd -= diff / 0.9856;
   }
 
-  const PLANET_IDS = [
-    sweph.SE_SUN, sweph.SE_MOON, sweph.SE_MERCURY, sweph.SE_VENUS,
-    sweph.SE_MARS, sweph.SE_JUPITER, sweph.SE_SATURN, sweph.SE_URANUS,
-    sweph.SE_NEPTUNE, sweph.SE_PLUTO, sweph.SE_TRUE_NODE, sweph.SE_CHIRON,
-  ];
+  // Planet IDs: Sun=0 Moon=1 Mercury=2 Venus=3 Mars=4 Jupiter=5
+  // Saturn=6 Uranus=7 Neptune=8 Pluto=9 TrueNode=11 Chiron=15
+  const PLANET_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 15];
 
   const personalityGates = PLANET_IDS.map((p: number, i: number) => {
-    const pos = sweph.calc_ut(julday, p, sweph.SEFLG_SWIEPH);
+    const pos = sweph.calc_ut(julday, p, SEFLG_SWIEPH);
     return { planet: PLANET_NAMES[i], ...degreeToGate(pos.data[0]), degree: pos.data[0] };
   });
 
   const designGates = PLANET_IDS.map((p: number, i: number) => {
-    const pos = sweph.calc_ut(designJd, p, sweph.SEFLG_SWIEPH);
+    const pos = sweph.calc_ut(designJd, p, SEFLG_SWIEPH);
     return { planet: PLANET_NAMES[i], ...degreeToGate(pos.data[0]), degree: pos.data[0] };
   });
 
