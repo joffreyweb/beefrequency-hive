@@ -68,6 +68,21 @@ function buildInvitationHtml({
   isFR: boolean;
 }) {
   const intro = isFR ? "Ton espace privé est prêt." : "Your private space is ready.";
+  const welcomeBlock = isFR
+    ? `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
+Bienvenue dans la Hive.<br>
+Cet espace t'appartient.<br>
+C'est ici que commence vraiment ton voyage —<br>
+à ton rythme, en toute confiance,<br>
+accompagné à chaque étape.
+</p>`
+    : `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
+Welcome to the Hive.<br>
+This space is yours.<br>
+This is where your journey truly begins —<br>
+at your pace, in full trust,<br>
+accompanied at every step.
+</p>`;
   const ctaLabel = isFR ? "Accéder à mon espace" : "Access my space";
   const linkNote = isFR
     ? "Ce lien est valable 365 jours."
@@ -144,6 +159,7 @@ function buildInvitationHtml({
   <tr><td style="padding-bottom:24px;">
     <p style="font-family:Georgia,serif;font-size:18px;color:#2C1A0E;margin:0 0 16px 0;">${greeting},</p>
     <p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;margin:0 0 24px 0;">${intro}</p>
+    ${welcomeBlock}
   </td></tr>
 
   <tr><td align="center" style="padding-bottom:24px;">
