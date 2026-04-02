@@ -1,13 +1,16 @@
 /**
- * iCloud CalDAV — lecture seule des creneaux occupes
+ * CalDAV — lecture seule des creneaux occupes
+ * Compatible iCloud et Radicale
  *
  * Variables .env:
- * - CALDAV_URL (ex: https://caldav.icloud.com/)
- * - CALDAV_USERNAME (Apple ID email)
- * - CALDAV_APP_PASSWORD (mot de passe app genere dans appleid.apple.com)
+ * - CALDAV_URL (ex: https://caldav.icloud.com/ ou https://cal.beefrequency.com/)
+ * - CALDAV_USERNAME
+ * - CALDAV_APP_PASSWORD
+ * - CALDAV_HOME_URL (optionnel, requis pour Radicale: https://cal.beefrequency.com/Joffrey/)
  */
 
-import { createDAVClient, DAVCalendar } from "tsdav";
+import { createDAVClient, fetchCalendars, fetchCalendarObjects, getBasicAuthHeaders } from "tsdav";
+import type { DAVAccount } from "tsdav";
 
 export function isCalDAVConfigured(): boolean {
   return !!(process.env.CALDAV_URL && process.env.CALDAV_USERNAME && process.env.CALDAV_APP_PASSWORD);
@@ -26,56 +29,129 @@ export async function getBusySlots(startDate: Date, endDate: Date): Promise<Busy
   }
 
   try {
-    const client = await createDAVClient({
-      serverUrl: process.env.CALDAV_URL!,
-      credentials: {
-        username: process.env.CALDAV_USERNAME!,
-        password: process.env.CALDAV_APP_PASSWORD!,
-      },
-      authMethod: "Basic",
-      defaultAccountType: "caldav",
-    });
+    const homeUrl = process.env.CALDAV_HOME_URL;
 
-    const calendars = await client.fetchCalendars();
-
-    if (calendars.length === 0) {
-      console.log("[CalDAV] Aucun calendrier trouve");
-      return [];
+    // Si homeUrl est fourni (Radicale), on utilise les fonctions bas niveau
+    // Sinon (iCloud), on utilise createDAVClient avec decouverte automatique
+    if (homeUrl) {
+      return await fetchWithDirectHomeUrl(homeUrl, startDate, endDate);
+    } else {
+      return await fetchWithAutoDiscovery(startDate, endDate);
     }
-
-    const busySlots: BusySlot[] = [];
-
-    for (const calendar of calendars) {
-      try {
-        const objects = await client.fetchCalendarObjects({
-          calendar,
-          timeRange: {
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
-          },
-        });
-
-        for (const obj of objects) {
-          if (!obj.data) continue;
-          // Parse basique du VEVENT
-          const dtstart = extractICalDate(obj.data, "DTSTART");
-          const dtend = extractICalDate(obj.data, "DTEND");
-          const summary = extractICalField(obj.data, "SUMMARY");
-
-          if (dtstart && dtend) {
-            busySlots.push({ start: dtstart, end: dtend, summary: summary || undefined });
-          }
-        }
-      } catch (err) {
-        console.error(`[CalDAV] Erreur calendrier ${calendar.displayName}:`, err);
-      }
-    }
-
-    return busySlots;
   } catch (error) {
     console.error("[CalDAV] Erreur connexion:", error);
     return [];
   }
+}
+
+async function fetchWithDirectHomeUrl(homeUrl: string, startDate: Date, endDate: Date): Promise<BusySlot[]> {
+  const credentials = {
+    username: process.env.CALDAV_USERNAME!,
+    password: process.env.CALDAV_APP_PASSWORD!,
+  };
+  const headers = getBasicAuthHeaders(credentials);
+
+  const account: DAVAccount = {
+    accountType: "caldav",
+    serverUrl: process.env.CALDAV_URL!,
+    credentials,
+    homeUrl,
+    rootUrl: process.env.CALDAV_URL!,
+  };
+
+  const calendars = await fetchCalendars({ account, headers });
+
+  if (calendars.length === 0) {
+    console.log("[CalDAV] Aucun calendrier trouve");
+    return [];
+  }
+
+  return await collectBusySlots(calendars, headers, startDate, endDate);
+}
+
+async function fetchWithAutoDiscovery(startDate: Date, endDate: Date): Promise<BusySlot[]> {
+  const client = await createDAVClient({
+    serverUrl: process.env.CALDAV_URL!,
+    credentials: {
+      username: process.env.CALDAV_USERNAME!,
+      password: process.env.CALDAV_APP_PASSWORD!,
+    },
+    authMethod: "Basic",
+    defaultAccountType: "caldav",
+  });
+
+  const calendars = await client.fetchCalendars();
+
+  if (calendars.length === 0) {
+    console.log("[CalDAV] Aucun calendrier trouve");
+    return [];
+  }
+
+  const busySlots: BusySlot[] = [];
+
+  for (const calendar of calendars) {
+    try {
+      const objects = await client.fetchCalendarObjects({
+        calendar,
+        timeRange: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        },
+      });
+
+      for (const obj of objects) {
+        if (!obj.data) continue;
+        const dtstart = extractICalDate(obj.data, "DTSTART");
+        const dtend = extractICalDate(obj.data, "DTEND");
+        const summary = extractICalField(obj.data, "SUMMARY");
+
+        if (dtstart && dtend) {
+          busySlots.push({ start: dtstart, end: dtend, summary: summary || undefined });
+        }
+      }
+    } catch (err) {
+      console.error(`[CalDAV] Erreur calendrier ${calendar.displayName}:`, err);
+    }
+  }
+
+  return busySlots;
+}
+
+async function collectBusySlots(
+  calendars: Awaited<ReturnType<typeof fetchCalendars>>,
+  headers: Record<string, string>,
+  startDate: Date,
+  endDate: Date,
+): Promise<BusySlot[]> {
+  const busySlots: BusySlot[] = [];
+
+  for (const calendar of calendars) {
+    try {
+      const objects = await fetchCalendarObjects({
+        calendar,
+        headers,
+        timeRange: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        },
+      });
+
+      for (const obj of objects) {
+        if (!obj.data) continue;
+        const dtstart = extractICalDate(obj.data, "DTSTART");
+        const dtend = extractICalDate(obj.data, "DTEND");
+        const summary = extractICalField(obj.data, "SUMMARY");
+
+        if (dtstart && dtend) {
+          busySlots.push({ start: dtstart, end: dtend, summary: summary || undefined });
+        }
+      }
+    } catch (err) {
+      console.error(`[CalDAV] Erreur calendrier ${calendar.displayName}:`, err);
+    }
+  }
+
+  return busySlots;
 }
 
 function extractICalDate(ical: string, field: string): Date | null {
