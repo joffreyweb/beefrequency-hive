@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     });
 
     // Met à jour le flag onboardingCompleted et le type HD si renseigné
-    await prisma.client.update({
+    const updatedClient = await prisma.client.update({
       where: { id: client.id },
       data: {
         onboardingCompleted: true,
@@ -135,7 +135,26 @@ export async function POST(request: Request) {
         birthCity: birthPlace.trim(),
         birthCountry: birthCountry.trim(),
       },
+      include: { user: { select: { email: true, name: true } } },
     });
+
+    // Envoyer l'email PWA si pas encore envoyé
+    if (!updatedClient.pwaEmailSent && process.env.SMTP_HOST) {
+      try {
+        const { sendPWAEmail } = await import("@/lib/mailer");
+        await sendPWAEmail({
+          to: updatedClient.user.email,
+          firstName: firstName.trim(),
+          language: (updatedClient.language === "EN" ? "EN" : "FR") as "FR" | "EN",
+        });
+        await prisma.client.update({
+          where: { id: client.id },
+          data: { pwaEmailSent: true },
+        });
+      } catch (err) {
+        console.error("[onboarding] PWA email error:", err);
+      }
+    }
 
     // Update User name with firstName
     await prisma.user.update({
