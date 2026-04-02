@@ -88,8 +88,17 @@ accompanied at every step.
     ? "Ce lien est valable 365 jours."
     : "This link is valid for 365 days.";
 
+  const safariWarning = isFR
+    ? `<p style="font-family:Arial,sans-serif;font-size:12px;color:#B8821E;margin:0 0 12px 0;font-weight:bold;">
+⚠️ Tu lis cet email depuis Gmail ou une autre app ? Ouvre d'abord Safari, colle ce lien : <a href="https://hive.joffreydeleplanque.com" style="color:#B8821E;">hive.joffreydeleplanque.com</a> — puis suis les étapes ci-dessous.
+</p>`
+    : `<p style="font-family:Arial,sans-serif;font-size:12px;color:#B8821E;margin:0 0 12px 0;font-weight:bold;">
+⚠️ Reading this from Gmail or another app? Open Safari first, paste this link: <a href="https://hive.joffreydeleplanque.com" style="color:#B8821E;">hive.joffreydeleplanque.com</a> — then follow the steps below.
+</p>`;
+
   const pwaBlock = isFR
     ? `<div style="margin-top:32px;padding:24px;background:#F0E8D5;border-radius:8px;border-left:3px solid #B8821E;">
+  ${safariWarning}
   <p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;margin:0 0 16px 0;font-weight:bold;">
     📱 Installe l'application sur ton téléphone
   </p>
@@ -119,6 +128,7 @@ accompanied at every step.
   </div>
 </div>`
     : `<div style="margin-top:32px;padding:24px;background:#F0E8D5;border-radius:8px;border-left:3px solid #B8821E;">
+  ${safariWarning}
   <p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;margin:0 0 16px 0;font-weight:bold;">
     📱 Install the app on your phone
   </p>
