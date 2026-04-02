@@ -78,20 +78,12 @@ export async function POST(request: NextRequest) {
   // Send welcome email
   if (process.env.SMTP_HOST) {
     try {
-      const { transporter } = await import("@/lib/mailer");
-      const lang = language === "EN" ? "EN" : "FR";
-      const subject = lang === "EN"
-        ? "Welcome to the Hive"
-        : "Bienvenue dans la Hive";
-      const body = lang === "EN"
-        ? `Hello ${firstName},\n\nYour space in the Hive is ready.\n\nClick here to activate your account:\n${inviteLink}\n\nJoffrey`
-        : `Bonjour ${firstName},\n\nTon espace dans la Hive est pret.\n\nClique ici pour activer ton compte :\n${inviteLink}\n\nJoffrey`;
-
-      await transporter.sendMail({
-        from: `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`,
+      const { sendInvitationEmail } = await import("@/lib/mailer");
+      await sendInvitationEmail({
         to: email,
-        subject,
-        text: body,
+        firstName,
+        inviteUrl: inviteLink,
+        language: (language === "EN" ? "EN" : "FR") as "FR" | "EN",
       });
     } catch (err) {
       console.error("[create-client] Email error:", err);
