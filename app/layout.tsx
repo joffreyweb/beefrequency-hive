@@ -25,6 +25,17 @@ export const metadata: Metadata = {
   title: "Hive · BeeFrequency",
   description: "Espace de pilotage — From poison to nectar",
   manifest: "/manifest.json",
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Hive",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {

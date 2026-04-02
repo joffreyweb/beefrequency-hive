@@ -1,21 +1,15 @@
 {
-  "name": "Hive · BeeFrequency",
+  "name": "Hive — BeeFrequency",
   "short_name": "Hive",
-  "description": "Espace de pilotage — From poison to nectar",
+  "description": "Ton espace de transformation — BeeFrequency",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#B8821E",
+  "orientation": "portrait",
   "background_color": "#FDFAF4",
+  "theme_color": "#B8821E",
   "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
