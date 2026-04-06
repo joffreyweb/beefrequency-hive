@@ -312,7 +312,7 @@ function AudioInduction({
   return (
     <div className="space-y-6 text-center py-4">
       <h3 className="font-display text-xl text-brun-chaud">
-        {T({ EN: "Audio Induction", FR: "Induction audio" })}
+        {T({ EN: "Listen to the audio", FR: "Écouter l'audio" })}
       </h3>
 
       <audio ref={audioRef} src={audioUrl} preload="auto" />
