@@ -36,7 +36,7 @@ export default function SeuilOneFlow({ onComplete, lang }: SeuilOneFlowProps) {
         locked={video1Done}
         onUploaded={() => {
           setVideo1Done(true);
-          setSubStep("video2"); // TEMP BYPASS: skip audio for testing
+          onComplete(); // TEMP BYPASS: skip audio + video2, go to next step
         }}
         lang={lang}
       />
