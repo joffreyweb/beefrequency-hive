@@ -162,7 +162,7 @@ Toutes tes réponses restent strictement confidentielles.`,
   // Section courante
   const section = SECTIONS[currentSection];
   const sectionAnswers = answers[section.id] || {};
-  const allAnswered = section.questions.every((q) => sectionAnswers[q.id]?.trim());
+  const allAnswered = true; // All questions are optional
   const isLastSection = currentSection === 7;
 
   return (

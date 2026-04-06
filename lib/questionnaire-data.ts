@@ -262,9 +262,6 @@ export const SECTIONS: Section[] = [
     intro: "Ces questions ouvertes sont les plus importantes. Elles me permettent de te voir, toi — pas seulement ton corps.",
     questions: [
       {
-        id: "s8q1", text: "Quelle est la raison profonde qui t'amène ici — qu'est-ce qui cherche à se transformer ?", type: "textarea",
-      },
-      {
         id: "s8q2", text: "Prends-tu actuellement des compléments alimentaires ? Si oui, lesquels ?", type: "textarea",
       },
       {
