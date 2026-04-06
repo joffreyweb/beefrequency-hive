@@ -8,7 +8,6 @@ type SubStep = "video1" | "audio" | "video2";
 type VideoPhase = "intro" | "recording" | "preview" | "uploading" | "done";
 
 const VIDEO1_QUESTIONS = [
-  "Où j'en suis aujourd'hui.",
   "Ce que je ressens en arrivant ici.",
   "Ce qui est vraiment présent en moi.",
   "Ce que j'ai envie de transformer.",
@@ -37,7 +36,7 @@ export default function SeuilOneFlow({ onComplete, lang }: SeuilOneFlowProps) {
         locked={video1Done}
         onUploaded={() => {
           setVideo1Done(true);
-          setTimeout(() => setSubStep("audio"), 800);
+          setSubStep("audio");
         }}
         lang={lang}
       />
@@ -288,7 +287,7 @@ function AudioInduction({
     if (!audio) return;
 
     const onPlay = () => setPlaying(true);
-    const onEnded = () => { setEnded(true); setPlaying(false); };
+    const onEnded = () => { setEnded(true); setPlaying(false); onComplete(); };
     const onTimeUpdate = () => {
       if (audio.duration > 0) {
         setProgress(Math.round((audio.currentTime / audio.duration) * 100));
@@ -298,16 +297,16 @@ function AudioInduction({
     audio.addEventListener("play", onPlay);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("timeupdate", onTimeUpdate);
+
+    // Auto-play on mount
+    audio.play().catch(() => {});
+
     return () => {
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("timeupdate", onTimeUpdate);
     };
-  }, []);
-
-  function startAudio() {
-    audioRef.current?.play();
-  }
+  }, [onComplete]);
 
   return (
     <div className="space-y-6 text-center py-4">
@@ -337,29 +336,10 @@ function AudioInduction({
         </div>
       )}
 
-      {!playing && !ended && (
-        <button
-          onClick={startAudio}
-          disabled={!audioUrl}
-          className="px-8 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40"
-        >
-          {T({ EN: "Play induction", FR: "Lancer l'induction" })}
-        </button>
-      )}
-
       {playing && !ended && (
         <p className="font-ui text-sm text-brun-mid/60 animate-pulse">
           {T({ EN: "Listening in progress...", FR: "Écoute en cours..." })}
         </p>
-      )}
-
-      {ended && (
-        <button
-          onClick={onComplete}
-          className="px-8 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors"
-        >
-          {T({ EN: "Start Video 2 recording", FR: "Commencer l'enregistrement Vidéo 2" })}
-        </button>
       )}
     </div>
   );

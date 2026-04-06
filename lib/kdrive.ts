@@ -38,18 +38,37 @@ export function isKDriveConfigured(): boolean {
   return !!(process.env.INFOMANIAK_API_TOKEN && process.env.INFOMANIAK_DRIVE_ID);
 }
 
-/** Creer un dossier sur kDrive */
+/** Trouver un sous-dossier par nom dans un dossier parent */
+async function findChildFolder(parentId: string, name: string): Promise<string | null> {
+  const driveId = getDriveId();
+  const res = await fetch(`${API_BASE}/drive/${driveId}/files/${parentId}/files?type=dir`, {
+    headers: getHeaders(),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const folder = data.data?.find((f: { name: string }) => f.name === name);
+  return folder?.id ?? null;
+}
+
+/** Creer un dossier sur kDrive (ou retourner l'existant) */
 async function createFolder(parentId: string, name: string): Promise<string> {
   const driveId = getDriveId();
   const res = await fetch(`${API_BASE}/drive/${driveId}/files/${parentId}/directory`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ name, conflict_resolution: "rename" }),
+    body: JSON.stringify({ name }),
   });
 
   if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`kDrive createFolder failed: ${res.status} ${error}`);
+    const errorText = await res.text();
+
+    // Le dossier existe deja — on recupere son ID
+    if (errorText.includes("destination_already_exists")) {
+      const existingId = await findChildFolder(parentId, name);
+      if (existingId) return existingId;
+    }
+
+    throw new Error(`kDrive createFolder failed: ${res.status} ${errorText}`);
   }
 
   const data = await res.json();
