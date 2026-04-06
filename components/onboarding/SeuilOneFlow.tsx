@@ -10,7 +10,7 @@ type VideoPhase = "intro" | "recording" | "preview" | "uploading" | "done";
 const VIDEO1_QUESTIONS = [
   "Ce que je ressens en arrivant ici.",
   "Ce qui est vraiment présent en moi.",
-  "Ce que j'ai envie de transformer.",
+  "Ce qui me met en joie ou en élan de oui.",
 ];
 
 const VIDEO2_QUESTION = "Et si tout était possible… Qu'est-ce que j'ai profondément envie de vivre ?";
@@ -298,9 +298,6 @@ function AudioInduction({
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("timeupdate", onTimeUpdate);
 
-    // Auto-play on mount
-    audio.play().catch(() => {});
-
     return () => {
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("ended", onEnded);
@@ -308,22 +305,28 @@ function AudioInduction({
     };
   }, [onComplete]);
 
+  function startAudio() {
+    audioRef.current?.play();
+  }
+
   return (
     <div className="space-y-6 text-center py-4">
       <h3 className="font-display text-xl text-brun-chaud">
         {T({ EN: "Audio Induction", FR: "Induction audio" })}
       </h3>
 
-      <p className="font-display text-sm text-brun-mid leading-relaxed italic max-w-sm mx-auto">
-        {T({
-          EN: "Before the second video, take a moment to listen. Close your eyes. Let yourself be guided.",
-          FR: "Avant la deuxième vidéo, prends un moment pour écouter. Ferme les yeux. Laisse-toi guider.",
-        })}
-      </p>
-
       <audio ref={audioRef} src={audioUrl} preload="auto" />
 
-      {/* Progress bar */}
+      {!playing && !ended && (
+        <button
+          onClick={startAudio}
+          disabled={!audioUrl}
+          className="px-8 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40"
+        >
+          {T({ EN: "Start listening", FR: "Commencer l'écoute" })}
+        </button>
+      )}
+
       {playing && (
         <div className="max-w-xs mx-auto">
           <div className="h-1.5 bg-creme-sacree rounded-full overflow-hidden">
