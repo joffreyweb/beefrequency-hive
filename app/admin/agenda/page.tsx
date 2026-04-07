@@ -206,7 +206,7 @@ export default function AgendaPage() {
               ))}
 
               {/* Available slots — clickable to create RDV */}
-              {!isWeekend && daySlots.filter((s) => s.available).map((s) => (
+              {daySlots.filter((s) => s.available).map((s) => (
                 <button
                   key={s.start}
                   onClick={() => openModal(s.start)}

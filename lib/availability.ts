@@ -88,10 +88,6 @@ export async function getAvailableSlotsRange(
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
 
-    // Exclure samedi (6) et dimanche (0)
-    const dow = date.getDay();
-    if (dow === 0 || dow === 6) continue;
-
     const key = date.toISOString().split("T")[0];
     result[key] = await getAvailableSlots(date, slotDurationMin);
   }
