@@ -9,7 +9,7 @@
  * - CALDAV_HOME_URL (optionnel, requis pour Radicale: https://cal.beefrequency.com/Joffrey/)
  */
 
-import { createDAVClient, fetchCalendars, fetchCalendarObjects, getBasicAuthHeaders } from "tsdav";
+import { createDAVClient, fetchCalendars, fetchCalendarObjects, createCalendarObject, getBasicAuthHeaders } from "tsdav";
 import type { DAVAccount } from "tsdav";
 
 export function isCalDAVConfigured(): boolean {
@@ -152,6 +152,93 @@ async function collectBusySlots(
   }
 
   return busySlots;
+}
+
+// ═══════════════════════════════════════
+// Création d'événement CalDAV (PUT vers Radicale)
+// ═══════════════════════════════════════
+
+export async function createCalDAVEvent({
+  uid,
+  summary,
+  start,
+  end,
+  description,
+}: {
+  uid: string;
+  summary: string;
+  start: Date;
+  end: Date;
+  description?: string;
+}): Promise<boolean> {
+  if (!isCalDAVConfigured()) {
+    console.log("[CalDAV] Non configure — event non pousse");
+    return false;
+  }
+
+  const homeUrl = process.env.CALDAV_HOME_URL;
+  if (!homeUrl) {
+    console.log("[CalDAV] CALDAV_HOME_URL requis pour push Radicale");
+    return false;
+  }
+
+  try {
+    const credentials = {
+      username: process.env.CALDAV_USERNAME!,
+      password: process.env.CALDAV_APP_PASSWORD!,
+    };
+    const headers = getBasicAuthHeaders(credentials);
+
+    const account: DAVAccount = {
+      accountType: "caldav",
+      serverUrl: process.env.CALDAV_URL!,
+      credentials,
+      homeUrl,
+      rootUrl: process.env.CALDAV_URL!,
+    };
+
+    const calendars = await fetchCalendars({ account, headers });
+    if (calendars.length === 0) {
+      console.error("[CalDAV] Aucun calendrier trouve pour push");
+      return false;
+    }
+
+    const calendar = calendars[0];
+    const dtstart = formatICalDate(start);
+    const dtend = formatICalDate(end);
+
+    const iCalString = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//BeeFrequency//Hive//FR",
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTAMP:${formatICalDate(new Date())}`,
+      `DTSTART:${dtstart}`,
+      `DTEND:${dtend}`,
+      `SUMMARY:${summary}`,
+      ...(description ? [`DESCRIPTION:${description}`] : []),
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    await createCalendarObject({
+      calendar,
+      iCalString,
+      filename: `${uid}.ics`,
+      headers,
+    });
+
+    console.log(`[CalDAV] Event pousse: ${uid}`);
+    return true;
+  } catch (error) {
+    console.error("[CalDAV] Erreur push event:", error);
+    return false;
+  }
+}
+
+function formatICalDate(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
 function extractICalDate(ical: string, field: string): Date | null {

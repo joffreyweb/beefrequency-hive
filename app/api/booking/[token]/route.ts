@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createZoomMeeting, isZoomConfigured } from "@/lib/zoom";
+import { createCalDAVEvent } from "@/lib/caldav";
 
 // GET /api/booking/[token] — Valider le token et retourner les infos
 export async function GET(
@@ -92,6 +93,20 @@ export async function POST(
       zoomStartUrl,
     },
   });
+
+  // Push vers Radicale CalDAV
+  try {
+    const endTime = new Date(dateTime.getTime() + dur * 60000);
+    await createCalDAVEvent({
+      uid: `hive-${appointment.id}`,
+      summary: `Session BeeFrequency — ${client.user.name || "Client"}`,
+      start: dateTime,
+      end: endTime,
+      description: zoomJoinUrl ? `Zoom: ${zoomJoinUrl}` : undefined,
+    });
+  } catch (err) {
+    console.error("[booking] CalDAV push error:", err);
+  }
 
   // Marquer le token comme utilise
   await prisma.bookingToken.update({
