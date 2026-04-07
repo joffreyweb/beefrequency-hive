@@ -8,6 +8,24 @@ import { prisma } from "./prisma";
 
 const WORK_START_HOUR = 9;
 const WORK_END_HOUR = 21;
+const TZ = "Europe/Brussels";
+
+/** Create a Date for a given hour in Europe/Brussels on the same calendar day */
+function brusselsHour(date: Date, hour: number): Date {
+  // Get the calendar date in Brussels
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date);
+  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value || "00";
+  const dateStr = `${get("year")}-${get("month")}-${get("day")}`;
+  // Build a date string with the target hour, then find the UTC equivalent
+  // Using Intl to get the offset for that specific moment
+  const target = new Date(`${dateStr}T${String(hour).padStart(2, "0")}:00:00`);
+  const utcStr = target.toLocaleString("en-US", { timeZone: "UTC" });
+  const tzStr = target.toLocaleString("en-US", { timeZone: TZ });
+  const diff = new Date(utcStr).getTime() - new Date(tzStr).getTime();
+  return new Date(target.getTime() + diff);
+}
 
 export interface AvailableSlot {
   start: Date;
@@ -24,10 +42,8 @@ export async function getAvailableSlots(
   date: Date,
   slotDurationMin: number = 60
 ): Promise<AvailableSlot[]> {
-  const dayStart = new Date(date);
-  dayStart.setHours(WORK_START_HOUR, 0, 0, 0);
-  const dayEnd = new Date(date);
-  dayEnd.setHours(WORK_END_HOUR, 0, 0, 0);
+  const dayStart = brusselsHour(date, WORK_START_HOUR);
+  const dayEnd = brusselsHour(date, WORK_END_HOUR);
 
   // 1. Creneaux CalDAV occupes
   const caldavBusy = await getBusySlots(dayStart, dayEnd);
@@ -95,7 +111,9 @@ export async function getAvailableSlotsRange(
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
 
-    const key = date.toISOString().split("T")[0];
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value || "";
+    const key = `${get("year")}-${get("month")}-${get("day")}`;
     result[key] = await getAvailableSlots(date, slotDurationMin);
   }
 

@@ -27,6 +27,15 @@ interface ClientOption {
 }
 
 const DAYS_FR = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+const TZ = "Europe/Brussels";
+
+/** Returns YYYY-MM-DD in Europe/Brussels timezone */
+function toBrusselsDate(d: Date | string): string {
+  const date = typeof d === "string" ? new Date(d) : d;
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
 
 export default function AgendaPage() {
   const [weekStart, setWeekStart] = useState(() => {
@@ -50,13 +59,13 @@ export default function AgendaPage() {
   }, [weekStart]);
 
   function fetchData() {
-    const month = weekStart.toISOString().slice(0, 7);
+    const month = toBrusselsDate(weekStart).slice(0, 7);
     fetch(`/api/admin/appointments?month=${month}`)
       .then((r) => r.json())
       .then((d) => setAppointments(d.appointments || []))
       .catch(() => {});
 
-    const start = weekStart.toISOString().split("T")[0];
+    const start = toBrusselsDate(weekStart);
     fetch(`/api/availability?start=${start}&days=7`)
       .then((r) => r.json())
       .then((d) => setSlots(d.slots || {}))
@@ -131,7 +140,7 @@ export default function AgendaPage() {
 
   const apptsByDate: Record<string, Appointment[]> = {};
   appointments.forEach((a) => {
-    const key = a.scheduledAt.split("T")[0];
+    const key = toBrusselsDate(a.scheduledAt);
     if (!apptsByDate[key]) apptsByDate[key] = [];
     apptsByDate[key].push(a);
   });
@@ -168,7 +177,7 @@ export default function AgendaPage() {
       {/* Week grid */}
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
-          const key = day.toISOString().split("T")[0];
+          const key = toBrusselsDate(day);
           const daySlots = slots[key] || [];
           const dayAppts = apptsByDate[key] || [];
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
