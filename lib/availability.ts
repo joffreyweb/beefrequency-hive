@@ -6,8 +6,8 @@
 import { getBusySlots } from "./caldav";
 import { prisma } from "./prisma";
 
-const WORK_START_HOUR = 9;
-const WORK_END_HOUR = 18;
+const WORK_START_HOUR = 8;
+const WORK_END_HOUR = 20;
 
 export interface AvailableSlot {
   start: Date;
@@ -40,12 +40,25 @@ export async function getAvailableSlots(
     select: { scheduledAt: true, durationMin: true },
   });
 
+  // 3. Événements CalDAV externes (sync iPhone)
+  const calendarEvents = await prisma.calendarEvent.findMany({
+    where: {
+      startAt: { lt: dayEnd },
+      endAt: { gt: dayStart },
+    },
+    select: { startAt: true, endAt: true },
+  });
+
   // Combiner toutes les plages occupees
   const busyRanges = [
     ...caldavBusy.map((s) => ({ start: s.start.getTime(), end: s.end.getTime() })),
     ...dbAppointments.map((a) => ({
       start: new Date(a.scheduledAt).getTime(),
       end: new Date(a.scheduledAt).getTime() + a.durationMin * 60000,
+    })),
+    ...calendarEvents.map((e) => ({
+      start: new Date(e.startAt).getTime(),
+      end: new Date(e.endAt).getTime(),
     })),
   ];
 

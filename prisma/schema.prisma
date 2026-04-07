@@ -941,3 +941,20 @@ model QuestionnaireEntry {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+
+// ═══════════════════════════════════════
+// Événements CalDAV externes (sync iPhone → Hive)
+// ═══════════════════════════════════════
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  uid         String   @unique // iCal UID
+  summary     String
+  startAt     DateTime
+  endAt       DateTime
+  durationMin Int
+  source      String   @default("caldav") // caldav | manual
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
