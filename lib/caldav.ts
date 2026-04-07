@@ -204,8 +204,7 @@ export async function createCalDAVEvent({
     }
 
     const calendar = calendars[0];
-    const dtstart = formatICalDate(start);
-    const dtend = formatICalDate(end);
+    const TZ = "Europe/Brussels";
 
     const iCalString = [
       "BEGIN:VCALENDAR",
@@ -213,9 +212,9 @@ export async function createCalDAVEvent({
       "PRODID:-//BeeFrequency//Hive//FR",
       "BEGIN:VEVENT",
       `UID:${uid}`,
-      `DTSTAMP:${formatICalDate(new Date())}`,
-      `DTSTART:${dtstart}`,
-      `DTEND:${dtend}`,
+      `DTSTAMP:${formatICalDateUTC(new Date())}`,
+      `DTSTART;TZID=${TZ}:${formatICalDateLocal(start, TZ)}`,
+      `DTEND;TZID=${TZ}:${formatICalDateLocal(end, TZ)}`,
       `SUMMARY:${summary}`,
       ...(description ? [`DESCRIPTION:${description}`] : []),
       "END:VEVENT",
@@ -237,8 +236,22 @@ export async function createCalDAVEvent({
   }
 }
 
-function formatICalDate(date: Date): string {
+/** UTC format for DTSTAMP: 20260407T120000Z */
+function formatICalDateUTC(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+/** Local format for DTSTART/DTEND with TZID: 20260407T140000 */
+function formatICalDateLocal(date: Date, tz: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value || "00";
+  return `${get("year")}${get("month")}${get("day")}T${get("hour")}${get("minute")}${get("second")}`;
 }
 
 function extractICalDate(ical: string, field: string): Date | null {
