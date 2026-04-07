@@ -18,6 +18,7 @@ interface Appointment {
 interface Slot {
   start: string;
   available: boolean;
+  busyCaldav?: boolean;
 }
 
 interface ClientOption {
@@ -205,19 +206,23 @@ export default function AgendaPage() {
                 </div>
               ))}
 
-              {/* All slots — available are clickable, busy are greyed out */}
+              {/* All slots — 3 states: free, CalDAV busy (clickable), DB busy (disabled) */}
               {daySlots.map((s) => (
                 <button
                   key={s.start}
                   onClick={() => s.available ? openModal(s.start) : undefined}
                   disabled={!s.available}
                   className={`w-full text-[10px] font-ui text-center py-1 rounded mb-0.5 transition-colors ${
-                    s.available
-                      ? "text-foret/50 bg-foret/5 hover:bg-foret/15 hover:text-foret cursor-pointer"
-                      : "text-brun-mid/25 bg-brun-mid/5 cursor-default"
+                    !s.available
+                      ? "text-brun-mid/25 bg-brun-mid/5 cursor-default"
+                      : s.busyCaldav
+                        ? "text-ambre-vif/70 bg-ambre-vif/10 hover:bg-ambre-vif/20 cursor-pointer"
+                        : "text-foret/50 bg-foret/5 hover:bg-foret/15 hover:text-foret cursor-pointer"
                   }`}
+                  title={s.busyCaldav && s.available ? "Occupé iPhone — cliquer pour créer quand même" : undefined}
                 >
                   {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                  {s.busyCaldav && s.available ? " ●" : ""}
                 </button>
               ))}
             </div>

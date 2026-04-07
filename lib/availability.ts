@@ -7,11 +7,12 @@ import { getBusySlots } from "./caldav";
 import { prisma } from "./prisma";
 
 const WORK_START_HOUR = 9;
-const WORK_END_HOUR = 20;
+const WORK_END_HOUR = 21;
 
 export interface AvailableSlot {
   start: Date;
   available: boolean;
+  busyCaldav?: boolean; // occupied by external CalDAV event (iPhone), not blocking
 }
 
 /**
@@ -40,16 +41,19 @@ export async function getAvailableSlots(
     select: { scheduledAt: true, durationMin: true },
   });
 
-  // Combiner toutes les plages occupees
-  const busyRanges = [
-    ...caldavBusy.map((s) => ({ start: s.start.getTime(), end: s.end.getTime() })),
-    ...dbAppointments.map((a) => ({
-      start: new Date(a.scheduledAt).getTime(),
-      end: new Date(a.scheduledAt).getTime() + a.durationMin * 60000,
-    })),
-  ];
+  // Plages occupees par des RDV Hive (bloquent la creation)
+  const dbBusyRanges = dbAppointments.map((a) => ({
+    start: new Date(a.scheduledAt).getTime(),
+    end: new Date(a.scheduledAt).getTime() + a.durationMin * 60000,
+  }));
 
-  // 3. Generer tous les creneaux possibles
+  // Plages CalDAV externes (iPhone) — informatif, ne bloquent pas
+  const caldavRanges = caldavBusy.map((s) => ({
+    start: s.start.getTime(),
+    end: s.end.getTime(),
+  }));
+
+  // Generer tous les creneaux possibles
   const slots: AvailableSlot[] = [];
   let current = dayStart.getTime();
   const slotMs = slotDurationMin * 60000;
@@ -58,14 +62,17 @@ export async function getAvailableSlots(
     const slotStart = current;
     const slotEnd = current + slotMs;
 
-    // Verifier si le creneau chevauche une plage occupee
-    const isOccupied = busyRanges.some(
+    const isDbBusy = dbBusyRanges.some(
+      (busy) => slotStart < busy.end && slotEnd > busy.start
+    );
+    const isCaldavBusy = caldavRanges.some(
       (busy) => slotStart < busy.end && slotEnd > busy.start
     );
 
     slots.push({
       start: new Date(slotStart),
-      available: !isOccupied,
+      available: !isDbBusy,
+      busyCaldav: isCaldavBusy,
     });
 
     current += slotMs;
