@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { createZoomMeeting, isZoomConfigured } from "@/lib/zoom";
+import { createCalDAVEvent } from "@/lib/caldav";
 
 // GET /api/admin/appointments — Tous les RDV (filtre optionnel par mois)
 export async function GET(request: NextRequest) {
@@ -113,6 +114,20 @@ export async function POST(request: NextRequest) {
     },
     include: { client: { include: { user: { select: { name: true, email: true } } } } },
   });
+
+  // Push vers Radicale CalDAV
+  try {
+    const endTime = new Date(dateTime.getTime() + dur * 60000);
+    await createCalDAVEvent({
+      uid: `hive-${appointment.id}`,
+      summary: `${meetingTitle} — ${client.user.name || "Client"}`,
+      start: dateTime,
+      end: endTime,
+      description: zoomJoinUrl ? `Zoom: ${zoomJoinUrl}` : undefined,
+    });
+  } catch (err) {
+    console.error("[appointment] CalDAV push error:", err);
+  }
 
   // Envoyer email de confirmation
   if (sendEmail !== false && process.env.SMTP_HOST) {
