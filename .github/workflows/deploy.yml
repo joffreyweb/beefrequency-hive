@@ -35,6 +35,7 @@ jobs:
           command_timeout: 10m
           script: |
             cd /var/www/hive
+            pkill -f 'next build' || true
             npm ci
             npx prisma generate
             npx prisma migrate deploy
