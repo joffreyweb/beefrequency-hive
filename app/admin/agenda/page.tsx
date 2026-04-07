@@ -42,6 +42,7 @@ export default function AgendaPage() {
   const [form, setForm] = useState({ clientId: "", durationMin: "60", notes: "", useFromPack: true, meetingType: "zoom" as "zoom" | "presentiel" });
   const [creating, setCreating] = useState(false);
   const [createResult, setCreateResult] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -59,6 +60,19 @@ export default function AgendaPage() {
       .then((r) => r.json())
       .then((d) => setSlots(d.slots || {}))
       .catch(() => {});
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer ce RDV ?")) return;
+    setDeleting(id);
+    try {
+      await fetch(`/api/admin/appointments/${id}`, { method: "DELETE" });
+      fetchData();
+    } catch {
+      // ignore
+    } finally {
+      setDeleting(null);
+    }
   }
 
   function openModal(slotStart: string) {
@@ -166,20 +180,29 @@ export default function AgendaPage() {
 
               {/* Existing appointments */}
               {dayAppts.map((a) => (
-                <Link
-                  key={a.id}
-                  href={`/admin/clients/${a.clientId}`}
-                  className={`block mb-1 px-2 py-1.5 rounded text-xs font-ui transition-colors ${
-                    a.status === "CANCELLED"
-                      ? "bg-red-50 text-red-600 line-through"
-                      : "bg-or-sacre/15 text-brun-chaud hover:bg-or-sacre/25"
-                  }`}
-                >
-                  <span className="font-medium">
-                    {new Date(a.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  {" "}{a.client.user.name.split(" ")[0]}
-                </Link>
+                <div key={a.id} className={`flex items-center gap-1 mb-1 rounded text-xs font-ui ${
+                  a.status === "CANCELLED"
+                    ? "bg-red-50 text-red-600 line-through"
+                    : "bg-or-sacre/15 text-brun-chaud"
+                }`}>
+                  <Link
+                    href={`/admin/clients/${a.clientId}`}
+                    className="flex-1 px-2 py-1.5 hover:bg-or-sacre/25 rounded transition-colors"
+                  >
+                    <span className="font-medium">
+                      {new Date(a.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    {" "}{a.client.user.name.split(" ")[0]}
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(a.id)}
+                    disabled={deleting === a.id}
+                    className="px-1.5 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-30"
+                    title="Supprimer"
+                  >
+                    {deleting === a.id ? "…" : "✕"}
+                  </button>
+                </div>
               ))}
 
               {/* Available slots — clickable to create RDV */}

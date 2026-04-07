@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { updateZoomMeeting, deleteZoomMeeting } from "@/lib/zoom";
+import { deleteCalDAVEvent } from "@/lib/caldav";
 
 // PATCH /api/admin/appointments/[id] — Modifier (reschedule) ou annuler
 export async function PATCH(
@@ -31,6 +32,7 @@ export async function PATCH(
     if (appointment.zoomMeetingId) {
       await deleteZoomMeeting(appointment.zoomMeetingId).catch(console.error);
     }
+    await deleteCalDAVEvent(`hive-${id}`).catch(console.error);
   }
 
   // Reschedule
@@ -109,6 +111,7 @@ export async function DELETE(
   if (appointment?.zoomMeetingId) {
     await deleteZoomMeeting(appointment.zoomMeetingId).catch(console.error);
   }
+  await deleteCalDAVEvent(`hive-${id}`).catch(console.error);
 
   await prisma.appointment.delete({ where: { id } });
   return NextResponse.json({ success: true });

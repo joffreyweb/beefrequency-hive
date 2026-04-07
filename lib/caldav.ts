@@ -237,6 +237,43 @@ export async function createCalDAVEvent({
 }
 
 /** UTC format for DTSTAMP: 20260407T120000Z */
+export async function deleteCalDAVEvent(uid: string): Promise<boolean> {
+  if (!isCalDAVConfigured()) return false;
+
+  const homeUrl = process.env.CALDAV_HOME_URL;
+  if (!homeUrl) return false;
+
+  try {
+    const credentials = {
+      username: process.env.CALDAV_USERNAME!,
+      password: process.env.CALDAV_APP_PASSWORD!,
+    };
+    const headers = getBasicAuthHeaders(credentials);
+
+    const account: DAVAccount = {
+      accountType: "caldav",
+      serverUrl: process.env.CALDAV_URL!,
+      credentials,
+      homeUrl,
+      rootUrl: process.env.CALDAV_URL!,
+    };
+
+    const calendars = await fetchCalendars({ account, headers });
+    if (calendars.length === 0) return false;
+
+    const calendar = calendars[0];
+    const calendarUrl = calendar.url.endsWith("/") ? calendar.url : `${calendar.url}/`;
+    const eventUrl = `${calendarUrl}${uid}.ics`;
+
+    const res = await fetch(eventUrl, { method: "DELETE", headers });
+    console.log(`[CalDAV] Event supprime: ${uid} (status ${res.status})`);
+    return res.status >= 200 && res.status < 300;
+  } catch (error) {
+    console.error("[CalDAV] Erreur suppression event:", error);
+    return false;
+  }
+}
+
 function formatICalDateUTC(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
