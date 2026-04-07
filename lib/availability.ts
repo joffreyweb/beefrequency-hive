@@ -7,7 +7,7 @@ import { getBusySlots } from "./caldav";
 import { prisma } from "./prisma";
 
 const WORK_START_HOUR = 9;
-const WORK_END_HOUR = 18;
+const WORK_END_HOUR = 20;
 
 export interface AvailableSlot {
   start: Date;

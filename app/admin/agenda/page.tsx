@@ -205,12 +205,17 @@ export default function AgendaPage() {
                 </div>
               ))}
 
-              {/* Available slots — clickable to create RDV */}
-              {daySlots.filter((s) => s.available).map((s) => (
+              {/* All slots — available are clickable, busy are greyed out */}
+              {daySlots.map((s) => (
                 <button
                   key={s.start}
-                  onClick={() => openModal(s.start)}
-                  className="w-full text-[10px] font-ui text-foret/50 text-center py-1 rounded bg-foret/5 hover:bg-foret/15 hover:text-foret transition-colors mb-0.5 cursor-pointer"
+                  onClick={() => s.available ? openModal(s.start) : undefined}
+                  disabled={!s.available}
+                  className={`w-full text-[10px] font-ui text-center py-1 rounded mb-0.5 transition-colors ${
+                    s.available
+                      ? "text-foret/50 bg-foret/5 hover:bg-foret/15 hover:text-foret cursor-pointer"
+                      : "text-brun-mid/25 bg-brun-mid/5 cursor-default"
+                  }`}
                 >
                   {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                 </button>
