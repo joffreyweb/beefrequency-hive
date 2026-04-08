@@ -30,7 +30,8 @@ function brusselsHour(date: Date, hour: number): Date {
 export interface AvailableSlot {
   start: Date;
   available: boolean;
-  busyCaldav?: boolean; // occupied by external CalDAV event (iPhone), not blocking
+  busyCaldav?: boolean;
+  caldavSummary?: string;
 }
 
 /**
@@ -67,6 +68,7 @@ export async function getAvailableSlots(
   const caldavRanges = caldavBusy.map((s) => ({
     start: s.start.getTime(),
     end: s.end.getTime(),
+    summary: s.summary,
   }));
 
   // Generer tous les creneaux possibles
@@ -81,14 +83,15 @@ export async function getAvailableSlots(
     const isDbBusy = dbBusyRanges.some(
       (busy) => slotStart < busy.end && slotEnd > busy.start
     );
-    const isCaldavBusy = caldavRanges.some(
+    const caldavMatch = caldavRanges.find(
       (busy) => slotStart < busy.end && slotEnd > busy.start
     );
 
     slots.push({
       start: new Date(slotStart),
       available: !isDbBusy,
-      busyCaldav: isCaldavBusy,
+      busyCaldav: !!caldavMatch,
+      caldavSummary: caldavMatch?.summary,
     });
 
     current += slotMs;

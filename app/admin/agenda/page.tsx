@@ -19,6 +19,7 @@ interface Slot {
   start: string;
   available: boolean;
   busyCaldav?: boolean;
+  caldavSummary?: string;
 }
 
 interface ClientOption {
@@ -228,10 +229,10 @@ export default function AgendaPage() {
                         ? "text-ambre-vif/70 bg-ambre-vif/10 hover:bg-ambre-vif/20 cursor-pointer"
                         : "text-foret/50 bg-foret/5 hover:bg-foret/15 hover:text-foret cursor-pointer"
                   }`}
-                  title={s.busyCaldav && s.available ? "Occupé iPhone — cliquer pour créer quand même" : undefined}
+                  title={s.busyCaldav && s.available ? `${s.caldavSummary || "Occupé iPhone"} — cliquer pour créer quand même` : undefined}
                 >
                   {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                  {s.busyCaldav && s.available ? " ●" : ""}
+                  {s.busyCaldav && s.available ? ` ${s.caldavSummary || "●"}` : ""}
                 </button>
               ))}
             </div>
