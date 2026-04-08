@@ -26,16 +26,34 @@ function getInitials(name: string): string {
 }
 
 export default async function AdminDashboard() {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  // Compute today boundaries in Europe/Brussels (DST-aware)
+  const TZ = "Europe/Brussels";
+  const nowParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const todayStr = `${nowParts.find((p) => p.type === "year")?.value}-${nowParts.find((p) => p.type === "month")?.value}-${nowParts.find((p) => p.type === "day")?.value}`;
+  // Use Intl to find the UTC offset for midnight Brussels
+  const midnightRef = new Date(`${todayStr}T00:00:00Z`);
+  const inTz = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(midnightRef);
+  const getTz = (t: Intl.DateTimeFormatPartTypes) => inTz.find((p) => p.type === t)?.value || "00";
+  const actualLocal = `${getTz("year")}-${getTz("month")}-${getTz("day")}T${getTz("hour")}:${getTz("minute")}:${getTz("second")}`;
+  const offsetMs = new Date(`${actualLocal}Z`).getTime() - new Date(`${todayStr}T00:00:00Z`).getTime();
+  const todayStart = new Date(midnightRef.getTime() - offsetMs);
+  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-  const [activeClientsCount, todaySessions, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires] =
+  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires] =
     await Promise.all([
       prisma.client.count({ where: { status: "ACTIVE" } }),
       prisma.session.findMany({
         where: { scheduledAt: { gte: todayStart, lte: todayEnd } },
+        orderBy: { scheduledAt: "asc" },
+        include: { client: { include: { user: { select: { name: true } } } } },
+      }),
+      prisma.appointment.findMany({
+        where: { scheduledAt: { gte: todayStart, lte: todayEnd }, status: { not: "CANCELLED" } },
         orderBy: { scheduledAt: "asc" },
         include: { client: { include: { user: { select: { name: true } } } } },
       }),
@@ -88,6 +106,19 @@ export default async function AdminDashboard() {
         orderBy: { createdAt: "asc" },
       }),
     ]);
+
+  // Merge Sessions + Appointments into unified list
+  const APPT_TYPE_LABELS: Record<string, string> = { zoom: "En ligne", presentiel: "Présentiel" };
+  const todaySessions = [
+    ...todaySessionsRaw.map((s) => ({
+      id: s.id, scheduledAt: s.scheduledAt, clientName: s.client.user.name ?? "",
+      duration: s.duration, typeLabel: SESSION_TYPE_LABELS[s.type] ?? s.type, zoomLink: s.zoomLink,
+    })),
+    ...todayAppointments.map((a) => ({
+      id: a.id, scheduledAt: a.scheduledAt, clientName: a.client.user.name ?? "",
+      duration: a.durationMin, typeLabel: APPT_TYPE_LABELS[a.meetingType] ?? a.meetingType, zoomLink: a.zoomJoinUrl,
+    })),
+  ].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
 
   pendingActions.sort((a, b) => {
     const urgDiff = (URGENCY_ORDER[a.urgency] ?? 2) - (URGENCY_ORDER[b.urgency] ?? 2);
@@ -304,8 +335,7 @@ export default async function AdminDashboard() {
             ) : (
               <div>
                 {todaySessions.map((session, index) => {
-                  const clientName = session.client.user.name ?? "";
-                  const initials = getInitials(clientName);
+                  const initials = getInitials(session.clientName);
                   return (
                     <div key={session.id}>
                       <div className="flex items-start gap-3 py-3">
@@ -314,11 +344,11 @@ export default async function AdminDashboard() {
                         </div>
                         <div className="flex-1">
                           <p className="font-display text-lg text-or-sacre">
-                            {new Date(session.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(session.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" })}
                           </p>
-                          <p className="font-ui text-sm text-brun-chaud mt-0.5">{clientName}</p>
+                          <p className="font-ui text-sm text-brun-chaud mt-0.5">{session.clientName}</p>
                           <p className="text-xs text-brun-mid mt-1">
-                            {SESSION_TYPE_LABELS[session.type] ?? session.type} &middot; {session.duration} min
+                            {session.typeLabel} &middot; {session.duration} min
                           </p>
                         </div>
                         <AgendaZoomButton sessionId={session.id} initialZoomLink={session.zoomLink ?? null} />
