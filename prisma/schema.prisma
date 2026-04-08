@@ -148,6 +148,8 @@ model Client {
   sessionPacks           SessionPack[]
   detoxDays              DetoxDay[]
   questionnaireEntry     QuestionnaireEntry?
+  tasks                  Task[]
+  sessionFollowups       SessionFollowup[]
 }
 
 model JournalEntry {
@@ -233,6 +235,9 @@ model Session {
 
   changeRequests  SessionChangeRequest[]
   reminders       SessionReminder[]
+  sessionNotes    SessionNote[]
+  tasks           Task[]
+  followups       SessionFollowup[]
 }
 
 model Message {
@@ -875,6 +880,10 @@ model Appointment {
   sessionPackId String?
   sessionPack   SessionPack? @relation(fields: [sessionPackId], references: [id])
 
+  sessionNotes  SessionNote[]
+  tasks         Task[]
+  followups     SessionFollowup[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -957,4 +966,50 @@ model CalendarEvent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════
+// WORKFLOW POST-SÉANCE
+// ═══════════════════════════════════════
+
+// Notes de séance (privées admin — JAMAIS exposées côté client)
+model SessionNote {
+  id            String       @id @default(cuid())
+  sessionId     String?
+  session       Session?     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  content       String       @db.Text
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Tâches admin liées à un client/séance
+model Task {
+  id            String       @id @default(cuid())
+  title         String
+  completed     Boolean      @default(false)
+  dueDate       DateTime?
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  sessionId     String?
+  session       Session?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Follow-up client (visible par le client)
+model SessionFollowup {
+  id            String       @id @default(cuid())
+  sessionId     String?
+  session       Session?     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  resources     Json         // [{type: 'elixir', id: '...'}, {type: 'protocol', id: '...'}]
+  message       String?      @db.Text
+  sentAt        DateTime     @default(now())
 }
