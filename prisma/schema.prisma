@@ -1092,3 +1092,31 @@ model ClientProgram {
 
   @@unique([clientId, programId])
 }
+
+// ═══════════════════════════════════════
+// PARAMÈTRES ADMIN
+// ═══════════════════════════════════════
+
+model AdminSettings {
+  id                     String   @id @default(cuid())
+
+  // Notifications
+  emailReminderSession   Boolean  @default(true)
+  emailNewMessage        Boolean  @default(true)
+  notifyOverdueTask      Boolean  @default(true)
+
+  // Séances
+  defaultSessionDuration Int      @default(60)
+  sessionBuffer          Int      @default(15)
+
+  // Emails
+  senderEmail            String?
+  emailSignature         String?
+
+  // App
+  timezone               String   @default("Europe/Brussels")
+  language               String   @default("fr")
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
