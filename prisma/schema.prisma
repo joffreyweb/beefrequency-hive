@@ -150,6 +150,7 @@ model Client {
   questionnaireEntry     QuestionnaireEntry?
   tasks                  Task[]
   sessionFollowups       SessionFollowup[]
+  clientPrograms         ClientProgram[]
 }
 
 model JournalEntry {
@@ -1012,4 +1013,82 @@ model SessionFollowup {
   resources     Json         // [{type: 'elixir', id: '...'}, {type: 'protocol', id: '...'}]
   message       String?      @db.Text
   sentAt        DateTime     @default(now())
+}
+
+// ═══════════════════════════════════════
+// PROGRAMMES MODULAIRES
+// ═══════════════════════════════════════
+
+model Module {
+  id           String          @id @default(cuid())
+  name         String          @unique
+  nameFr       String
+  nameEn       String
+  duration     Int             // en jours
+  description  String?
+  isStandalone Boolean         @default(false)
+
+  days           ModuleDay[]
+  programModules ProgramModule[]
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model ModuleDay {
+  id         String   @id @default(cuid())
+  moduleId   String
+  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  dayNumber  Int
+
+  elixirs    Json?    // [{elixirId, dosage, moment}]
+  practices  Json?    // [{practiceId, duration}]
+  notification String?
+
+  @@unique([moduleId, dayNumber])
+}
+
+model Program {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  nameFr         String
+  nameEn         String
+  description    String?
+
+  modules        ProgramModule[]
+  clientPrograms ClientProgram[]
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model ProgramModule {
+  id        String   @id @default(cuid())
+  programId String
+  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  moduleId  String
+  module    Module   @relation(fields: [moduleId], references: [id])
+  order     Int
+
+  @@unique([programId, order])
+}
+
+model ClientProgram {
+  id             String   @id @default(cuid())
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  programId      String
+  program        Program  @relation(fields: [programId], references: [id])
+
+  startDate      DateTime
+  currentDay     Int      @default(1)
+  status         String   @default("active") // active, paused, completed
+
+  skippedModules Json?    // ["moduleId1", "moduleId2"]
+  customNotes    String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([clientId, programId])
 }

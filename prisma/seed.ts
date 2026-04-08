@@ -161,6 +161,65 @@ async function main() {
   }
 
   console.log("DayMessage seed:", createdCount, "new messages created,", wisdomMessages.length, "total");
+
+  // ═══ Modules ═══
+  const moduleDefinitions = [
+    { name: "detox", nameFr: "Detox", nameEn: "Detox", duration: 10, isStandalone: false, description: "Phase de nettoyage initial" },
+    { name: "cycle", nameFr: "Cycle", nameEn: "Cycle", duration: 21, isStandalone: true, description: "Cycle complet de transformation" },
+    { name: "break", nameFr: "Intégration", nameEn: "Integration", duration: 10, isStandalone: false, description: "Pause d'intégration entre les cycles" },
+    { name: "protocol30", nameFr: "Protocole 30 jours", nameEn: "30-Day Protocol", duration: 30, isStandalone: false, description: "Suivi post-immersion SOS" },
+  ];
+
+  const moduleMap: Record<string, string> = {};
+  for (const mod of moduleDefinitions) {
+    const created = await prisma.module.upsert({
+      where: { name: mod.name },
+      update: { nameFr: mod.nameFr, nameEn: mod.nameEn, duration: mod.duration, description: mod.description, isStandalone: mod.isStandalone },
+      create: mod,
+    });
+    moduleMap[mod.name] = created.id;
+  }
+  console.log("Module seed:", moduleDefinitions.length, "modules");
+
+  // ═══ Programs ═══
+  const programDefinitions = [
+    {
+      name: "monitoring", nameFr: "Monitoring 3 mois", nameEn: "3-Month Monitoring",
+      description: "Programme Le Passage 1:1",
+      sequence: ["detox", "cycle", "break", "cycle", "break", "cycle"],
+    },
+    {
+      name: "sovereignty", nameFr: "Souveraineté 9 mois", nameEn: "Sovereignty 9 Months",
+      description: "Programme Souveraineté complet",
+      sequence: [
+        "detox", "cycle", "break", "cycle", "break", "cycle",
+        "detox", "cycle", "break", "cycle", "break", "cycle",
+        "detox", "cycle", "break", "cycle", "break", "cycle",
+      ],
+    },
+    {
+      name: "sos", nameFr: "SOS Urgence", nameEn: "SOS Emergency",
+      description: "Immersion + Protocole 30j",
+      sequence: ["protocol30"],
+    },
+  ];
+
+  for (const prog of programDefinitions) {
+    const { sequence, ...data } = prog;
+    const created = await prisma.program.upsert({
+      where: { name: prog.name },
+      update: { nameFr: prog.nameFr, nameEn: prog.nameEn, description: prog.description },
+      create: data,
+    });
+
+    await prisma.programModule.deleteMany({ where: { programId: created.id } });
+    for (let i = 0; i < sequence.length; i++) {
+      await prisma.programModule.create({
+        data: { programId: created.id, moduleId: moduleMap[sequence[i]], order: i + 1 },
+      });
+    }
+  }
+  console.log("Program seed:", programDefinitions.length, "programs");
 }
 
 main()
