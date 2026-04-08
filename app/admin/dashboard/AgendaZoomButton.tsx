@@ -5,12 +5,14 @@ import { useState } from "react";
 interface AgendaZoomButtonProps {
   sessionId: string;
   initialZoomLink: string | null;
+  type?: "session" | "appointment";
 }
 
 // Bouton Zoom dans l'agenda — prominent si lien existant, ajout inline sinon
 export default function AgendaZoomButton({
   sessionId,
   initialZoomLink,
+  type = "session",
 }: AgendaZoomButtonProps) {
   const [zoomLink, setZoomLink] = useState(initialZoomLink);
   const [editing, setEditing] = useState(false);
@@ -22,10 +24,16 @@ export default function AgendaZoomButton({
     if (!inputValue.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/sessions/${sessionId}`, {
+      const url = type === "appointment"
+        ? `/api/admin/appointments/${sessionId}`
+        : `/api/sessions/${sessionId}`;
+      const body = type === "appointment"
+        ? { zoomJoinUrl: inputValue.trim() }
+        : { zoomLink: inputValue.trim() };
+      const res = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ zoomLink: inputValue.trim() }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         setZoomLink(inputValue.trim());

@@ -113,10 +113,12 @@ export default async function AdminDashboard() {
     ...todaySessionsRaw.map((s) => ({
       id: s.id, scheduledAt: s.scheduledAt, clientName: s.client.user.name ?? "",
       duration: s.duration, typeLabel: SESSION_TYPE_LABELS[s.type] ?? s.type, zoomLink: s.zoomLink,
+      source: "session" as const,
     })),
     ...todayAppointments.map((a) => ({
       id: a.id, scheduledAt: a.scheduledAt, clientName: a.client.user.name ?? "",
       duration: a.durationMin, typeLabel: APPT_TYPE_LABELS[a.meetingType] ?? a.meetingType, zoomLink: a.zoomJoinUrl,
+      source: "appointment" as const,
     })),
   ].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
 
@@ -351,7 +353,7 @@ export default async function AdminDashboard() {
                             {session.typeLabel} &middot; {session.duration} min
                           </p>
                         </div>
-                        <AgendaZoomButton sessionId={session.id} initialZoomLink={session.zoomLink ?? null} />
+                        <AgendaZoomButton sessionId={session.id} initialZoomLink={session.zoomLink ?? null} type={session.source} />
                       </div>
                       {index < todaySessions.length - 1 && <div className="border-b border-or-pale/30" />}
                     </div>
