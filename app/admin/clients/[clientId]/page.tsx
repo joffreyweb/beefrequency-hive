@@ -4,6 +4,7 @@ import Link from "next/link";
 import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
+import ClientProgramSection from "@/components/admin/ClientProgramSection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -255,6 +256,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         programmeStartDate={client.programmeStartDate ? client.programmeStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
       />
+
+      {/* Programme assigné */}
+      <ClientProgramSection clientId={clientId} clientName={client.user.name} />
 
       {/* Actions : desactiver, archiver, supprimer, envoyer email */}
       <ClientActions

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ProgramProgress from "@/components/client/ProgramProgress";
 
 interface PhaseInfo {
   phaseType: "CYCLE" | "BREAK";
@@ -192,10 +193,8 @@ export default function ProgrammePage() {
 
   if (!activeInfo) return (
     <div className="space-y-4 pb-24">
-      <h1 className="font-display text-2xl text-brun-chaud">The Passage</h1>
-      <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
-        <p className="text-sm font-ui text-brun-mid/60">Your journey has not been configured yet.</p>
-      </div>
+      <h1 className="font-display text-2xl text-brun-chaud">Mon Parcours</h1>
+      <ProgramProgress />
     </div>
   );
 
