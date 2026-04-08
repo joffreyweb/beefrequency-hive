@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import PostSessionModal from "@/components/admin/PostSessionModal";
 
 interface Appointment {
   id: string;
@@ -54,6 +55,7 @@ export default function AgendaPage() {
   const [creating, setCreating] = useState(false);
   const [createResult, setCreateResult] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [postSession, setPostSession] = useState<Appointment | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -194,7 +196,9 @@ export default function AgendaPage() {
                 <div key={a.id} className={`flex items-center gap-1 mb-1 rounded text-xs font-ui ${
                   a.status === "CANCELLED"
                     ? "bg-red-50 text-red-600 line-through"
-                    : "bg-or-sacre/15 text-brun-chaud"
+                    : a.status === "COMPLETED"
+                      ? "bg-foret/10 text-foret"
+                      : "bg-or-sacre/15 text-brun-chaud"
                 }`}>
                   <Link
                     href={`/admin/clients/${a.clientId}`}
@@ -205,6 +209,15 @@ export default function AgendaPage() {
                     </span>
                     {" "}{a.client.user.name.split(" ")[0]}
                   </Link>
+                  {a.status !== "CANCELLED" && a.status !== "COMPLETED" && new Date(a.scheduledAt) <= new Date() && (
+                    <button
+                      onClick={() => setPostSession(a)}
+                      className="px-1.5 py-1 text-foret/50 hover:text-foret hover:bg-foret/10 rounded transition-colors text-[10px]"
+                      title="Terminer la séance"
+                    >
+                      ✓
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDelete(a.id)}
                     disabled={deleting === a.id}
@@ -251,6 +264,18 @@ export default function AgendaPage() {
           createResult={createResult}
           onCreate={handleCreate}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {/* Modal post-séance */}
+      {postSession && (
+        <PostSessionModal
+          isOpen
+          onClose={() => { setPostSession(null); fetchData(); }}
+          appointmentId={postSession.id}
+          clientId={postSession.clientId}
+          clientName={postSession.client.user.name}
+          date={postSession.scheduledAt}
         />
       )}
     </div>
