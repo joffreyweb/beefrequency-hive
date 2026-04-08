@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       const lang = session.client.language === "EN" ? "EN" : "FR";
       const dateStr = new Date(session.scheduledAt).toLocaleDateString(
         lang === "FR" ? "fr-FR" : "en-US",
-        { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }
+        { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" }
       );
 
       const subject = lang === "EN"
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       const lang = appt.client.language === "EN" ? "EN" : "FR";
       const dateStr = new Date(appt.scheduledAt).toLocaleDateString(
         lang === "FR" ? "fr-FR" : "en-US",
-        { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }
+        { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" }
       );
 
       const subject = lang === "EN"

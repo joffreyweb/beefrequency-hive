@@ -120,10 +120,10 @@ export async function POST(
       const { transporter } = await import("@/lib/mailer");
       const lang = client.language === "EN" ? "EN" : "FR";
       const dateStr = dateTime.toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
-        weekday: "long", day: "numeric", month: "long",
+        weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Brussels",
       });
       const timeStr = dateTime.toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
-        hour: "2-digit", minute: "2-digit",
+        hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels",
       });
 
       await transporter.sendMail({

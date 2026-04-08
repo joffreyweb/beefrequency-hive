@@ -73,10 +73,10 @@ export async function PATCH(
       } else {
         const newDate = new Date(body.scheduledAt);
         const dateStr = newDate.toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
-          weekday: "long", day: "numeric", month: "long",
+          weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Brussels",
         });
         const timeStr = newDate.toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
-          hour: "2-digit", minute: "2-digit",
+          hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels",
         });
         emailBody = lang === "EN"
           ? `Hello,\n\nYour session has been rescheduled:\n\nNew date: ${dateStr}\nNew time: ${timeStr}${updated.zoomJoinUrl ? `\nJoin: ${updated.zoomJoinUrl}` : ""}\n\nJoffrey`
