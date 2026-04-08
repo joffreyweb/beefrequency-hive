@@ -3,6 +3,7 @@ import { computeStockInfo } from "@/lib/stock-utils";
 import DashboardActions from "./DashboardActions";
 import AgendaZoomButton from "./AgendaZoomButton";
 import ClientTimeline from "./ClientTimeline";
+import TasksWidget from "@/components/admin/TasksWidget";
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   ONLINE: "En ligne",
@@ -363,6 +364,9 @@ export default async function AdminDashboard() {
             )}
           </div>
         </div>
+
+        {/* À faire */}
+        <TasksWidget />
 
         {/* Actions en attente */}
         <DashboardActions initialActions={serializedActions} />
