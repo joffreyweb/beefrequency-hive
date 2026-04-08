@@ -12,11 +12,25 @@ interface AtelierCard {
 // Cartes de navigation de l'Atelier
 const cards: AtelierCard[] = [
   {
+    href: "/admin/atelier/modules",
+    title: "Modules",
+    description: "Blocs composables : Detox, Cycle, Int\u00e9gration...",
+    icon: "\uD83E\uDDE9",
+    color: "#B8821E",
+  },
+  {
+    href: "/admin/atelier/programs",
+    title: "Programmes",
+    description: "Assembler les modules en parcours client",
+    icon: "\uD83D\uDCE6",
+    color: "#7A5514",
+  },
+  {
     href: "/admin/elixirs",
     title: "Catalogue \u00e9lixirs",
     description: "G\u00e9rer les \u00e9lixirs et suivre les stocks",
     icon: "\uD83E\uDDEA",
-    color: "#B8821E",
+    color: "#D4A042",
   },
   {
     href: "/admin/day-messages",
