@@ -291,24 +291,47 @@ function formatICalDateLocal(date: Date, tz: string): string {
   return `${get("year")}${get("month")}${get("day")}T${get("hour")}${get("minute")}${get("second")}`;
 }
 
+function extractVEvent(ical: string): string {
+  const match = ical.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/);
+  return match ? match[0] : ical;
+}
+
+/** Convert a local date/time in a given IANA timezone to UTC */
+function tzToUTC(dateStr: string, timeStr: string, tzid: string): Date {
+  const utcRef = new Date(`${dateStr}T${timeStr}Z`);
+  const inTz = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tzid, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(utcRef);
+  const get = (t: Intl.DateTimeFormatPartTypes) => inTz.find((p) => p.type === t)?.value || "00";
+  const actualLocal = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
+  const wantedLocal = `${dateStr}T${timeStr}`;
+  const correction = new Date(`${actualLocal}Z`).getTime() - new Date(`${wantedLocal}Z`).getTime();
+  return new Date(utcRef.getTime() - correction);
+}
+
 function extractICalDate(ical: string, field: string): Date | null {
-  // Match DTSTART;VALUE=DATE:20260330 or DTSTART:20260330T090000Z or DTSTART;TZID=...:20260330T090000
-  const regex = new RegExp(`${field}[^:]*:([\\dT]+Z?)`, "m");
-  const match = ical.match(regex);
+  const vevent = extractVEvent(ical);
+  const regex = new RegExp(`${field}(?:;TZID=([^:;]+))?[^:]*:(\\d{8}(?:T\\d{6}Z?)?)`, "m");
+  const match = vevent.match(regex);
   if (!match) return null;
 
-  const val = match[1];
-  if (val.length === 8) {
-    // Date only: YYYYMMDD
-    return new Date(`${val.slice(0, 4)}-${val.slice(4, 6)}-${val.slice(6, 8)}T00:00:00`);
-  }
-  // DateTime: YYYYMMDDTHHMMSS or YYYYMMDDTHHMMSSZ
-  const iso = `${val.slice(0, 4)}-${val.slice(4, 6)}-${val.slice(6, 8)}T${val.slice(9, 11)}:${val.slice(11, 13)}:${val.slice(13, 15)}${val.endsWith("Z") ? "Z" : ""}`;
-  return new Date(iso);
+  const tzid = match[1];
+  const val = match[2];
+
+  if (val.length === 8) return null; // all-day — skip
+
+  const dateStr = `${val.slice(0, 4)}-${val.slice(4, 6)}-${val.slice(6, 8)}`;
+  const timeStr = `${val.slice(9, 11)}:${val.slice(11, 13)}:${val.slice(13, 15)}`;
+
+  if (val.endsWith("Z")) return new Date(`${dateStr}T${timeStr}Z`);
+  if (tzid) return tzToUTC(dateStr, timeStr, tzid);
+  return new Date(`${dateStr}T${timeStr}Z`);
 }
 
 function extractICalField(ical: string, field: string): string | null {
+  const vevent = extractVEvent(ical);
   const regex = new RegExp(`${field}[^:]*:(.+)`, "m");
-  const match = ical.match(regex);
+  const match = vevent.match(regex);
   return match ? match[1].trim() : null;
 }
