@@ -16,12 +16,13 @@ export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 465,
   secure: process.env.SMTP_SECURE === "true",
+  // @ts-ignore — family est supporté par nodemailer mais absent du type
   family: 4,
   auth: {
     user: process.env.SMTP_USER,
     pass: smtpPass,
   },
-});
+} as nodemailer.TransportOptions);
 
 const mailFrom = () =>
   `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`;
