@@ -26,6 +26,22 @@ export async function GET(req: Request) {
   return NextResponse.json({ phases });
 }
 
+// DELETE — réinitialiser les phases d'un client (query: clientId)
+export async function DELETE(req: Request) {
+  const result = await requireAdmin();
+  if (isErrorResponse(result)) return result;
+
+  const { searchParams } = new URL(req.url);
+  const clientId = searchParams.get("clientId");
+  if (!clientId) {
+    return NextResponse.json({ error: "clientId requis" }, { status: 400 });
+  }
+
+  await prisma.clientPhase.deleteMany({ where: { clientId } });
+
+  return NextResponse.json({ ok: true });
+}
+
 // POST — générer les 7 phases (103j) pour un client à partir de sa startDate
 export async function POST(req: Request) {
   const result = await requireAdmin();

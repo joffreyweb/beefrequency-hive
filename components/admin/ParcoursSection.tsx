@@ -104,6 +104,7 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const loadPhases = useCallback(async () => {
     try {
@@ -141,6 +142,22 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
     }
   }
 
+  async function handleReset() {
+    if (!confirm("Réinitialiser le parcours ? Les élixirs et pratiques assignés seront supprimés.")) return;
+    setResetting(true);
+    try {
+      const res = await fetch(`/api/client-phases?clientId=${clientId}`, { method: "DELETE" });
+      if (res.ok) {
+        setPhases([]);
+        setSelectedPhaseId(null);
+      }
+    } catch {
+      // silent
+    } finally {
+      setResetting(false);
+    }
+  }
+
   if (loading) {
     return <p className="text-sm font-ui text-brun-mid/60 py-8">Chargement du parcours...</p>;
   }
@@ -167,6 +184,20 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Header + Reset */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-ui text-brun-mid/60">
+          {phases.length} phases · 103 jours
+        </p>
+        <button
+          onClick={handleReset}
+          disabled={resetting}
+          className="px-3 py-1.5 text-xs font-ui text-red-600 border border-red-200 rounded-sharp hover:bg-red-50 transition-colors disabled:opacity-50"
+        >
+          {resetting ? "Réinitialisation..." : "Réinitialiser le parcours"}
+        </button>
+      </div>
+
       {/* Timeline */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {phases.map((phase) => (
