@@ -195,7 +195,7 @@ function VideoStep({
           <div className="absolute bottom-4 left-0 right-0 px-4">
             <ul className="space-y-1">
               {questions.map((q, i) => (
-                <li key={i} className="text-white/80 font-ui text-xs">&middot; {q}</li>
+                <li key={i} className="text-white/90 font-display text-sm italic">&middot; {q}</li>
               ))}
             </ul>
           </div>
@@ -237,15 +237,15 @@ function VideoStep({
     <div className="space-y-6">
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-6">
         <h3 className="font-display text-xl text-brun-chaud mb-4">{title}</h3>
-        <p className="font-ui text-sm text-brun-mid mb-4">
+        <p className="font-ui text-base text-brun-mid mb-4">
           {T({
             EN: "Take 60 seconds to respond to these intentions:",
             FR: "Prends 60 secondes pour répondre à ces intentions :",
           })}
         </p>
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {questions.map((q, i) => (
-            <li key={i} className="flex items-start gap-2 font-ui text-sm text-brun-chaud">
+            <li key={i} className="flex items-start gap-2 font-display text-lg text-brun-chaud italic">
               <span className="text-or-sacre mt-0.5">&middot;</span>
               <span>{q}</span>
             </li>
