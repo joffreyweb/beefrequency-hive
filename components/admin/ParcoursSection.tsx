@@ -40,9 +40,16 @@ interface ClientPhase {
   startDate: string;
   endDate: string;
   status: "UPCOMING" | "ACTIVE" | "COMPLETED";
+  customName: string | null;
+  instructions: string | null;
+  morningCheckinEnabled: boolean;
+  eveningCheckinEnabled: boolean;
+  checkinMode: string;
   phaseElixirs: PhaseElixir[];
   phasePractices: PhasePractice[];
 }
+
+type PhaseTab = "general" | "elixirs" | "pratiques" | "checkins";
 
 // ─── Labels ───
 
@@ -270,7 +277,7 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
               </span>
             </div>
             <p className="text-sm font-ui text-brun-chaud">
-              {PHASE_LABELS[phase.phaseType]}{phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}
+              {phase.customName || `${PHASE_LABELS[phase.phaseType]}${phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}`}
             </p>
             <p className="text-xs font-ui text-brun-mid/50 mt-0.5">
               {formatDateShort(phase.startDate)} → {formatDateShort(phase.endDate)}
@@ -287,16 +294,25 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
   );
 }
 
-// ─── Phase Detail ───
+// ─── Phase Detail (Tabbed) ───
+
+const TAB_LABELS: Record<PhaseTab, string> = {
+  general: "Général",
+  elixirs: "Élixirs",
+  pratiques: "Pratiques",
+  checkins: "Check-ins",
+};
 
 function PhaseDetail({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
+  const [activeTab, setActiveTab] = useState<PhaseTab>("general");
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-display text-lg text-brun-chaud">
-            {PHASE_LABELS[phase.phaseType]}{phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}
+            {phase.customName || `${PHASE_LABELS[phase.phaseType]}${phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}`}
           </h3>
           <span className={`text-xs font-ui px-2 py-0.5 rounded-sharp ${
             phase.status === "ACTIVE" ? "bg-or-sacre/10 text-or-sacre" :
@@ -309,18 +325,204 @@ function PhaseDetail({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
         <p className="text-xs font-ui text-brun-mid/60">
           {formatDate(phase.startDate)} → {formatDate(phase.endDate)}
           {" · "}
-          {phase.phaseType === "CYCLE" ? "21 jours" : "10 jours"}{phase.phaseType === "DETOX" ? " · Détoxification" : ""}
+          {phase.phaseType === "CYCLE" ? "21 jours" : "10 jours"}
         </p>
       </div>
 
-      {/* Élixirs assignés */}
-      <ElixirsBlock phase={phase} onUpdate={onUpdate} />
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-or-pale/30 pb-0">
+        {(Object.keys(TAB_LABELS) as PhaseTab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-xs font-caps uppercase tracking-wider transition-colors rounded-t-[8px] ${
+              activeTab === tab
+                ? "bg-cire-chaude border border-b-0 border-or-pale text-brun-chaud"
+                : "text-brun-mid/50 hover:text-brun-mid"
+            }`}
+          >
+            {TAB_LABELS[tab]}
+            {tab === "elixirs" && phase.phaseElixirs.length > 0 && ` (${phase.phaseElixirs.length})`}
+            {tab === "pratiques" && phase.phasePractices.length > 0 && ` (${phase.phasePractices.length})`}
+          </button>
+        ))}
+      </div>
 
-      {/* Pratiques assignées */}
-      <PracticesBlock phase={phase} onUpdate={onUpdate} />
+      {/* Tab content */}
+      {activeTab === "general" && <GeneralTab phase={phase} onUpdate={onUpdate} />}
+      {activeTab === "elixirs" && (
+        <>
+          <ElixirsBlock phase={phase} onUpdate={onUpdate} />
+          <WeekView phase={phase} />
+        </>
+      )}
+      {activeTab === "pratiques" && <PracticesBlock phase={phase} onUpdate={onUpdate} />}
+      {activeTab === "checkins" && <CheckinsTab phase={phase} onUpdate={onUpdate} />}
+    </div>
+  );
+}
 
-      {/* Vue semaine */}
-      <WeekView phase={phase} />
+// ─── General Tab ───
+
+function GeneralTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
+  const [customName, setCustomName] = useState(phase.customName || "");
+  const [instructions, setInstructions] = useState(phase.instructions || "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setCustomName(phase.customName || "");
+    setInstructions(phase.instructions || "");
+    setSaved(false);
+  }, [phase.id, phase.customName, phase.instructions]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/client-phases/${phase.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customName, instructions }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        onUpdate();
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      // silent
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const defaultLabel = `${PHASE_LABELS[phase.phaseType]}${phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}`;
+
+  return (
+    <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 space-y-4">
+      <div>
+        <label className="block text-xs font-ui text-brun-mid mb-1">Nom affiché</label>
+        <input
+          type="text"
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          placeholder={defaultLabel}
+          className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+        />
+        <p className="text-xs text-brun-mid/40 mt-1">Laisser vide = &quot;{defaultLabel}&quot;</p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-ui text-brun-mid mb-1">Instructions pour le client</label>
+        <textarea
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          rows={5}
+          placeholder="Instructions personnalisées visibles par le client durant cette phase..."
+          className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre resize-y"
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-4 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
+        >
+          {saving ? "..." : "Sauvegarder"}
+        </button>
+        {saved && <span className="text-xs font-ui text-foret">Sauvegardé</span>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Check-ins Tab ───
+
+function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
+  const [morningEnabled, setMorningEnabled] = useState(phase.morningCheckinEnabled);
+  const [eveningEnabled, setEveningEnabled] = useState(phase.eveningCheckinEnabled);
+  const [checkinMode, setCheckinMode] = useState(phase.checkinMode);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setMorningEnabled(phase.morningCheckinEnabled);
+    setEveningEnabled(phase.eveningCheckinEnabled);
+    setCheckinMode(phase.checkinMode);
+    setSaved(false);
+  }, [phase.id, phase.morningCheckinEnabled, phase.eveningCheckinEnabled, phase.checkinMode]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/client-phases/${phase.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          morningCheckinEnabled: morningEnabled,
+          eveningCheckinEnabled: eveningEnabled,
+          checkinMode,
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        onUpdate();
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      // silent
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 space-y-5">
+      <div className="space-y-3">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={morningEnabled}
+            onChange={(e) => setMorningEnabled(e.target.checked)}
+            className="w-4 h-4 accent-or-sacre"
+          />
+          <span className="text-sm font-ui text-brun-chaud">Check-in matin activé</span>
+        </label>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={eveningEnabled}
+            onChange={(e) => setEveningEnabled(e.target.checked)}
+            className="w-4 h-4 accent-or-sacre"
+          />
+          <span className="text-sm font-ui text-brun-chaud">Check-in soir activé</span>
+        </label>
+      </div>
+
+      <div>
+        <label className="block text-xs font-ui text-brun-mid mb-1">Mode check-in</label>
+        <select
+          value={checkinMode}
+          onChange={(e) => setCheckinMode(e.target.value)}
+          className="w-full max-w-xs px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+        >
+          <option value="full">Complet (toutes les questions)</option>
+          <option value="light">Allégé (questions essentielles)</option>
+        </select>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-4 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
+        >
+          {saving ? "..." : "Sauvegarder"}
+        </button>
+        {saved && <span className="text-xs font-ui text-foret">Sauvegardé</span>}
+      </div>
     </div>
   );
 }

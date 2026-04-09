@@ -601,6 +601,13 @@ model ClientPhase {
   endDate     DateTime
   status      PhaseStatus @default(UPCOMING)
 
+  // Personnalisation par phase
+  customName              String?   // Nom affiché personnalisé (ex: "Repos & Ancrage")
+  instructions            String?   // Instructions texte visibles par le client
+  morningCheckinEnabled   Boolean   @default(true)
+  eveningCheckinEnabled   Boolean   @default(true)
+  checkinMode             String    @default("full") // full | light
+
   createdAt DateTime @default(now())
 
   phaseElixirs   PhaseElixir[]
