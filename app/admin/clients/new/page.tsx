@@ -5,16 +5,16 @@ import Link from "next/link";
 
 // Options d'offres disponibles
 const OFFER_OPTIONS = [
-  { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire" },
+  { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire privée" },
   { value: "SESSION_SEUIL", label: "Session Seuil" },
   { value: "LE_NECTAR_CYCLE", label: "Le Nectar Cycle (600€)" },
-  { value: "LE_PASSAGE_1_1", label: "Le Passage 1:1 (3900€)" },
-  { value: "LES_CYCLES_DE_LA_RUCHE", label: "Les Cycles de la Ruche (1200€)" },
+  { value: "LE_PASSAGE_1_1", label: "Le Passage 1:1 (3 900€)" },
+  { value: "LES_CYCLES_DE_LA_RUCHE", label: "Les Cycles de la Ruche (1 200€)" },
   { value: "CEREMONIE_RESET", label: "Cérémonie Reset (150€)" },
   { value: "LA_RUCHE_VIVANTE", label: "La Ruche Vivante (75€)" },
-  { value: "SOUVERAINETE", label: "Souveraineté (15000€)" },
+  { value: "SOUVERAINETE", label: "Souveraineté (15 000€)" },
   { value: "LA_CHAMBRE_DE_LA_REINE", label: "La Chambre de la Reine" },
-  { value: "SOS_URGENCE_VIP", label: "SOS Urgence VIP" },
+  { value: "SOS_URGENCE_VIP", label: "SOS · Urgence VIP" },
   { value: "LE_FIL_DE_LA_RUCHE", label: "Le Fil de la Ruche" },
 ];
 

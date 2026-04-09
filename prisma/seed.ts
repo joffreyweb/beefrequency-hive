@@ -198,7 +198,7 @@ async function main() {
       ],
     },
     {
-      name: "sos", nameFr: "SOS Urgence", nameEn: "SOS Emergency",
+      name: "sos", nameFr: "SOS \u00b7 Urgence VIP", nameEn: "SOS Emergency VIP",
       description: "Immersion + Protocole 30j",
       sequence: ["protocol30"],
     },

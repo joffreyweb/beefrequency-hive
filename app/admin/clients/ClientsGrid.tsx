@@ -28,16 +28,16 @@ function computeDayNumber(startDate: string): number {
 }
 
 const OFFER_OPTIONS = [
-  { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire" },
+  { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire priv\u00e9e" },
   { value: "SESSION_SEUIL", label: "Session Seuil" },
-  { value: "LE_NECTAR_CYCLE", label: "Le Nectar Cycle (600€)" },
-  { value: "LE_PASSAGE_1_1", label: "Le Passage 1:1 (3900€)" },
-  { value: "LES_CYCLES_DE_LA_RUCHE", label: "Les Cycles de la Ruche (1200€)" },
-  { value: "CEREMONIE_RESET", label: "Cérémonie Reset (150€)" },
-  { value: "LA_RUCHE_VIVANTE", label: "La Ruche Vivante (75€)" },
-  { value: "SOUVERAINETE", label: "Souveraineté (15000€)" },
+  { value: "LE_NECTAR_CYCLE", label: "Le Nectar Cycle (600\u20ac)" },
+  { value: "LE_PASSAGE_1_1", label: "Le Passage 1:1 (3 900\u20ac)" },
+  { value: "LES_CYCLES_DE_LA_RUCHE", label: "Les Cycles de la Ruche (1 200\u20ac)" },
+  { value: "CEREMONIE_RESET", label: "C\u00e9r\u00e9monie Reset (150\u20ac)" },
+  { value: "LA_RUCHE_VIVANTE", label: "La Ruche Vivante (75\u20ac)" },
+  { value: "SOUVERAINETE", label: "Souverainet\u00e9 (15 000\u20ac)" },
   { value: "LA_CHAMBRE_DE_LA_REINE", label: "La Chambre de la Reine" },
-  { value: "SOS_URGENCE_VIP", label: "SOS Urgence VIP" },
+  { value: "SOS_URGENCE_VIP", label: "SOS \u00b7 Urgence VIP" },
   { value: "LE_FIL_DE_LA_RUCHE", label: "Le Fil de la Ruche" },
 ];
 
