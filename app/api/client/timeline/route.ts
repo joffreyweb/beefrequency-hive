@@ -42,7 +42,7 @@ export async function GET() {
     };
   }
 
-  // Phases du programme (6 phases : 3 cycles + 3 intégrations)
+  // Phases du programme (7 phases : detox + 3 cycles + 3 intégrations)
   let phases = null;
   let activeInfo = null;
   const programmeStart = client.programmeStartDate || null;
@@ -64,13 +64,13 @@ export async function GET() {
   // Calcul progression globale
   let globalProgress = 0;
   let globalDay = 0;
-  const totalDaysWithDetox = 10 + TOTAL_PROGRAM_DAYS; // 103 jours
+  const totalDaysWithDetox = TOTAL_PROGRAM_DAYS; // 103 jours (détox incluse)
 
   if (detox && detox.status !== "UPCOMING") {
     globalDay = detox.dayInPhase;
   }
   if (activeInfo) {
-    globalDay = 10 + activeInfo.dayInProgram;
+    globalDay = activeInfo.dayInProgram;
   } else if (detox && detox.status === "COMPLETED" && !programmeStart) {
     globalDay = 10;
   }
