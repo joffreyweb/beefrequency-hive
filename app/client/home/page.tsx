@@ -63,19 +63,25 @@ export default async function ClientHomePage() {
   if (!client) redirect("/login");
 
   // Élixirs de la phase actuelle (PhaseElixir)
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const activePhase = await prisma.clientPhase.findFirst({
-    where: {
-      clientId: client.id,
-      startDate: { lte: now },
-      endDate: { gte: now },
-    },
+  // Récupérer toutes les phases et trouver l'active côté JS (évite les problèmes de timezone)
+  const allPhases = await prisma.clientPhase.findMany({
+    where: { clientId: client.id },
+    orderBy: { startDate: "asc" },
     include: {
       phaseElixirs: { include: { elixirLibrary: true } },
       phasePractices: true,
     },
   });
+
+  const today = new Date();
+  today.setHours(12, 0, 0, 0); // Midi pour éviter les problèmes de timezone
+  const activePhase = allPhases.find((p) => {
+    const start = new Date(p.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(p.endDate);
+    end.setHours(23, 59, 59, 999);
+    return today >= start && today <= end;
+  }) ?? allPhases.find((p) => new Date(p.startDate) > today) ?? null;
 
   const lang = (client.language === "EN" ? "EN" : "FR") as Lang;
   const T = (key: { EN: string; FR: string }) => key[lang];

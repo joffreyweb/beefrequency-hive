@@ -18,34 +18,25 @@ export async function GET() {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
   }
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  // Trouver la phase active (startDate <= today <= endDate)
-  const activePhase = await prisma.clientPhase.findFirst({
-    where: {
-      clientId: client.id,
-      startDate: { lte: now },
-      endDate: { gte: now },
-    },
-    include: {
-      phaseElixirs: { include: { elixirLibrary: true } },
-      phasePractices: true,
-    },
-  });
-
-  // Si pas de phase active, prendre la première phase à venir
-  const phase = activePhase ?? await prisma.clientPhase.findFirst({
-    where: {
-      clientId: client.id,
-      startDate: { gt: now },
-    },
+  // Récupérer toutes les phases et trouver l'active côté JS (évite les problèmes de timezone)
+  const allPhases = await prisma.clientPhase.findMany({
+    where: { clientId: client.id },
     orderBy: { startDate: "asc" },
     include: {
       phaseElixirs: { include: { elixirLibrary: true } },
       phasePractices: true,
     },
   });
+
+  const now = new Date();
+  now.setHours(12, 0, 0, 0);
+  const phase = allPhases.find((p) => {
+    const start = new Date(p.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(p.endDate);
+    end.setHours(23, 59, 59, 999);
+    return now >= start && now <= end;
+  }) ?? allPhases.find((p) => new Date(p.startDate) > now) ?? null;
 
   if (!phase) {
     return NextResponse.json({ phase: null, elixirsToday: [], practices: [] });
