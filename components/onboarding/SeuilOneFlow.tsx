@@ -10,7 +10,7 @@ type VideoPhase = "intro" | "recording" | "preview" | "uploading" | "done";
 const VIDEO1_QUESTIONS = [
   "Ce que je ressens en arrivant ici.",
   "Ce qui est vraiment présent en moi.",
-  "Ce qui me met en joie ou en élan de oui.",
+  "Quel est mon intention en venant ici ?",
 ];
 
 const VIDEO2_QUESTION = "Et si tout était possible… Qu'est-ce que j'ai profondément envie de vivre ?";
