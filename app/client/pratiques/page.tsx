@@ -26,6 +26,20 @@ interface ClientPractice {
   note: string | null;
 }
 
+interface PhasePractice {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  duration: number | null;
+  frequency: string;
+}
+
+interface PhaseInfo {
+  phaseType: string;
+  customName: string | null;
+}
+
 interface AuthUser {
   userId: string;
   clientId?: string;
@@ -71,6 +85,8 @@ function formatDate(dateStr: string): string {
  */
 export default function ClientPratiquesPage() {
   const [practices, setPractices] = useState<ClientPractice[]>([]);
+  const [phasePractices, setPhasePractices] = useState<PhasePractice[]>([]);
+  const [phaseInfo, setPhaseInfo] = useState<PhaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dayNumber, setDayNumber] = useState<number | null>(null);
@@ -84,10 +100,11 @@ export default function ClientPratiquesPage() {
       setLoading(true);
       setError(null);
 
-      // Charger en parallèle les pratiques et les infos utilisateur
-      const [practicesRes, authRes] = await Promise.all([
+      // Charger en parallèle les pratiques, phase actuelle et infos utilisateur
+      const [practicesRes, authRes, phaseRes] = await Promise.all([
         fetch("/api/client-practices"),
         fetch("/api/auth/me"),
+        fetch("/api/client/current-phase"),
       ]);
 
       if (!practicesRes.ok) {
@@ -96,6 +113,13 @@ export default function ClientPratiquesPage() {
 
       const practicesData = await practicesRes.json();
       setPractices(practicesData.clientPractices ?? practicesData);
+
+      // Charger les pratiques de la phase actuelle
+      if (phaseRes.ok) {
+        const phaseData = await phaseRes.json();
+        setPhasePractices(phaseData.practices ?? []);
+        if (phaseData.phase) setPhaseInfo(phaseData.phase);
+      }
 
       // Calculer le dayNumber à partir de startDate
       if (authRes.ok) {
@@ -221,17 +245,44 @@ export default function ClientPratiquesPage() {
           </p>
         )}
 
-        {/* Section Aujourd'hui */}
+        {/* Pratiques de la phase actuelle */}
+        {phasePractices.length > 0 && (
+          <section className="mb-10">
+            <h2 className="font-display text-lg text-brun-chaud mb-1">
+              {phaseInfo?.customName || "Phase actuelle"}
+            </h2>
+            <p className="font-ui text-xs text-brun-mid/60 mb-4">Pratiques de ta phase</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {phasePractices.map((pp) => (
+                <div key={pp.id} className="bg-cire-chaude border border-or-pale rounded-sm p-5 flex flex-col gap-3">
+                  <span className="font-caps text-xs text-or-sacre tracking-wider uppercase">
+                    {TYPE_BADGES[pp.type]?.emoji ?? "📋"} {TYPE_BADGES[pp.type]?.label ?? pp.type}
+                  </span>
+                  <h3 className="font-display text-lg text-brun-chaud leading-snug">{pp.title}</h3>
+                  {pp.description && (
+                    <p className="font-ui text-sm text-brun-mid line-clamp-2">{pp.description}</p>
+                  )}
+                  <div className="font-ui text-xs text-brun-mid/70 flex items-center gap-2">
+                    {pp.duration && <span>{pp.duration} min</span>}
+                    <span>{pp.frequency === "DAILY" ? "Quotidien" : "Jours spécifiques"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Section Aujourd'hui (pratiques individuelles) */}
         <section className="mb-10">
           <h2 className="font-display text-lg text-brun-chaud mb-4">
             Aujourd&apos;hui
           </h2>
 
-          {todayPractices.length === 0 ? (
+          {todayPractices.length === 0 && phasePractices.length === 0 ? (
             <p className="font-ui text-sm text-brun-mid">
               Aucune pratique assignée pour le moment.
             </p>
-          ) : (
+          ) : todayPractices.length === 0 ? null : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {todayPractices.map((cp) => (
                 <PracticeCard

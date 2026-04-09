@@ -9,6 +9,7 @@ import ElixirReceivedBanner from "@/components/client/ElixirReceivedBanner";
 import TimelineWidget from "@/components/client/TimelineWidget";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
+import { isElixirDayMatch } from "@/lib/parcours";
 
 export default async function ClientHomePage() {
   const session = await getSession();
@@ -60,6 +61,21 @@ export default async function ClientHomePage() {
   });
 
   if (!client) redirect("/login");
+
+  // Élixirs de la phase actuelle (PhaseElixir)
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const activePhase = await prisma.clientPhase.findFirst({
+    where: {
+      clientId: client.id,
+      startDate: { lte: now },
+      endDate: { gte: now },
+    },
+    include: {
+      phaseElixirs: { include: { elixirLibrary: true } },
+      phasePractices: true,
+    },
+  });
 
   const lang = (client.language === "EN" ? "EN" : "FR") as Lang;
   const T = (key: { EN: string; FR: string }) => key[lang];
@@ -133,8 +149,55 @@ export default async function ClientHomePage() {
       {/* Timeline widget */}
       <TimelineWidget />
 
-      {/* Elixirs prescribed */}
-      {client.elixirPrescriptions.length > 0 && (
+      {/* Élixirs du jour (phase actuelle) */}
+      {activePhase && activePhase.phaseElixirs.length > 0 && (
+        <div>
+          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
+            {T({ EN: "Today's Elixirs", FR: "Élixirs du jour" })}
+          </h2>
+          <div className="space-y-3">
+            {activePhase.phaseElixirs
+              .filter((pe) => isElixirDayMatch(pe.frequency, new Date()))
+              .map((pe) => {
+                const timingLabel: Record<string, Record<Lang, string>> = {
+                  MATIN: { EN: "Morning", FR: "Matin" },
+                  SOIR: { EN: "Evening", FR: "Soir" },
+                  JOURNEE: { EN: "During the day", FR: "Journée" },
+                  FLEXIBLE: { EN: "Flexible", FR: "Flexible" },
+                };
+                return (
+                  <div key={pe.id} className="bg-cire-chaude border-2 border-or-sacre/30 rounded-sm p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="font-display text-base text-brun-chaud">{pe.elixirLibrary.name}</p>
+                      <span className="font-caps text-[10px] text-or-sacre uppercase tracking-wider">
+                        {timingLabel[pe.timing]?.[lang] ?? pe.timing}
+                      </span>
+                    </div>
+                    <p className="font-ui text-sm text-brun-mid mt-1">
+                      {pe.dose || pe.elixirLibrary.dosage}
+                    </p>
+                    {pe.notes && (
+                      <p className="font-ui text-xs text-brun-mid/60 italic mt-1">{pe.notes}</p>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* Instructions de la phase */}
+      {activePhase?.instructions && (
+        <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
+            {T({ EN: "Instructions", FR: "Instructions" })}
+          </h2>
+          <p className="font-ui text-sm text-brun-mid whitespace-pre-line">{activePhase.instructions}</p>
+        </div>
+      )}
+
+      {/* Elixirs prescribed (ancien système — fallback) */}
+      {(!activePhase || activePhase.phaseElixirs.length === 0) && client.elixirPrescriptions.length > 0 && (
         <div>
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
             {T(t.home.yourElixirs)}
@@ -155,8 +218,28 @@ export default async function ClientHomePage() {
         </div>
       )}
 
-      {/* Today's practice */}
-      {todayPractice && (
+      {/* Today's practice (phase ou individuel) */}
+      {(activePhase?.phasePractices?.length ?? 0) > 0 ? (
+        <Link
+          href="/client/pratiques"
+          className="block bg-cire-chaude border border-or-pale rounded-sm p-5 hover:border-or-sacre transition-colors"
+        >
+          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
+            {T(t.home.todaysPractice)}
+          </h2>
+          <p className="font-display text-lg text-brun-chaud">
+            {activePhase!.phasePractices[0].title}
+          </p>
+          {activePhase!.phasePractices.length > 1 && (
+            <p className="font-ui text-xs text-brun-mid/60 mt-1">
+              +{activePhase!.phasePractices.length - 1} {T({ EN: "other practice(s)", FR: "autre(s) pratique(s)" })}
+            </p>
+          )}
+          <p className="font-ui text-sm text-or-sacre mt-1">
+            {T(t.home.start)} &rarr;
+          </p>
+        </Link>
+      ) : todayPractice ? (
         <Link
           href="/client/pratiques"
           className="block bg-cire-chaude border border-or-pale rounded-sm p-5 hover:border-or-sacre transition-colors"
@@ -171,7 +254,7 @@ export default async function ClientHomePage() {
             {T(t.home.start)} &rarr;
           </p>
         </Link>
-      )}
+      ) : null}
 
       {/* Next session */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
