@@ -184,17 +184,17 @@ async function main() {
   // ═══ Programs ═══
   const programDefinitions = [
     {
-      name: "monitoring", nameFr: "Monitoring 3 mois", nameEn: "3-Month Monitoring",
-      description: "Programme Le Passage 1:1",
-      sequence: ["detox", "cycle", "break", "cycle", "break", "cycle"],
+      name: "monitoring", nameFr: "Le Passage", nameEn: "The Passage",
+      description: "Programme Le Passage 1:1 — 103 jours",
+      sequence: ["detox", "cycle", "break", "cycle", "break", "cycle", "break"],
     },
     {
       name: "sovereignty", nameFr: "Souveraineté 9 mois", nameEn: "Sovereignty 9 Months",
       description: "Programme Souveraineté complet",
       sequence: [
-        "detox", "cycle", "break", "cycle", "break", "cycle",
-        "detox", "cycle", "break", "cycle", "break", "cycle",
-        "detox", "cycle", "break", "cycle", "break", "cycle",
+        "detox", "cycle", "break", "cycle", "break", "cycle", "break",
+        "detox", "cycle", "break", "cycle", "break", "cycle", "break",
+        "detox", "cycle", "break", "cycle", "break", "cycle", "break",
       ],
     },
     {

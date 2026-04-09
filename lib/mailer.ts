@@ -149,29 +149,27 @@ export async function sendInvitationEmail({
     : `Hello${firstName ? " " + firstName : ""}`;
 
   const textBody = isFR
-    ? `${greeting},\n\nTon espace privé est prêt.\n\nClique ici pour activer ton accès :\n${inviteUrl}\n\nCe lien est valable 365 jours.\n\nJoffrey`
-    : `${greeting},\n\nYour private space is ready.\n\nClick here to activate your access:\n${inviteUrl}\n\nThis link is valid for 365 days.\n\nJoffrey`;
+    ? `${greeting},\n\nTon espace privé est prêt.\n\nClique ici pour activer ton accès :\n${inviteUrl}\n\nJoffrey`
+    : `${greeting},\n\nYour private space is ready.\n\nClick here to activate your access:\n${inviteUrl}\n\nJoffrey`;
 
   const intro = isFR ? "Ton espace privé est prêt." : "Your private space is ready.";
   const welcomeBlock = isFR
     ? `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
 Bienvenue dans la Hive.<br>
 Cet espace t'appartient.<br>
-C'est ici que commence vraiment ton voyage —<br>
+C'est ici que commence vraiment ton voyage<br>
 à ton rythme, en toute confiance,<br>
 accompagné à chaque étape.
 </p>`
     : `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
 Welcome to the Hive.<br>
 This space is yours.<br>
-This is where your journey truly begins —<br>
+This is where your journey truly begins<br>
 at your pace, in full trust,<br>
 accompanied at every step.
 </p>`;
   const ctaLabel = isFR ? "Accéder à mon espace" : "Access my space";
-  const linkNote = isFR
-    ? "Ce lien est valable 365 jours."
-    : "This link is valid for 365 days.";
+  const linkNote = "";
 
   const innerContent = `
   <tr><td style="padding-bottom:24px;">
