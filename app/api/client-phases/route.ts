@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const phases = await prisma.clientPhase.findMany({
     where: { clientId },
-    orderBy: [{ phaseType: "asc" }, { phaseNumber: "asc" }],
+    orderBy: { startDate: "asc" },
     include: {
       phaseElixirs: { include: { elixirLibrary: true } },
       phasePractices: true,
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ phases });
 }
 
-// POST — générer les 6 phases pour un client à partir de sa startDate
+// POST — générer les 7 phases (103j) pour un client à partir de sa startDate
 export async function POST(req: Request) {
   const result = await requireAdmin();
   if (isErrorResponse(result)) return result;

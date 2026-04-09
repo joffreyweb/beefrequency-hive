@@ -2,7 +2,7 @@
 // Logique métier — Parcours 3 mois
 // ═══════════════════════════════════════
 
-export type PhaseType = "CYCLE" | "BREAK";
+export type PhaseType = "DETOX" | "CYCLE" | "BREAK";
 export type PhaseStatus = "UPCOMING" | "ACTIVE" | "COMPLETED";
 
 export interface PhaseDefinition {
@@ -26,19 +26,20 @@ export interface ActivePhaseInfo {
   totalDays: number; // durée totale du programme
 }
 
-// Structure fixe du parcours 3 mois
+// Structure fixe du parcours 103 jours (3,5 cycles lunaires)
 const PHASE_DEFINITIONS: PhaseDefinition[] = [
-  { phaseType: "CYCLE", phaseNumber: 1, durationDays: 21, startDay: 0, label: "Cycle 1" },
-  { phaseType: "BREAK", phaseNumber: 1, durationDays: 10, startDay: 21, label: "Intégration 1" },
-  { phaseType: "CYCLE", phaseNumber: 2, durationDays: 21, startDay: 31, label: "Cycle 2" },
-  { phaseType: "BREAK", phaseNumber: 2, durationDays: 10, startDay: 52, label: "Intégration 2" },
-  { phaseType: "CYCLE", phaseNumber: 3, durationDays: 21, startDay: 62, label: "Cycle 3" },
-  { phaseType: "BREAK", phaseNumber: 3, durationDays: 10, startDay: 83, label: "Intégration 3" },
+  { phaseType: "DETOX",  phaseNumber: 0, durationDays: 10, startDay: 0,  label: "Detox" },
+  { phaseType: "CYCLE",  phaseNumber: 1, durationDays: 21, startDay: 10, label: "Cycle 1" },
+  { phaseType: "BREAK",  phaseNumber: 1, durationDays: 10, startDay: 31, label: "Intégration 1" },
+  { phaseType: "CYCLE",  phaseNumber: 2, durationDays: 21, startDay: 41, label: "Cycle 2" },
+  { phaseType: "BREAK",  phaseNumber: 2, durationDays: 10, startDay: 62, label: "Intégration 2" },
+  { phaseType: "CYCLE",  phaseNumber: 3, durationDays: 21, startDay: 72, label: "Cycle 3" },
+  { phaseType: "BREAK",  phaseNumber: 3, durationDays: 10, startDay: 93, label: "Intégration 3" },
 ];
 
-export const TOTAL_PROGRAM_DAYS = 93; // 3×21 + 3×10
+export const TOTAL_PROGRAM_DAYS = 103; // 10 + 3×21 + 3×10
 
-/** Calcule les 6 phases avec dates absolues à partir de la startDate du client */
+/** Calcule les 7 phases avec dates absolues à partir de la startDate du client */
 export function computePhases(startDate: Date | string, today?: Date): ComputedPhase[] {
   const start = new Date(startDate);
   start.setHours(0, 0, 0, 0);

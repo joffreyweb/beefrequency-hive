@@ -580,6 +580,7 @@ model ElixirLibrary {
 }
 
 enum PhaseType {
+  DETOX
   CYCLE
   BREAK
 }
@@ -595,7 +596,7 @@ model ClientPhase {
   clientId    String
   client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   phaseType   PhaseType
-  phaseNumber Int         // 1, 2 ou 3
+  phaseNumber Int         // 0 (detox) ou 1-3
   startDate   DateTime
   endDate     DateTime
   status      PhaseStatus @default(UPCOMING)

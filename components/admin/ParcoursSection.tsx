@@ -35,7 +35,7 @@ interface PhasePractice {
 
 interface ClientPhase {
   id: string;
-  phaseType: "CYCLE" | "BREAK";
+  phaseType: "DETOX" | "CYCLE" | "BREAK";
   phaseNumber: number;
   startDate: string;
   endDate: string;
@@ -47,6 +47,7 @@ interface ClientPhase {
 // ─── Labels ───
 
 const PHASE_LABELS: Record<string, string> = {
+  DETOX: "Detox",
   CYCLE: "Cycle",
   BREAK: "Intégration",
 };
@@ -156,7 +157,7 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
           disabled={generating}
           className="px-5 py-2 text-sm font-ui uppercase tracking-[0.06em] bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
         >
-          {generating ? "Génération..." : "Générer le parcours 3 mois"}
+          {generating ? "Génération..." : "Générer le parcours 103 jours"}
         </button>
       </div>
     );
@@ -183,7 +184,7 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
               </span>
             </div>
             <p className="text-sm font-ui text-brun-chaud">
-              {PHASE_LABELS[phase.phaseType]} {phase.phaseNumber}
+              {PHASE_LABELS[phase.phaseType]}{phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}
             </p>
             <p className="text-xs font-ui text-brun-mid/50 mt-0.5">
               {formatDateShort(phase.startDate)} → {formatDateShort(phase.endDate)}
@@ -209,7 +210,7 @@ function PhaseDetail({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
       <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-display text-lg text-brun-chaud">
-            {PHASE_LABELS[phase.phaseType]} {phase.phaseNumber}
+            {PHASE_LABELS[phase.phaseType]}{phase.phaseType !== "DETOX" ? ` ${phase.phaseNumber}` : ""}
           </h3>
           <span className={`text-xs font-ui px-2 py-0.5 rounded-sharp ${
             phase.status === "ACTIVE" ? "bg-or-sacre/10 text-or-sacre" :
@@ -222,7 +223,7 @@ function PhaseDetail({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
         <p className="text-xs font-ui text-brun-mid/60">
           {formatDate(phase.startDate)} → {formatDate(phase.endDate)}
           {" · "}
-          {phase.phaseType === "CYCLE" ? "21 jours" : "10 jours"}
+          {phase.phaseType === "CYCLE" ? "21 jours" : "10 jours"}{phase.phaseType === "DETOX" ? " · Détoxification" : ""}
         </p>
       </div>
 
