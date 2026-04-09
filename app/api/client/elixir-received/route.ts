@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireClient, isErrorResponse } from "@/lib/api-utils";
 import { transporter } from "@/lib/mailer";
+import { getNextMonday } from "@/lib/parcours";
 
 // POST /api/client/elixir-received — Client confirme avoir reçu ses élixirs
 export async function POST() {
@@ -39,14 +40,15 @@ export async function POST() {
     ? `${client.intake.firstName} ${client.intake.lastName}`
     : client.user.name;
 
-  // Met à jour le statut → produits reçus + démarre la détox
+  // Met à jour le statut → produits reçus + programme démarre le lundi suivant
   const now = new Date();
+  const mondayStart = getNextMonday(now);
   await prisma.client.update({
     where: { id: client.id },
     data: {
       produitsRecus: true,
       produitsRecusAt: now,
-      detoxStartDate: now,
+      detoxStartDate: mondayStart,
     },
   });
 

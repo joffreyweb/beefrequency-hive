@@ -105,6 +105,9 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [newStartDate, setNewStartDate] = useState("");
+  const [changingDate, setChangingDate] = useState(false);
 
   const loadPhases = useCallback(async () => {
     try {
@@ -158,6 +161,27 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
     }
   }
 
+  async function handleChangeStartDate() {
+    if (!newStartDate) return;
+    setChangingDate(true);
+    try {
+      const res = await fetch("/api/client-phases", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId, startDate: newStartDate }),
+      });
+      if (res.ok) {
+        setShowDatePicker(false);
+        setNewStartDate("");
+        await loadPhases();
+      }
+    } catch {
+      // silent
+    } finally {
+      setChangingDate(false);
+    }
+  }
+
   if (loading) {
     return <p className="text-sm font-ui text-brun-mid/60 py-8">Chargement du parcours...</p>;
   }
@@ -184,19 +208,50 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Header + Reset */}
-      <div className="flex items-center justify-between">
+      {/* Header + Actions */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs font-ui text-brun-mid/60">
           {phases.length} phases · 103 jours
+          {phases.length > 0 && ` · Début ${formatDateShort(phases[0].startDate)}`}
         </p>
-        <button
-          onClick={handleReset}
-          disabled={resetting}
-          className="px-3 py-1.5 text-xs font-ui text-red-600 border border-red-200 rounded-sharp hover:bg-red-50 transition-colors disabled:opacity-50"
-        >
-          {resetting ? "Réinitialisation..." : "Réinitialiser le parcours"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="px-3 py-1.5 text-xs font-ui text-or-sacre border border-or-pale rounded-sharp hover:bg-or-sacre/10 transition-colors"
+          >
+            {showDatePicker ? "Annuler" : "Modifier date départ"}
+          </button>
+          <button
+            onClick={handleReset}
+            disabled={resetting}
+            className="px-3 py-1.5 text-xs font-ui text-red-600 border border-red-200 rounded-sharp hover:bg-red-50 transition-colors disabled:opacity-50"
+          >
+            {resetting ? "Réinitialisation..." : "Réinitialiser"}
+          </button>
+        </div>
       </div>
+
+      {/* Date picker */}
+      {showDatePicker && (
+        <div className="bg-creme-sacree border border-or-pale rounded-[8px] p-4 flex items-end gap-3">
+          <div>
+            <label className="block text-xs font-ui text-brun-mid mb-1">Nouvelle date de départ</label>
+            <input
+              type="date"
+              value={newStartDate}
+              onChange={(e) => setNewStartDate(e.target.value)}
+              className="px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+            />
+          </div>
+          <button
+            onClick={handleChangeStartDate}
+            disabled={changingDate || !newStartDate}
+            className="px-4 py-2 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
+          >
+            {changingDate ? "..." : "Recalculer les phases"}
+          </button>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="flex gap-2 overflow-x-auto pb-2">
