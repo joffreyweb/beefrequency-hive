@@ -68,10 +68,13 @@ export async function POST(
       await Promise.allSettled(
         batch.map(async (sub) => {
           const unsubLink = `${BASE_URL}/api/newsletter/unsubscribe?email=${encodeURIComponent(sub.email)}`;
-          const htmlWithFooter = `${campaign.content}
+          const logoHeader = `<div style="text-align:center;padding:32px 0 24px 0;">
+  <img src="https://hive.joffreydeleplanque.com/icon512.png" alt="BeeFrequency" width="80" height="80" style="display:inline-block;width:80px;height:80px;border:none;" />
+</div>`;
+          const htmlWithFooter = `${logoHeader}${campaign.content}
 <hr style="border:none;border-top:1px solid #E8D5A8;margin:32px 0 16px 0;">
 <p style="font-family:Arial,sans-serif;font-size:11px;color:#999;text-align:center;">
-  <a href="${unsubLink}" style="color:#999;text-decoration:underline;">Se d\u00e9sinscrire</a> | <a href="${unsubLink}" style="color:#999;text-decoration:underline;">Unsubscribe</a>
+  <a href="${unsubLink}" style="color:#999;text-decoration:underline;">Se désinscrire</a> | <a href="${unsubLink}" style="color:#999;text-decoration:underline;">Unsubscribe</a>
 </p>`;
 
           await transporter.sendMail({
