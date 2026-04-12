@@ -1174,6 +1174,73 @@ model NewsletterCampaign {
   updatedAt      DateTime @updatedAt
 }
 
+// ═══════════════════════════════════════
+// MODULE — CRM PROSPECTS (ready for AI)
+// ═══════════════════════════════════════
+
+model Prospect {
+  id              String   @id @default(cuid())
+
+  // Identité
+  email           String   @unique
+  firstName       String?
+  lastName        String?
+  phone           String?
+  company         String?
+  role            String?  // CEO, Founder, etc.
+
+  // Source & tracking
+  source          String   @default("manual") // manual, referral, website, instagram, linkedin, event, newsletter
+  sourceDetail    String?
+  referredBy      String?
+
+  // Pipeline
+  status          String   @default("new") // new, contacted, qualified, negotiation, won, lost, nurturing
+  temperature     String   @default("cold") // cold, warm, hot
+  score           Int      @default(0)      // 0-100, pour future IA scoring
+
+  // Qualification
+  budget          String?  // unknown, low, mid, high, premium
+  timeline        String?  // immediate, 1-3months, 6months+, unknown
+  needs           String[] @default([])
+  painPoints      String[] @default([])
+
+  // Suivi
+  lastContactAt   DateTime?
+  nextFollowUpAt  DateTime?
+  touchpoints     Int      @default(0)
+
+  // Notes & historique
+  notes           String?  @db.Text
+  history         Json?    // [{date, type, content, by}, ...]
+  aiInsights      Json?    // Future: suggestions IA
+
+  // Métadonnées
+  tags            String[] @default([])
+  metadata        Json?
+
+  // Conversion
+  convertedAt     DateTime?
+  clientId        String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  activities      ProspectActivity[]
+}
+
+model ProspectActivity {
+  id          String   @id @default(cuid())
+  prospectId  String
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  type        String   // email_sent, call, meeting, note, status_change, linkedin, whatsapp
+  content     String?  @db.Text
+  outcome     String?  // positive, neutral, negative, no_response
+  createdAt   DateTime @default(now())
+
+  @@index([prospectId])
+}
+
 model AdminSettings {
   id                     String   @id @default(cuid())
 

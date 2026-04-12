@@ -95,6 +95,12 @@ export default function Sidebar({
             badge={unreadMessagesCount}
           />
           <NavItem
+            href="/admin/prospects"
+            label="Prospects"
+            emoji={"\uD83C\uDFAF"}
+            active={isActive("/admin/prospects")}
+          />
+          <NavItem
             href="/admin/newsletter"
             label="Newsletter"
             emoji={"\u2709\uFE0F"}

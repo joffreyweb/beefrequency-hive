@@ -427,6 +427,34 @@ CADRE D'ENGAGEMENT MONITORING
     passwordWrong: { EN: "Current password is incorrect", FR: "Mot de passe actuel incorrect" },
   },
 
+  // === ADMIN — PROSPECTS CRM ===
+  prospects: {
+    title: { EN: "Prospects", FR: "Prospects" },
+    newProspect: { EN: "New prospect", FR: "Nouveau prospect" },
+    kanban: { EN: "Kanban", FR: "Kanban" },
+    list: { EN: "List", FR: "Liste" },
+    search: { EN: "Search...", FR: "Rechercher..." },
+    allStatuses: { EN: "All statuses", FR: "Tous statuts" },
+    allTemperatures: { EN: "All temperatures", FR: "Toutes temp." },
+    statusNew: { EN: "New", FR: "Nouveau" },
+    statusContacted: { EN: "Contacted", FR: "Contact\u00e9" },
+    statusQualified: { EN: "Qualified", FR: "Qualifi\u00e9" },
+    statusNegotiation: { EN: "Negotiation", FR: "N\u00e9gociation" },
+    statusWon: { EN: "Won", FR: "Gagn\u00e9" },
+    statusLost: { EN: "Lost", FR: "Perdu" },
+    statusNurturing: { EN: "Nurturing", FR: "Nurturing" },
+    cold: { EN: "Cold", FR: "Froid" },
+    warm: { EN: "Warm", FR: "Ti\u00e8de" },
+    hot: { EN: "Hot", FR: "Chaud" },
+    addActivity: { EN: "Add activity", FR: "Ajouter activit\u00e9" },
+    convertToClient: { EN: "Convert to client", FR: "Convertir en client" },
+    information: { EN: "Information", FR: "Informations" },
+    history: { EN: "History", FR: "Historique" },
+    nextFollowUp: { EN: "Next follow-up", FR: "Prochain suivi" },
+    noActivity: { EN: "No activity", FR: "Aucune activit\u00e9" },
+    exportCsv: { EN: "Export CSV", FR: "Export CSV" },
+  },
+
   // === ADMIN — NEWSLETTER ===
   newsletter: {
     title: { EN: "Newsletter", FR: "Newsletter" },
