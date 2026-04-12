@@ -35,13 +35,32 @@ export async function POST(
     },
   });
 
+  // Find VisitorProfile if exists
+  const visitorProfile = await prisma.visitorProfile.findUnique({
+    where: { email: prospect.email },
+  });
+
   const client = await prisma.client.create({
     data: {
       userId: user.id,
       offerType,
       status: "ACTIVE",
+      acquisitionSource: prospect.source || null,
+      acquisitionMedium: null,
+      acquisitionCampaign: null,
+      referredBy: prospect.referredBy || null,
+      prospectId: prospect.id,
+      visitorProfileId: visitorProfile?.id || null,
     },
   });
+
+  // Link VisitorProfile if exists
+  if (visitorProfile) {
+    await prisma.visitorProfile.update({
+      where: { id: visitorProfile.id },
+      data: { clientId: client.id, convertedAt: new Date(), completed: true },
+    });
+  }
 
   // Mark prospect as converted
   await prisma.prospect.update({

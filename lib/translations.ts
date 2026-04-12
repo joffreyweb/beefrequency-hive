@@ -427,6 +427,26 @@ CADRE D'ENGAGEMENT MONITORING
     passwordWrong: { EN: "Current password is incorrect", FR: "Mot de passe actuel incorrect" },
   },
 
+  // === ADMIN — ANALYTICS ===
+  analytics: {
+    title: { EN: "Analytics", FR: "Analytics" },
+    funnel: { EN: "Funnel", FR: "Funnel" },
+    abandons: { EN: "Drop-offs", FR: "Abandons" },
+    sources: { EN: "Sources", FR: "Sources" },
+    visitors: { EN: "Visitors", FR: "Visiteurs" },
+    conversions: { EN: "Conversions", FR: "Conversions" },
+    overallRate: { EN: "Overall rate", FR: "Taux global" },
+    topDropoff: { EN: "Top drop-off", FR: "Plus gros abandon" },
+    createProspect: { EN: "Create prospect", FR: "Cr\u00e9er prospect" },
+    lastVisit: { EN: "Last visit", FR: "Derni\u00e8re visite" },
+    dropoffStep: { EN: "Drop-off step", FR: "\u00c9tape abandon" },
+    visits: { EN: "Visits", FR: "Visites" },
+    rate: { EN: "Rate", FR: "Taux" },
+    period7: { EN: "7 days", FR: "7 jours" },
+    period30: { EN: "30 days", FR: "30 jours" },
+    period90: { EN: "90 days", FR: "90 jours" },
+  },
+
   // === ADMIN — PROSPECTS CRM ===
   prospects: {
     title: { EN: "Prospects", FR: "Prospects" },

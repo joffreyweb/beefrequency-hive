@@ -105,6 +105,14 @@ model Client {
   engagementAcceptedAt  DateTime?
   engagementText        String?      @db.Text
 
+  // Source & attribution
+  acquisitionSource     String?  // website, referral, instagram, etc.
+  acquisitionCampaign   String?  // UTM campaign
+  acquisitionMedium     String?  // UTM medium
+  referredBy            String?  // Nom du référent
+  prospectId            String?  // Lien vers Prospect d'origine
+  visitorProfileId      String?  // Lien vers VisitorProfile
+
   // Suivi parcours — étapes
   colisEnvoye           Boolean      @default(false)
   colisEnvoyeAt         DateTime?
@@ -1239,6 +1247,77 @@ model ProspectActivity {
   createdAt   DateTime @default(now())
 
   @@index([prospectId])
+}
+
+// ═══════════════════════════════════════
+// MODULE — FUNNEL TRACKING & ANALYTICS
+// ═══════════════════════════════════════
+
+model FunnelEvent {
+  id          String   @id @default(cuid())
+
+  // Identification
+  sessionId   String
+  visitorId   String?
+  email       String?
+
+  // Événement
+  step        String   // landing, form_start, form_email, form_submit, onboarding_1..5, completed
+  page        String?
+  source      String?
+  medium      String?
+  campaign    String?
+  referrer    String?
+
+  // Contexte
+  device      String?
+  browser     String?
+  country     String?
+  language    String?
+
+  // Timing
+  duration    Int?
+  createdAt   DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([email])
+  @@index([step])
+}
+
+model VisitorProfile {
+  id          String   @id @default(cuid())
+
+  // Identification
+  sessionId   String   @unique
+  email       String?  @unique
+
+  // Parcours
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @default(now())
+  totalVisits Int      @default(1)
+  pagesViewed String[] @default([])
+
+  // Funnel progress
+  funnelStep  String   @default("landing")
+  stoppedAt   String?
+  completed   Boolean  @default(false)
+
+  // Attribution
+  source      String?
+  medium      String?
+  campaign    String?
+  referrer    String?
+
+  // Conversion
+  prospectId  String?
+  clientId    String?
+  convertedAt DateTime?
+
+  // Données collectées
+  collectedData Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model AdminSettings {

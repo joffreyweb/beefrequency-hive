@@ -138,6 +138,30 @@ export async function POST(request: Request) {
       include: { user: { select: { email: true, name: true } } },
     });
 
+    // Enrichissement via VisitorProfile (funnel tracking)
+    try {
+      const visitorProfile = await prisma.visitorProfile.findUnique({
+        where: { email: updatedClient.user.email },
+      });
+      if (visitorProfile) {
+        await prisma.client.update({
+          where: { id: client.id },
+          data: {
+            acquisitionSource: visitorProfile.source || null,
+            acquisitionCampaign: visitorProfile.campaign || null,
+            acquisitionMedium: visitorProfile.medium || null,
+            visitorProfileId: visitorProfile.id,
+          },
+        });
+        await prisma.visitorProfile.update({
+          where: { id: visitorProfile.id },
+          data: { completed: true, clientId: client.id, convertedAt: new Date() },
+        });
+      }
+    } catch {
+      // Non-blocking enrichment
+    }
+
     // Envoyer l'email PWA si pas encore envoyé
     if (!updatedClient.pwaEmailSent && process.env.SMTP_HOST) {
       try {
