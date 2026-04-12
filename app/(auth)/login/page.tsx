@@ -122,6 +122,15 @@ export default function LoginPage() {
             {loading ? T(t.login.loading) : T(t.login.button)}
           </button>
         </form>
+
+        <div className="text-center mt-4">
+          <a
+            href="/forgot-password"
+            className="font-ui text-xs text-brun-mid/60 hover:text-or-sacre transition-colors"
+          >
+            {T({ EN: "Forgot password?", FR: "Mot de passe oubli\u00e9 ?" })}
+          </a>
+        </div>
       </div>
     </div>
   );
