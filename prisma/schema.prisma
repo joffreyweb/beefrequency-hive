@@ -99,6 +99,12 @@ model Client {
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
   isLegacy              Boolean      @default(false) // Client Legacy — admin only, skip onboarding
 
+  // Cadre d'engagement Monitoring Passage
+  fixedDay              String?
+  reportsUsed           Int          @default(0)
+  engagementAcceptedAt  DateTime?
+  engagementText        String?      @db.Text
+
   // Suivi parcours — étapes
   colisEnvoye           Boolean      @default(false)
   colisEnvoyeAt         DateTime?

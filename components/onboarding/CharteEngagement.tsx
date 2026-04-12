@@ -63,6 +63,14 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
           signedAt: new Date().toISOString(),
         }),
       });
+
+      // Enregistrer aussi l'engagement Monitoring Passage (fixedDay sera défini au booking)
+      await fetch("/api/client/engagement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
       onComplete();
     } catch {
       setSubmitting(false);
@@ -84,7 +92,17 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
         className="h-72 overflow-y-auto border border-or-pale rounded-sm bg-cire-chaude p-5 text-sm font-ui text-brun-chaud space-y-4 leading-relaxed"
       >
         {charterText.split("\n\n").map((paragraph, i) => {
+          const isSeparator = /^\u2501/.test(paragraph.trim());
           const isHeading = /^(\d+\.|Convention|Purpose|Objet)/.test(paragraph.trim());
+          if (isSeparator) {
+            return (
+              <div key={i} className="border-t border-or-sacre/40 pt-4 mt-4">
+                <p className="font-display text-base text-or-sacre font-semibold text-center">
+                  {paragraph.replace(/\u2501/g, "").trim()}
+                </p>
+              </div>
+            );
+          }
           return (
             <p key={i} className={isHeading ? "font-display text-base text-brun-chaud" : ""}>
               {paragraph}

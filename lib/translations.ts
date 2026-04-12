@@ -160,7 +160,20 @@ The work includes breathing and meditation practices, use of elixirs and process
 The participant may decide to interrupt the journey. This decision must be accompanied by a closing session. No interruption happens without this exchange.
 
 7. Personal Data \u2014 GDPR
-Personal data collected (videos, journal, birth data) is processed confidentially, hosted in Switzerland (Infomaniak) and is never shared with third parties. The participant has the right of access, rectification and deletion.`,
+Personal data collected (videos, journal, birth data) is processed confidentially, hosted in Switzerland (Infomaniak) and is never shared with third parties. The participant has the right of access, rectification and deletion.
+
+---
+MONITORING ENGAGEMENT FRAMEWORK
+
+1. Reference day — You choose a fixed day each week that becomes your reference appointment throughout the program.
+
+2. Rescheduling — Only one reschedule allowed over the 3 cycles. Travel: notify at least 7 days in advance.
+
+3. Missed appointments — Any forgotten or missed appointment is considered lost. Rescheduling possible but must be paid in advance, and cannot be moved again.
+
+4. Cancellation — 48 hours minimum before the appointment.
+
+5. Right to terminate — In case of repeated non-compliance, I reserve the right to suspend the program without refund.`,
 
   charterFR: `Convention & Engagement
 
@@ -186,7 +199,20 @@ Le travail inclut des pratiques de respiration, m\u00e9ditation, \u00e9lixirs et
 Le participant peut d\u00e9cider d\u2019interrompre le parcours. Cette d\u00e9cision doit \u00eatre accompagn\u00e9e d\u2019une s\u00e9ance de cl\u00f4ture. Aucune interruption ne se fait sans cet \u00e9change.
 
 7. Donn\u00e9es personnelles \u2014 RGPD
-Les donn\u00e9es personnelles collect\u00e9es (vid\u00e9os, journal, donn\u00e9es de naissance) sont trait\u00e9es de mani\u00e8re confidentielle, h\u00e9berg\u00e9es en Suisse (Infomaniak) et ne sont jamais partag\u00e9es avec des tiers. Droit d\u2019acc\u00e8s, rectification et suppression garantis.`,
+Les donn\u00e9es personnelles collect\u00e9es (vid\u00e9os, journal, donn\u00e9es de naissance) sont trait\u00e9es de mani\u00e8re confidentielle, h\u00e9berg\u00e9es en Suisse (Infomaniak) et ne sont jamais partag\u00e9es avec des tiers. Droit d\u2019acc\u00e8s, rectification et suppression garantis.
+
+---
+CADRE D'ENGAGEMENT MONITORING
+
+1. Jour de référence — Vous choisissez un jour fixe par semaine qui devient votre RDV de référence pendant tout le programme.
+
+2. Reports — Un seul report autorisé sur les 3 cycles. Voyage : prévenir 7 jours à l'avance minimum.
+
+3. Rendez-vous non honorés — Tout RDV oublié ou non honoré est considéré comme perdu. Reprogrammation possible mais payante à l'avance, et non déplaçable.
+
+4. Annulation — 48 heures minimum avant le RDV.
+
+5. Droit de fin — En cas de non-respect répété des règles, je me réserve le droit de suspendre l'accompagnement sans remboursement.`,
 
   // === HOME / DASHBOARD ===
   home: {

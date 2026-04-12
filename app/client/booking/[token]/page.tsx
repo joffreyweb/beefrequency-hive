@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import CharteEngagement from "@/components/client/CharteEngagement";
 
 interface Slot {
   start: string;
   available: boolean;
 }
+
+const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 export default function BookingPage() {
   const params = useParams();
@@ -21,6 +24,8 @@ export default function BookingPage() {
   const [booking, setBooking] = useState(false);
   const [done, setDone] = useState(false);
   const [zoomUrl, setZoomUrl] = useState("");
+  const [showCharte, setShowCharte] = useState(false);
+  const [engagementAccepted, setEngagementAccepted] = useState(false);
 
   useEffect(() => {
     // Validate token
@@ -43,7 +48,43 @@ export default function BookingPage() {
       .then((r) => r.json())
       .then((d) => setSlots(d.slots || {}))
       .catch(() => {});
+
+    // Check if engagement already accepted
+    fetch("/api/client/engagement")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.hasAccepted) setEngagementAccepted(true);
+      })
+      .catch(() => {});
   }, [token]);
+
+  function handleConfirmClick() {
+    if (!selectedSlot) return;
+    if (engagementAccepted) {
+      handleBook();
+    } else {
+      setShowCharte(true);
+    }
+  }
+
+  async function handleCharteAccept() {
+    if (!selectedSlot) return;
+    const fixedDay = DAY_NAMES[new Date(selectedSlot).getDay()];
+    const res = await fetch("/api/client/engagement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fixedDay }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Erreur lors de l'acceptation");
+      setShowCharte(false);
+      return;
+    }
+    setEngagementAccepted(true);
+    setShowCharte(false);
+    await handleBook();
+  }
 
   async function handleBook() {
     if (!selectedSlot) return;
@@ -154,15 +195,25 @@ export default function BookingPage() {
           })}
         </div>
 
-        {selectedSlot && (
+        {selectedSlot && !showCharte && (
           <div className="mt-6 text-center">
             <button
-              onClick={handleBook}
+              onClick={handleConfirmClick}
               disabled={booking}
               className="px-8 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif disabled:opacity-50"
             >
               {booking ? "Confirmation..." : "Confirmer ce creneau"}
             </button>
+          </div>
+        )}
+
+        {showCharte && (
+          <div className="mt-6">
+            <CharteEngagement
+              onAccept={handleCharteAccept}
+              onCancel={() => setShowCharte(false)}
+              clientName={clientName}
+            />
           </div>
         )}
       </div>
