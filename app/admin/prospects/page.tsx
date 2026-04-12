@@ -81,11 +81,23 @@ export default function ProspectsPage() {
   useEffect(() => { fetchProspects(); }, [fetchProspects]);
 
   async function handleStatusChange(id: string, newStatus: string) {
-    await fetch(`/api/admin/prospects/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
+    // Optimistic update
+    setProspects((prev) => prev.map((p) => p.id === id ? { ...p, status: newStatus } : p));
+    try {
+      const res = await fetch(`/api/admin/prospects/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        // Rollback
+        await fetchProspects();
+        return;
+      }
+    } catch {
+      await fetchProspects();
+      return;
+    }
     fetchProspects();
   }
 
@@ -194,29 +206,40 @@ function KanbanView({ prospects, onSelect, onStatusChange, displayName }: {
               {items.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => onSelect(p)}
-                  className="bg-cire-chaude border border-or-pale rounded-lg p-3 cursor-pointer hover:border-or-sacre transition-colors"
+                  className="bg-cire-chaude border border-or-pale rounded-lg p-3 hover:border-or-sacre transition-colors"
                 >
-                  <p className="font-ui text-sm text-brun-chaud truncate">{displayName(p)}</p>
-                  {p.company && <p className="font-ui text-[10px] text-brun-mid truncate">{p.company}</p>}
-                  <div className="flex items-center justify-between mt-2">
-                    <span className={`px-1.5 py-0.5 text-[9px] rounded-full ${TEMP_COLORS[p.temperature] || ""}`}>
-                      {p.temperature}
-                    </span>
-                    {p.score > 0 && <span className="text-[10px] font-ui text-or-sacre">{p.score}/100</span>}
+                  <div
+                    onClick={() => onSelect(p)}
+                    className="cursor-pointer"
+                  >
+                    <p className="font-ui text-sm text-brun-chaud truncate">{displayName(p)}</p>
+                    {p.company && <p className="font-ui text-[10px] text-brun-mid truncate">{p.company}</p>}
+                    <div className="flex items-center justify-between mt-2">
+                      <span className={`px-1.5 py-0.5 text-[9px] rounded-full ${TEMP_COLORS[p.temperature] || ""}`}>
+                        {p.temperature}
+                      </span>
+                      {p.score > 0 && <span className="text-[10px] font-ui text-or-sacre">{p.score}/100</span>}
+                    </div>
+                    {p.nextFollowUpAt && (
+                      <p className="text-[10px] font-ui text-brun-mid/50 mt-1">
+                        Suivi : {new Date(p.nextFollowUpAt).toLocaleDateString("fr-FR")}
+                      </p>
+                    )}
                   </div>
-                  {p.nextFollowUpAt && (
-                    <p className="text-[10px] font-ui text-brun-mid/50 mt-1">
-                      Suivi : {new Date(p.nextFollowUpAt).toLocaleDateString("fr-FR")}
-                    </p>
-                  )}
-                  {/* Quick status buttons */}
-                  {status !== "won" && status !== "lost" && (
-                    <div className="flex gap-1 mt-2">
+                  {/* Quick status buttons — outside the clickable zone */}
+                  {status !== "won" && status !== "lost" && getNextStatuses(status).length > 0 && (
+                    <div className="flex gap-2 mt-2 pt-2 border-t border-or-pale/30">
                       {getNextStatuses(status).map((next) => (
-                        <button key={next} onClick={(e) => { e.stopPropagation(); onStatusChange(p.id, next); }}
-                          className="text-[9px] font-ui text-or-sacre/70 hover:text-or-sacre px-1">
-                          &rarr; {STATUS_LABELS[next]}
+                        <button
+                          key={next}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onStatusChange(p.id, next);
+                          }}
+                          className="text-[10px] font-ui text-or-sacre hover:text-ambre-vif hover:underline px-1">
+                          → {STATUS_LABELS[next]}
                         </button>
                       ))}
                     </div>
@@ -371,8 +394,9 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-or-pale">
           <div>
+            <p className="font-caps text-[10px] uppercase tracking-widest text-brun-mid/60">Modifier le prospect</p>
             <h2 className="font-display text-xl text-brun-chaud">{name}</h2>
-            {form.company && <p className="font-ui text-xs text-brun-mid">{form.company} {form.role ? `\u2014 ${form.role}` : ""}</p>}
+            {form.company && <p className="font-ui text-xs text-brun-mid">{form.company} {form.role ? `— ${form.role}` : ""}</p>}
           </div>
           <button onClick={onClose} className="text-brun-mid hover:text-brun-chaud text-xl">&times;</button>
         </div>
@@ -393,28 +417,28 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
           {tab === "info" ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <MField label="Pr\u00e9nom" value={form.firstName || ""} onChange={(v) => setForm((p) => ({ ...p, firstName: v || null }))} />
+                <MField label="Prénom" value={form.firstName || ""} onChange={(v) => setForm((p) => ({ ...p, firstName: v || null }))} />
                 <MField label="Nom" value={form.lastName || ""} onChange={(v) => setForm((p) => ({ ...p, lastName: v || null }))} />
-                <MField label="T\u00e9l\u00e9phone" value={form.phone || ""} onChange={(v) => setForm((p) => ({ ...p, phone: v || null }))} />
+                <MField label="Téléphone" value={form.phone || ""} onChange={(v) => setForm((p) => ({ ...p, phone: v || null }))} />
                 <MField label="Entreprise" value={form.company || ""} onChange={(v) => setForm((p) => ({ ...p, company: v || null }))} />
-                <MField label="R\u00f4le" value={form.role || ""} onChange={(v) => setForm((p) => ({ ...p, role: v || null }))} />
-                <MField label="R\u00e9f\u00e9r\u00e9 par" value={form.referredBy || ""} onChange={(v) => setForm((p) => ({ ...p, referredBy: v || null }))} />
+                <MField label="Rôle" value={form.role || ""} onChange={(v) => setForm((p) => ({ ...p, role: v || null }))} />
+                <MField label="Référé par" value={form.referredBy || ""} onChange={(v) => setForm((p) => ({ ...p, referredBy: v || null }))} />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <MSelect label="Status" value={form.status} options={STATUSES.map((s) => ({ v: s, l: STATUS_LABELS[s] }))} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
-                <MSelect label="Temp\u00e9rature" value={form.temperature}
-                  options={[{ v: "cold", l: "Froid" }, { v: "warm", l: "Ti\u00e8de" }, { v: "hot", l: "Chaud" }]}
+                <MSelect label="Température" value={form.temperature}
+                  options={[{ v: "cold", l: "Froid" }, { v: "warm", l: "Tiède" }, { v: "hot", l: "Chaud" }]}
                   onChange={(v) => setForm((p) => ({ ...p, temperature: v }))} />
                 <MField label="Score (0-100)" value={String(form.score)} onChange={(v) => setForm((p) => ({ ...p, score: parseInt(v) || 0 }))} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <MSelect label="Budget" value={form.budget || ""}
-                  options={[{ v: "", l: "\u2014" }, { v: "unknown", l: "Inconnu" }, { v: "low", l: "Bas" }, { v: "mid", l: "Moyen" }, { v: "high", l: "Haut" }, { v: "premium", l: "Premium" }]}
+                  options={[{ v: "", l: "—" }, { v: "unknown", l: "Inconnu" }, { v: "low", l: "Bas" }, { v: "mid", l: "Moyen" }, { v: "high", l: "Haut" }, { v: "premium", l: "Premium" }]}
                   onChange={(v) => setForm((p) => ({ ...p, budget: v || null }))} />
                 <MSelect label="Timeline" value={form.timeline || ""}
-                  options={[{ v: "", l: "\u2014" }, { v: "immediate", l: "Imm\u00e9diat" }, { v: "1-3months", l: "1-3 mois" }, { v: "6months+", l: "6 mois+" }, { v: "unknown", l: "Inconnu" }]}
+                  options={[{ v: "", l: "—" }, { v: "immediate", l: "Immédiat" }, { v: "1-3months", l: "1-3 mois" }, { v: "6months+", l: "6 mois+" }, { v: "unknown", l: "Inconnu" }]}
                   onChange={(v) => setForm((p) => ({ ...p, timeline: v || null }))} />
               </div>
 
@@ -427,7 +451,7 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
                   rows={3} className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre" />
               </div>
 
-              <MField label="Tags (s\u00e9par\u00e9s par ,)" value={form.tags.join(", ")}
+              <MField label="Tags (séparés par ,)" value={form.tags.join(", ")}
                 onChange={(v) => setForm((p) => ({ ...p, tags: v ? v.split(",").map((t) => t.trim()) : [] }))} />
             </div>
           ) : (
@@ -440,7 +464,7 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
                     <option value="note">Note</option>
                     <option value="call">Appel</option>
                     <option value="email_sent">Email</option>
-                    <option value="meeting">R\u00e9union</option>
+                    <option value="meeting">Réunion</option>
                     <option value="linkedin">LinkedIn</option>
                     <option value="whatsapp">WhatsApp</option>
                   </select>
@@ -449,12 +473,12 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
                     <option value="">Outcome</option>
                     <option value="positive">Positif</option>
                     <option value="neutral">Neutre</option>
-                    <option value="negative">N\u00e9gatif</option>
-                    <option value="no_response">Pas de r\u00e9ponse</option>
+                    <option value="negative">Négatif</option>
+                    <option value="no_response">Pas de réponse</option>
                   </select>
                 </div>
                 <textarea value={activityForm.content} onChange={(e) => setActivityForm((p) => ({ ...p, content: e.target.value }))}
-                  placeholder="D\u00e9tails..." rows={2}
+                  placeholder="Détails..." rows={2}
                   className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-sm font-ui focus:outline-none focus:border-or-sacre" />
                 <button onClick={handleAddActivity} disabled={addingActivity}
                   className="px-3 py-1.5 bg-or-sacre text-white font-ui text-xs rounded-[2px] hover:bg-ambre-vif disabled:opacity-50">
@@ -464,7 +488,7 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
 
               {/* Timeline */}
               {activities.length === 0 ? (
-                <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Aucune activit\u00e9</p>
+                <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Aucune activité</p>
               ) : (
                 <div className="space-y-3">
                   {activities.map((a) => (
@@ -498,10 +522,14 @@ function ProspectModal({ prospect, onClose, onUpdate }: {
 
         {/* Footer */}
         <div className="flex items-center justify-between p-5 border-t border-or-pale">
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
             <button onClick={handleDelete} className="text-xs font-ui text-red-400 hover:text-red-600">Supprimer</button>
-            {(form.status === "qualified" || form.status === "negotiation") && !form.clientId && (
-              <button onClick={handleConvert} className="text-xs font-ui text-foret hover:text-foret/70">Convertir en client</button>
+            {!form.clientId ? (
+              <button onClick={handleConvert} className="px-3 py-1.5 bg-foret/10 text-foret font-ui text-xs uppercase tracking-wider rounded-[2px] hover:bg-foret hover:text-white transition-colors">
+                Convertir en client
+              </button>
+            ) : (
+              <span className="text-xs font-ui text-foret">✓ Déjà client</span>
             )}
           </div>
           <div className="flex gap-2">
@@ -551,21 +579,21 @@ function AddProspectModal({ onClose, onCreated }: { onClose: () => void; onCreat
         <div className="space-y-3">
           <MField label="Email *" value={form.email} onChange={(v) => setForm((p) => ({ ...p, email: v }))} />
           <div className="grid grid-cols-2 gap-3">
-            <MField label="Pr\u00e9nom" value={form.firstName} onChange={(v) => setForm((p) => ({ ...p, firstName: v }))} />
+            <MField label="Prénom" value={form.firstName} onChange={(v) => setForm((p) => ({ ...p, firstName: v }))} />
             <MField label="Nom" value={form.lastName} onChange={(v) => setForm((p) => ({ ...p, lastName: v }))} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <MField label="T\u00e9l\u00e9phone" value={form.phone} onChange={(v) => setForm((p) => ({ ...p, phone: v }))} />
+            <MField label="Téléphone" value={form.phone} onChange={(v) => setForm((p) => ({ ...p, phone: v }))} />
             <MField label="Entreprise" value={form.company} onChange={(v) => setForm((p) => ({ ...p, company: v }))} />
           </div>
           <MSelect label="Source" value={form.source}
             options={[
               { v: "manual", l: "Manuel" }, { v: "referral", l: "Recommandation" }, { v: "website", l: "Site web" },
-              { v: "instagram", l: "Instagram" }, { v: "linkedin", l: "LinkedIn" }, { v: "event", l: "\u00c9v\u00e9nement" },
+              { v: "instagram", l: "Instagram" }, { v: "linkedin", l: "LinkedIn" }, { v: "event", l: "Événement" },
               { v: "newsletter", l: "Newsletter" },
             ]}
             onChange={(v) => setForm((p) => ({ ...p, source: v }))} />
-          <MField label="R\u00e9f\u00e9r\u00e9 par" value={form.referredBy} onChange={(v) => setForm((p) => ({ ...p, referredBy: v }))} />
+          <MField label="Référé par" value={form.referredBy} onChange={(v) => setForm((p) => ({ ...p, referredBy: v }))} />
         </div>
         <div className="flex gap-2 pt-2">
           <button onClick={onClose}
