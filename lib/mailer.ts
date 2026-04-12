@@ -262,3 +262,69 @@ without opening a browser.
     html: htmlBody,
   });
 }
+
+// ═══════════════════════════════════════
+// EMAIL 3 — Relance douce (inactivité)
+// ═══════════════════════════════════════
+
+export async function sendReactivationEmail({
+  to,
+  firstName,
+  language = "FR",
+}: {
+  to: string;
+  firstName?: string;
+  language?: "FR" | "EN";
+}) {
+  const isFR = language === "FR";
+
+  const subject = isFR
+    ? "On pense \u00e0 toi"
+    : "Checking in";
+
+  const greeting = isFR
+    ? `Bonjour${firstName ? " " + firstName : ""}`
+    : `Hello${firstName ? " " + firstName : ""}`;
+
+  const textBody = isFR
+    ? `${greeting},\n\nJe voulais simplement prendre de tes nouvelles.\n\nTon espace est toujours l\u00e0, il t\u2019attend.\nSi tu traverses une p\u00e9riode charg\u00e9e ou si quelque chose te freine, sache que c\u2019est normal \u2014 et que tu peux revenir \u00e0 ton rythme.\n\nUn petit check-in, m\u00eame court, peut suffire \u00e0 relancer le mouvement.\n\nJe suis l\u00e0 si tu as besoin.\n\nJoffrey`
+    : `${greeting},\n\nJust wanted to check in with you.\n\nYour space is still here, waiting for you.\nIf you're going through a busy period or something is holding you back, know that it's normal \u2014 and you can come back at your own pace.\n\nA small check-in, even a short one, can be enough to restart the momentum.\n\nI'm here if you need me.\n\nJoffrey`;
+
+  const bodyBlock = isFR
+    ? `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
+Je voulais simplement prendre de tes nouvelles.<br><br>
+Ton espace est toujours l&agrave;, il t&rsquo;attend.<br>
+Si tu traverses une p&eacute;riode charg&eacute;e ou si quelque chose te freine,<br>
+sache que c&rsquo;est normal &mdash; et que tu peux revenir &agrave; ton rythme.<br><br>
+Un petit check-in, m&ecirc;me court, peut suffire &agrave; relancer le mouvement.
+</p>
+<p style="font-family:Georgia,serif;font-size:14px;color:#B8821E;margin:0 0 24px 0;">
+<a href="https://hive.joffreydeleplanque.com/client/home" style="color:#B8821E;text-decoration:underline;">Acc&eacute;der &agrave; mon espace &rarr;</a>
+</p>`
+    : `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
+Just wanted to check in with you.<br><br>
+Your space is still here, waiting for you.<br>
+If you&rsquo;re going through a busy period or something is holding you back,<br>
+know that it&rsquo;s normal &mdash; and you can come back at your own pace.<br><br>
+A small check-in, even a short one, can be enough to restart the momentum.
+</p>
+<p style="font-family:Georgia,serif;font-size:14px;color:#B8821E;margin:0 0 24px 0;">
+<a href="https://hive.joffreydeleplanque.com/client/home" style="color:#B8821E;text-decoration:underline;">Go to my space &rarr;</a>
+</p>`;
+
+  const innerContent = `
+  <tr><td style="padding-bottom:24px;">
+    <p style="font-family:Georgia,serif;font-size:18px;color:#2C1A0E;margin:0 0 16px 0;">${greeting},</p>
+    ${bodyBlock}
+  </td></tr>`;
+
+  const htmlBody = wrapEmailHtml(isFR, innerContent);
+
+  await transporter.sendMail({
+    from: mailFrom(),
+    to,
+    subject,
+    text: textBody,
+    html: htmlBody,
+  });
+}

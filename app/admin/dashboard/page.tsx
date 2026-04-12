@@ -4,6 +4,7 @@ import DashboardActions from "./DashboardActions";
 import AgendaZoomButton from "./AgendaZoomButton";
 import ClientTimeline from "./ClientTimeline";
 import TasksWidget from "@/components/admin/TasksWidget";
+import InactiveClientsWidget from "@/components/admin/InactiveClientsWidget";
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   ONLINE: "En ligne",
@@ -371,6 +372,9 @@ export default async function AdminDashboard() {
         {/* Actions en attente */}
         <DashboardActions initialActions={serializedActions} />
       </div>
+
+      {/* Clients à relancer */}
+      <InactiveClientsWidget />
 
       {/* Questionnaires en attente — section independante sous la grille */}
       <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">

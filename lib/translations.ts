@@ -427,6 +427,15 @@ CADRE D'ENGAGEMENT MONITORING
     passwordWrong: { EN: "Current password is incorrect", FR: "Mot de passe actuel incorrect" },
   },
 
+  // === ADMIN — INACTIVE CLIENTS ===
+  inactive: {
+    title: { EN: "Clients to follow up", FR: "Clients \u00e0 relancer" },
+    daysInactive: { EN: "days without activity", FR: "jours sans activit\u00e9" },
+    sendRelance: { EN: "Send follow-up", FR: "Envoyer relance" },
+    sent: { EN: "Sent", FR: "Envoy\u00e9" },
+    noInactive: { EN: "All clients are active", FR: "Tous les clients sont actifs" },
+  },
+
   // === COMMON ===
   common: {
     loading: { EN: "Loading...", FR: "Chargement..." },
