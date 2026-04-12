@@ -45,7 +45,6 @@ export default async function ClientHomePage() {
       sessions: {
         where: { status: "SCHEDULED", scheduledAt: { gte: new Date() } },
         orderBy: { scheduledAt: "asc" },
-        take: 1,
       },
       clientPractices: {
         where: { isActive: true },
@@ -104,7 +103,7 @@ export default async function ClientHomePage() {
       ? allMessages[(dayNumber - 1) % allMessages.length]
       : null;
 
-  const nextSession = client.sessions[0] ?? null;
+  const upcomingSessions = client.sessions;
   const todayPractice = client.clientPractices[0] ?? null;
 
   const sessionTypeLabels: Record<string, Record<Lang, string>> = {
@@ -262,38 +261,44 @@ export default async function ClientHomePage() {
         </Link>
       ) : null}
 
-      {/* Next session */}
+      {/* Upcoming sessions */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          {T(t.home.nextSession)}
+          {T({ EN: "MY UPCOMING SESSIONS", FR: "MES PROCHAINES S\u00c9ANCES" })}
         </h2>
-        {nextSession ? (
-          <>
-            <p className="font-display text-lg text-brun-chaud">
-              {new Date(nextSession.scheduledAt).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-            </p>
-            <p className="text-sm text-brun-mid mt-1">
-              {new Date(nextSession.scheduledAt).toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-              {" "}&mdash; {sessionTypeLabels[nextSession.type]?.[lang] ?? nextSession.type}
-            </p>
-            {nextSession.zoomLink && (
-              <a
-                href={nextSession.zoomLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-3 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
-              >
-                {T(t.home.joinZoom)}
-              </a>
-            )}
-          </>
+        {upcomingSessions.length > 0 ? (
+          <div className="space-y-4">
+            {upcomingSessions.map((s) => (
+              <div key={s.id} className="flex items-start justify-between gap-3 border-b border-or-pale/30 pb-3 last:border-0 last:pb-0">
+                <div>
+                  <p className="font-display text-lg text-brun-chaud">
+                    {new Date(s.scheduledAt).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  </p>
+                  <p className="text-sm text-brun-mid mt-1">
+                    {new Date(s.scheduledAt).toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {" "}&mdash; {sessionTypeLabels[s.type]?.[lang] ?? s.type}
+                  </p>
+                </div>
+                {s.zoomLink && (
+                  <a
+                    href={s.zoomLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 mt-1 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
+                  >
+                    {T(t.home.joinZoom)}
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <p className="text-brun-mid text-sm font-ui">{T(t.home.noSession)}</p>
         )}
