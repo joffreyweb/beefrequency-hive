@@ -244,6 +244,12 @@ export default function OnboardingPage() {
                     required
                   />
 
+                  <Field
+                    label={T(t.onboarding.phoneNumber)}
+                    value={form.phoneNumber}
+                    onChange={(v) => update("phoneNumber", v)}
+                  />
+
                   <div>
                     <label className="block text-sm font-ui text-brun-chaud mb-1">
                       {T(t.onboarding.birthDate)} <span className="text-or-sacre">*</span>

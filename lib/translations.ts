@@ -89,6 +89,7 @@ export const t = {
     city: { EN: "City", FR: "Ville" },
     country: { EN: "Country", FR: "Pays" },
     phone: { EN: "Phone number", FR: "Num\u00e9ro de t\u00e9l\u00e9phone" },
+    phoneNumber: { EN: "Phone number", FR: "Num\u00e9ro de t\u00e9l\u00e9phone" },
     continueButton: { EN: "Continue", FR: "Continuer" },
     backButton: { EN: "Back", FR: "Retour" },
 
@@ -165,15 +166,15 @@ Personal data collected (videos, journal, birth data) is processed confidentiall
 ---
 MONITORING ENGAGEMENT FRAMEWORK
 
-1. Reference day — You choose a fixed day each week that becomes your reference appointment throughout the program.
+1. Reference day. You choose a fixed day each week that becomes your reference appointment throughout the program.
 
-2. Rescheduling — Only one reschedule allowed over the 3 cycles. Travel: notify at least 7 days in advance.
+2. Rescheduling. Only one reschedule allowed over the 3 cycles. Travel: notify at least 7 days in advance.
 
-3. Missed appointments — Any forgotten or missed appointment is considered lost. Rescheduling possible but must be paid in advance, and cannot be moved again.
+3. Missed appointments. Any forgotten or missed appointment is considered lost. Rescheduling possible but must be paid in advance, and cannot be moved again.
 
-4. Cancellation — 48 hours minimum before the appointment.
+4. Cancellation. 48 hours minimum before the appointment.
 
-5. Right to terminate — In case of repeated non-compliance, I reserve the right to suspend the program without refund.`,
+5. Right to terminate. In case of repeated non-compliance, I reserve the right to suspend the program without refund.`,
 
   charterFR: `Convention & Engagement
 
@@ -204,15 +205,15 @@ Les donn\u00e9es personnelles collect\u00e9es (vid\u00e9os, journal, donn\u00e9e
 ---
 CADRE D'ENGAGEMENT MONITORING
 
-1. Jour de référence — Vous choisissez un jour fixe par semaine qui devient votre RDV de référence pendant tout le programme.
+1. Jour de référence. Vous choisissez un jour fixe par semaine qui devient votre RDV de référence pendant tout le programme.
 
-2. Reports — Un seul report autorisé sur les 3 cycles. Voyage : prévenir 7 jours à l'avance minimum.
+2. Reports. Un seul report autorisé sur les 3 cycles. Voyage : prévenir 7 jours à l'avance minimum.
 
-3. Rendez-vous non honorés — Tout RDV oublié ou non honoré est considéré comme perdu. Reprogrammation possible mais payante à l'avance, et non déplaçable.
+3. Rendez-vous non honorés. Tout RDV oublié ou non honoré est considéré comme perdu. Reprogrammation possible mais payante à l'avance, et non déplaçable.
 
-4. Annulation — 48 heures minimum avant le RDV.
+4. Annulation. 48 heures minimum avant le RDV.
 
-5. Droit de fin — En cas de non-respect répété des règles, je me réserve le droit de suspendre l'accompagnement sans remboursement.`,
+5. Droit de fin. En cas de non-respect répété des règles, je me réserve le droit de suspendre l'accompagnement sans remboursement.`,
 
   // === HOME / DASHBOARD ===
   home: {
