@@ -46,7 +46,7 @@ export default async function AdminDashboard() {
   const todayStart = new Date(midnightRef.getTime() - offsetMs);
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires] =
+  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments] =
     await Promise.all([
       prisma.client.count({ where: { status: "ACTIVE" } }),
       prisma.session.findMany({
@@ -107,6 +107,16 @@ export default async function AdminDashboard() {
         },
         orderBy: { createdAt: "asc" },
       }),
+      // Upcoming sessions (next 7 days, excluding today)
+      prisma.appointment.findMany({
+        where: {
+          scheduledAt: { gt: todayEnd, lte: new Date(todayEnd.getTime() + 7 * 24 * 60 * 60 * 1000) },
+          status: { not: "CANCELLED" },
+        },
+        orderBy: { scheduledAt: "asc" },
+        take: 5,
+        include: { client: { include: { user: { select: { name: true } } } } },
+      }),
     ]);
 
   // Merge Sessions + Appointments into unified list
@@ -123,6 +133,14 @@ export default async function AdminDashboard() {
       source: "appointment" as const,
     })),
   ].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+
+  const upcomingSessions = upcomingAppointments.map((a) => ({
+    id: a.id,
+    scheduledAt: a.scheduledAt,
+    clientName: a.client.user.name ?? "",
+    duration: a.durationMin,
+    typeLabel: APPT_TYPE_LABELS[a.meetingType] ?? a.meetingType,
+  }));
 
   pendingActions.sort((a, b) => {
     const urgDiff = (URGENCY_ORDER[a.urgency] ?? 2) - (URGENCY_ORDER[b.urgency] ?? 2);
@@ -324,8 +342,8 @@ export default async function AdminDashboard() {
         )}
       </div>
 
-      {/* Agenda + Actions */}
-      <div className="grid grid-cols-[1.2fr_1fr] gap-6 min-h-0">
+      {/* Agenda + Upcoming + Actions */}
+      <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-6 min-h-0">
         {/* Agenda du jour */}
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] overflow-y-auto">
           <div className="p-5">
@@ -358,6 +376,43 @@ export default async function AdminDashboard() {
                         <AgendaZoomButton sessionId={session.id} initialZoomLink={session.zoomLink ?? null} type={session.source} />
                       </div>
                       {index < todaySessions.length - 1 && <div className="border-b border-or-pale/30" />}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Prochaines séances */}
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] overflow-y-auto">
+          <div className="p-5">
+            <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
+              Prochaines s&eacute;ances
+            </h2>
+            {upcomingSessions.length === 0 ? (
+              <div className="flex items-center justify-center h-32">
+                <p className="text-sm font-ui text-brun-mid/60">Aucune s&eacute;ance pr&eacute;vue</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingSessions.map((session) => {
+                  const initials = getInitials(session.clientName);
+                  const sessionDate = new Date(session.scheduledAt);
+                  return (
+                    <div key={session.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-or-pale/20 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-or-sacre/10 flex items-center justify-center shrink-0">
+                        <span className="text-xs font-ui font-medium text-or-sacre">{initials}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-ui text-sm text-brun-chaud truncate">{session.clientName}</p>
+                        <p className="text-xs text-brun-mid">
+                          {sessionDate.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Brussels" })}
+                          {" \u00b7 "}
+                          {sessionDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" })}
+                        </p>
+                      </div>
+                      <span className="text-xs text-brun-mid/60">{session.duration} min</span>
                     </div>
                   );
                 })}
