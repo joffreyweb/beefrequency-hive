@@ -76,7 +76,7 @@ export default function Sidebar({
           />
           <NavItem
             href="/admin/slots"
-            label="Cr\u00e9neaux"
+            label="Créneaux"
             emoji={"\uD83D\uDD50"}
             active={isActive("/admin/slots")}
           />
@@ -120,7 +120,7 @@ export default function Sidebar({
           />
           <NavItem
             href="/admin/settings"
-            label="Param\u00e8tres"
+            label="Paramètres"
             emoji={"\u2699\uFE0F"}
             active={isActive("/admin/settings")}
           />
