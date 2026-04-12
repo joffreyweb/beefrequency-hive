@@ -75,6 +75,12 @@ export default function Sidebar({
             active={isActive("/admin/agenda")}
           />
           <NavItem
+            href="/admin/slots"
+            label="Cr\u00e9neaux"
+            emoji={"\uD83D\uDD50"}
+            active={isActive("/admin/slots")}
+          />
+          <NavItem
             href="/admin/clients"
             label="La Ruche"
             emoji={"\uD83D\uDC1D"}
