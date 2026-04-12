@@ -393,6 +393,38 @@ CADRE D'ENGAGEMENT MONITORING
     changePhoto: { EN: "Change profile photo", FR: "Changer ma photo" },
     save: { EN: "Save", FR: "Enregistrer" },
     saving: { EN: "Saving...", FR: "Enregistrement..." },
+    // Adresse livraison
+    deliveryAddress: { EN: "Delivery address", FR: "Adresse de livraison" },
+    addressLine1: { EN: "Address", FR: "Adresse" },
+    addressLine2: { EN: "Address line 2", FR: "Compl\u00e9ment d\u2019adresse" },
+    city: { EN: "City", FR: "Ville" },
+    postalCode: { EN: "Postal code", FR: "Code postal" },
+    country: { EN: "Country", FR: "Pays" },
+    edit: { EN: "Edit", FR: "Modifier" },
+    cancel: { EN: "Cancel", FR: "Annuler" },
+    saved: { EN: "Saved!", FR: "Enregistr\u00e9 !" },
+    // Engagement
+    myEngagement: { EN: "My engagement", FR: "Mon engagement" },
+    referenceDay: { EN: "Reference day", FR: "Jour de r\u00e9f\u00e9rence" },
+    reportsUsed: { EN: "Reschedules used", FR: "Reports utilis\u00e9s" },
+    acceptedOn: { EN: "Accepted on", FR: "Accept\u00e9 le" },
+    notYetAccepted: { EN: "Not yet accepted", FR: "Pas encore accept\u00e9" },
+    // Contact
+    contact: { EN: "Contact", FR: "Contact" },
+    email: { EN: "Email", FR: "Email" },
+    phone: { EN: "Phone", FR: "T\u00e9l\u00e9phone" },
+    // Timezone
+    timezone: { EN: "Timezone", FR: "Fuseau horaire" },
+    // Password
+    password: { EN: "Password", FR: "Mot de passe" },
+    currentPassword: { EN: "Current password", FR: "Mot de passe actuel" },
+    newPassword: { EN: "New password", FR: "Nouveau mot de passe" },
+    confirmPassword: { EN: "Confirm password", FR: "Confirmer le mot de passe" },
+    changePassword: { EN: "Change password", FR: "Changer le mot de passe" },
+    passwordChanged: { EN: "Password changed!", FR: "Mot de passe chang\u00e9 !" },
+    passwordMismatch: { EN: "Passwords do not match", FR: "Les mots de passe ne correspondent pas" },
+    passwordTooShort: { EN: "Minimum 8 characters", FR: "Minimum 8 caract\u00e8res" },
+    passwordWrong: { EN: "Current password is incorrect", FR: "Mot de passe actuel incorrect" },
   },
 
   // === COMMON ===
