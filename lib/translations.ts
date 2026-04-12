@@ -427,6 +427,28 @@ CADRE D'ENGAGEMENT MONITORING
     passwordWrong: { EN: "Current password is incorrect", FR: "Mot de passe actuel incorrect" },
   },
 
+  // === ADMIN — NEWSLETTER ===
+  newsletter: {
+    title: { EN: "Newsletter", FR: "Newsletter" },
+    subscribers: { EN: "Subscribers", FR: "Abonn\u00e9s" },
+    campaigns: { EN: "Campaigns", FR: "Campagnes" },
+    segments: { EN: "Segments", FR: "Segments" },
+    addSubscriber: { EN: "Add subscriber", FR: "Ajouter un abonn\u00e9" },
+    newCampaign: { EN: "New campaign", FR: "Nouvelle campagne" },
+    send: { EN: "Send", FR: "Envoyer" },
+    sent: { EN: "Sent", FR: "Envoy\u00e9" },
+    draft: { EN: "Draft", FR: "Brouillon" },
+    noSubscribers: { EN: "No subscribers", FR: "Aucun abonn\u00e9" },
+    noCampaigns: { EN: "No campaigns", FR: "Aucune campagne" },
+    exportCsv: { EN: "Export CSV", FR: "Export CSV" },
+    search: { EN: "Search...", FR: "Rechercher..." },
+    allStatuses: { EN: "All statuses", FR: "Tous les statuts" },
+    allSources: { EN: "All sources", FR: "Toutes les sources" },
+    activeSubscribers: { EN: "Active subscribers", FR: "Abonn\u00e9s actifs" },
+    overview: { EN: "Overview", FR: "Vue d\u2019ensemble" },
+    sources: { EN: "Sources", FR: "Sources" },
+  },
+
   // === ADMIN — INACTIVE CLIENTS ===
   inactive: {
     title: { EN: "Clients to follow up", FR: "Clients \u00e0 relancer" },

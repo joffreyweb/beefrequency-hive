@@ -1111,6 +1111,69 @@ model ClientProgram {
 // PARAMÈTRES ADMIN
 // ═══════════════════════════════════════
 
+// ═══════════════════════════════════════
+// MODULE — NEWSLETTER MULTI-PLATEFORME
+// ═══════════════════════════════════════
+
+model NewsletterSubscriber {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  firstName      String?
+  lastName       String?
+
+  // Source tracking — extensible
+  source         String   @default("website") // website, hive, sales, instagram, referral, manual, api
+  sourceDetail   String?  // Ex: "landing-page-may2026", "checkout-upsell"
+
+  // Segmentation — extensible
+  tags           String[] @default([]) // ["vip", "buyer", "lead", "cold"]
+  segments       String[] @default([]) // ["english", "french", "executive", "therapist"]
+
+  // Status & dates
+  status         String   @default("active") // active, unsubscribed, bounced, cleaned
+  subscribedAt   DateTime @default(now())
+  unsubscribedAt DateTime?
+  lastEmailAt    DateTime?
+
+  // Tracking engagement
+  emailsSent     Int      @default(0)
+  emailsOpened   Int      @default(0)
+  emailsClicked  Int      @default(0)
+
+  // Métadonnées extensibles
+  metadata       Json?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model NewsletterCampaign {
+  id             String   @id @default(cuid())
+  name           String
+  subject        String
+  previewText    String?
+  content        String   @db.Text
+
+  // Ciblage
+  targetTags     String[] @default([])
+  targetSegments String[] @default([])
+  excludeTags    String[] @default([])
+
+  // Tracking
+  status         String   @default("draft") // draft, scheduled, sending, sent, failed
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  sentCount      Int      @default(0)
+  openCount      Int      @default(0)
+  clickCount     Int      @default(0)
+
+  // Source
+  source         String   @default("admin") // admin, automation, api
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model AdminSettings {
   id                     String   @id @default(cuid())
 
