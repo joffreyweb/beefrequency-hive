@@ -5,6 +5,8 @@ import {
   requireAuth,
   isErrorResponse,
 } from "@/lib/api-utils";
+import { createZoomMeeting, isZoomConfigured } from "@/lib/zoom";
+import { transporter } from "@/lib/mailer";
 
 // GET — Sessions (admin : toutes triées par date, client : les siennes SANS notes)
 export async function GET() {
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
     // Vérifier que le client existe
     const client = await prisma.client.findUnique({
       where: { id: clientId },
+      include: { user: { select: { name: true, email: true } } },
     });
 
     if (!client) {
@@ -100,13 +103,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Générer Zoom auto si ONLINE et pas de lien fourni
+    let finalZoomLink = zoomLink || null;
+    if (type === "ONLINE" && !finalZoomLink && isZoomConfigured()) {
+      try {
+        const meetingTitle = `Session avec ${client.user.name || "Client"}`;
+        const zoom = await createZoomMeeting(meetingTitle, new Date(scheduledAt), parseInt(duration, 10));
+        finalZoomLink = zoom.joinUrl;
+      } catch (err) {
+        console.error("[sessions] Zoom creation error:", err);
+      }
+    }
+
     const newSession = await prisma.session.create({
       data: {
         clientId,
         scheduledAt: new Date(scheduledAt),
         duration: parseInt(duration, 10),
         type,
-        ...(zoomLink !== undefined && { zoomLink }),
+        ...(finalZoomLink ? { zoomLink: finalZoomLink } : {}),
       },
       include: {
         client: {
@@ -114,6 +129,25 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Envoyer email de confirmation
+    if (client.user.email) {
+      try {
+        const dateStr = new Date(newSession.scheduledAt).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+        const timeStr = new Date(newSession.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+        const firstName = client.user.name?.split(" ")[0] || "";
+        const mailFrom = `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`;
+
+        await transporter.sendMail({
+          from: mailFrom,
+          to: client.user.email,
+          subject: `S\u00e9ance confirm\u00e9e - ${dateStr}`,
+          text: `Bonjour ${firstName},\n\nTa s\u00e9ance est confirm\u00e9e :\n\nDate : ${dateStr}\nHeure : ${timeStr}\nDur\u00e9e : ${newSession.duration} min${newSession.zoomLink ? `\nRejoindre : ${newSession.zoomLink}` : ""}\n\n\u00c0 bient\u00f4t,\nJoffrey`,
+        });
+      } catch (err) {
+        console.error("[sessions] Email confirmation error:", err);
+      }
+    }
 
     return NextResponse.json({ session: newSession }, { status: 201 });
   } catch {
