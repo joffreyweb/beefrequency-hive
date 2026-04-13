@@ -88,8 +88,21 @@ export default function ClientHeader() {
           className="h-full flex items-center justify-between"
           style={{ maxWidth: "640px", margin: "0 auto", padding: "0 20px" }}
         >
-          <Link href="/client/home" className="font-display text-lg text-brun-chaud tracking-wide">
-            Hive
+          <Link href="/client/home" className="flex flex-col items-start leading-none">
+            <span
+              style={{
+                fontFamily: "'Cormorant SC', serif",
+                letterSpacing: "0.12em",
+                color: "#B8821E",
+                fontWeight: 400,
+              }}
+              className="text-sm"
+            >
+              BEEFREQUENCY
+            </span>
+            <span className="font-ui text-[9px] text-brun-mid/70 tracking-wide mt-0.5">
+              by Joffrey Deleplanque
+            </span>
           </Link>
           <div className="flex items-center gap-2">
             {info && (

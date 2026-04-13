@@ -6,10 +6,11 @@ import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
 import CharteEngagement from "@/components/onboarding/CharteEngagement";
 import SeuilOneFlow from "@/components/onboarding/SeuilOneFlow";
-import { COUNTRIES, getCountryName, filterCities } from "@/lib/countries";
+import { COUNTRIES, getCountryName, getSortedCountries } from "@/lib/countries";
 
 interface FormData {
   firstName: string;
+  lastName: string;
   email: string;
   postalAddress: string;
   addressLine2: string;
@@ -26,6 +27,7 @@ interface FormData {
 
 const INITIAL_FORM: FormData = {
   firstName: "",
+  lastName: "",
   email: "",
   postalAddress: "",
   addressLine2: "",
@@ -115,10 +117,11 @@ export default function OnboardingPage() {
         if (data.user) {
           const updates: Partial<FormData> = {};
           if (data.user.email) updates.email = data.user.email;
-          // Pré-remplir le prénom depuis le nom saisi par l'admin
+          // Pré-remplir prénom et nom depuis le nom saisi par l'admin
           if (data.user.name) {
-            const firstName = data.user.name.split(" ")[0];
-            if (firstName) updates.firstName = firstName;
+            const parts = data.user.name.trim().split(/\s+/);
+            if (parts[0]) updates.firstName = parts[0];
+            if (parts.length > 1) updates.lastName = parts.slice(1).join(" ");
           }
           setForm((prev) => ({ ...prev, ...updates }));
         }
@@ -142,6 +145,8 @@ export default function OnboardingPage() {
   function isStep2Valid() {
     return (
       form.firstName.trim() !== "" &&
+      form.lastName.trim() !== "" &&
+      form.phoneNumber.trim() !== "" &&
       form.birthDate !== "" &&
       form.birthPlace.trim() !== "" &&
       form.birthCountry.trim() !== "" &&
@@ -162,7 +167,7 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: form.firstName.trim(),
-          lastName: "",
+          lastName: form.lastName.trim(),
           birthDate: form.birthDate,
           birthTime: form.birthTimeUnknown ? null : form.birthTime || null,
           birthPlace: form.birthPlace.trim(),
@@ -201,52 +206,57 @@ export default function OnboardingPage() {
           {/* Logo block — Welcome Screen */}
           <div className="flex flex-col items-center w-full mb-9 mt-4">
 
-            {/* Symbole uniquement — crop left 38% du logo paysage */}
-            <div className="w-40 h-40 flex items-center justify-center overflow-hidden mb-4">
+            {/* Logo BeeFrequency */}
+            <div className="w-40 h-40 flex items-center justify-center mb-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo_joffrey_transparent.png"
                 alt="BeeFrequency"
-                style={{
-                  width: '421px',
-                  maxWidth: 'none',
-                  height: 'auto',
-                  marginLeft: '0px',
-                  objectFit: 'cover',
-                  objectPosition: 'left center',
-                }}
+                className="w-full h-full object-contain"
               />
             </div>
 
-            {/* BE · hexagone · FREQUENCY */}
-            <div className="flex items-center justify-center gap-2">
-              <span style={{
-                fontFamily: "'Cormorant SC', serif",
-                fontSize: '11px',
-                letterSpacing: '0.22em',
-                color: '#B8821E',
-                fontWeight: 400,
-              }}>BE</span>
+            {/* BEE ⬡ FREQUENCY — même taille que Bienvenue, espacement serré */}
+            <div className="flex items-center justify-center gap-1.5">
+              <span
+                style={{
+                  fontFamily: "'Cormorant SC', serif",
+                  letterSpacing: "0.12em",
+                  color: "#B8821E",
+                  fontWeight: 400,
+                }}
+                className="text-3xl"
+              >
+                BEE
+              </span>
 
-              <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
-                <path d="M5.5 1L10 3.5V8.5L5.5 11L1 8.5V3.5L5.5 1Z"
-                      stroke="#B8821E" strokeWidth="0.8" fill="none"/>
+              <svg width="28" height="32" viewBox="0 0 11 13" fill="none">
+                <path
+                  d="M5.5 1L10 3.5V8.5L5.5 11L1 8.5V3.5L5.5 1Z"
+                  stroke="#B8821E"
+                  strokeWidth="0.8"
+                  fill="none"
+                />
               </svg>
 
-              <span style={{
-                fontFamily: "'Cormorant SC', serif",
-                fontSize: '11px',
-                letterSpacing: '0.22em',
-                color: '#B8821E',
-                fontWeight: 400,
-              }}>FREQUENCY</span>
+              <span
+                style={{
+                  fontFamily: "'Cormorant SC', serif",
+                  letterSpacing: "0.12em",
+                  color: "#B8821E",
+                  fontWeight: 400,
+                }}
+                className="text-3xl"
+              >
+                FREQUENCY
+              </span>
             </div>
 
           </div>
-          <h1 className="font-display text-2xl text-brun-chaud mb-4">
+          <h1 className="font-display text-3xl text-brun-chaud mb-4">
             {T(t.onboarding.welcomeTitle)}
           </h1>
-          <p className="font-display text-lg text-brun-mid leading-relaxed mb-10 max-w-sm">
+          <p className="font-display text-base text-brun-mid leading-relaxed mb-10 max-w-sm">
             {T(t.onboarding.welcomeBody)}
           </p>
           <button
@@ -261,10 +271,21 @@ export default function OnboardingPage() {
       {/* Steps 2-4 */}
       {step >= 2 && (
         <>
-          <header className="flex items-center justify-center gap-2 pt-8 pb-4">
-            <span className="font-ui text-base font-light lowercase text-brun-mid">be</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8D5A8" strokeWidth="1" strokeLinejoin="round"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" /></svg>
-            <span className="font-ui text-base font-light lowercase text-brun-mid">beefrequency</span>
+          <header className="flex flex-col items-center pt-8 pb-4 leading-none">
+            <span
+              style={{
+                fontFamily: "'Cormorant SC', serif",
+                letterSpacing: "0.12em",
+                color: "#B8821E",
+                fontWeight: 400,
+              }}
+              className="text-base"
+            >
+              BEEFREQUENCY
+            </span>
+            <span className="font-ui text-[10px] text-brun-mid/70 tracking-wide mt-0.5">
+              by Joffrey Deleplanque
+            </span>
           </header>
 
           {/* Progress: steps 2, 3, 4 shown as 1, 2, 3 */}
@@ -294,23 +315,26 @@ export default function OnboardingPage() {
               {/* Step 2 — Personal info */}
               {step === 2 && (
                 <div className="space-y-4">
-                  <div className="mb-6">
-                    <h2 className="font-display text-xl text-brun-chaud">
-                      {T(t.onboarding.infoTitle)}
-                    </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field
+                      label={T(t.onboarding.firstName)}
+                      value={form.firstName}
+                      onChange={(v) => update("firstName", v)}
+                      required
+                    />
+                    <Field
+                      label={T({ EN: "Last name", FR: "Nom" })}
+                      value={form.lastName}
+                      onChange={(v) => update("lastName", v)}
+                      required
+                    />
                   </div>
-
-                  <Field
-                    label={T(t.onboarding.firstName)}
-                    value={form.firstName}
-                    onChange={(v) => update("firstName", v)}
-                    required
-                  />
 
                   <Field
                     label={T(t.onboarding.phoneNumber)}
                     value={form.phoneNumber}
                     onChange={(v) => update("phoneNumber", v)}
+                    required
                   />
 
                   <div>
@@ -355,11 +379,11 @@ export default function OnboardingPage() {
                     </label>
                     <select
                       value={form.birthCountry}
-                      onChange={(e) => { update("birthCountry", e.target.value); update("birthPlace", ""); }}
+                      onChange={(e) => update("birthCountry", e.target.value)}
                       className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
                     >
                       <option value="">{T({ EN: "Select a country…", FR: "Sélectionner un pays…" })}</option>
-                      {COUNTRIES.map((c) => (
+                      {getSortedCountries(lang).map((c) => (
                         <option key={c.code} value={c.code}>
                           {getCountryName(c, lang)}
                         </option>
@@ -367,12 +391,10 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  <CityAutocomplete
+                  <Field
                     label={T(t.onboarding.birthCity)}
-                    countryCode={form.birthCountry}
                     value={form.birthPlace}
                     onChange={(v) => update("birthPlace", v)}
-                    lang={lang}
                     required
                   />
 
@@ -420,7 +442,7 @@ export default function OnboardingPage() {
                       onChange={(e) => update("country", e.target.value)}
                       className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
                     >
-                      {COUNTRIES.filter((c) => c.code !== "XX").map((c) => (
+                      {getSortedCountries(lang).map((c) => (
                         <option key={c.code} value={getCountryName(c, lang)}>
                           {getCountryName(c, lang)}
                         </option>
@@ -448,8 +470,26 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 3 — Video Seuil 1 (double vidéo + audio) */}
+              {/* Step 3 — Convention (AVANT vidéo) */}
               {step === 3 && (
+                <div className="space-y-4">
+                  <CharteEngagement
+                    lang={lang}
+                    clientFirstName={form.firstName}
+                    clientName={[form.firstName, form.lastName].filter(Boolean).join(" ")}
+                    onComplete={() => goToStep(4)}
+                  />
+                  <button
+                    onClick={() => goToStep(2)}
+                    className="w-full py-2 border border-brun-mid text-brun-mid rounded-sharp uppercase font-caps text-xs tracking-wider hover:bg-brun-mid hover:text-creme-sacree transition-colors"
+                  >
+                    {T(t.onboarding.backButton)}
+                  </button>
+                </div>
+              )}
+
+              {/* Step 4 — Video Seuil 1 (après Convention) */}
+              {step === 4 && (
                 <div className="space-y-4">
                   <div>
                     <h2 className="font-display text-xl text-brun-chaud">
@@ -464,24 +504,14 @@ export default function OnboardingPage() {
                       {T(t.onboarding.videoDescription)}
                     </p>
                   </div>
-                  <SeuilOneFlow lang={lang} onComplete={() => goToStep(4)} />
+                  <SeuilOneFlow lang={lang} onComplete={handleSubmit} />
                   <button
-                    onClick={() => goToStep(2)}
+                    onClick={() => goToStep(3)}
                     className="w-full py-2 border border-brun-mid text-brun-mid rounded-sharp uppercase font-caps text-xs tracking-wider hover:bg-brun-mid hover:text-creme-sacree transition-colors"
                   >
                     {T(t.onboarding.backButton)}
                   </button>
                 </div>
-              )}
-
-              {/* Step 4 — Charter */}
-              {step === 4 && (
-                <CharteEngagement
-                  lang={lang}
-                  clientFirstName={form.firstName}
-                  clientName={form.firstName}
-                  onComplete={handleSubmit}
-                />
               )}
             </div>
           </div>
@@ -520,69 +550,3 @@ function Field({
   );
 }
 
-function CityAutocomplete({
-  label,
-  countryCode,
-  value,
-  onChange,
-  lang,
-  required,
-}: {
-  label: string;
-  countryCode: string;
-  value: string;
-  onChange: (v: string) => void;
-  lang: "FR" | "EN";
-  required?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!countryCode || !open) { setSuggestions([]); return; }
-    setSuggestions(filterCities(countryCode, value));
-  }, [countryCode, value, open]);
-
-  // Close on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <label className="block text-sm font-ui text-brun-chaud mb-1">
-        {label} {required && <span className="text-or-sacre">*</span>}
-      </label>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-        placeholder={lang === "FR" ? "Commence à taper…" : "Start typing…"}
-        className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre transition-colors"
-      />
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-or-pale rounded-sharp shadow-lg max-h-48 overflow-y-auto">
-          {suggestions.map((city) => (
-            <li key={city}>
-              <button
-                type="button"
-                onClick={() => { onChange(city); setOpen(false); }}
-                className="w-full text-left px-3 py-2 text-sm font-ui text-brun-chaud hover:bg-creme-sacree transition-colors"
-              >
-                {city}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}

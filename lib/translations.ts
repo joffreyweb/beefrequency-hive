@@ -155,12 +155,12 @@ The participant commits to a process involving active presence, continuity in ex
 This accompaniment does not constitute a medical act, diagnosis or treatment. It does not replace medical follow-up. The participant is solely responsible for their choices, decisions and actions.
 
 5. Nature of the Process
-The work includes breathing and meditation practices, use of elixirs and processes of inner observation. The elixirs are natural preparations \u2014 they do not constitute medication and make no therapeutic claims. The participant engages freely in these practices.
+The work includes breathing and meditation practices, use of elixirs and processes of inner observation. The elixirs are natural preparations. They do not constitute medication and make no therapeutic claims. The participant engages freely in these practices.
 
 6. Interruption of the Journey
 The participant may decide to interrupt the journey. This decision must be accompanied by a closing session. No interruption happens without this exchange.
 
-7. Personal Data \u2014 GDPR
+7. Personal Data. GDPR
 Personal data collected (videos, journal, birth data) is processed confidentially, hosted in Switzerland (Infomaniak) and is never shared with third parties. The participant has the right of access, rectification and deletion.
 
 ---
@@ -194,12 +194,12 @@ Le participant s\u2019engage dans un processus impliquant une pr\u00e9sence acti
 Cet accompagnement ne constitue en aucun cas un acte m\u00e9dical, un diagnostic ou un traitement. Il ne remplace pas un suivi m\u00e9dical. Le participant est seul responsable de ses choix, d\u00e9cisions et actions.
 
 5. Nature du processus
-Le travail inclut des pratiques de respiration, m\u00e9ditation, \u00e9lixirs et observation int\u00e9rieure. Les \u00e9lixirs sont des pr\u00e9parations naturelles \u2014 ils ne constituent pas des m\u00e9dicaments et ne font l\u2019objet d\u2019aucune all\u00e9gation th\u00e9rapeutique. Le participant s\u2019engage librement dans ces pratiques.
+Le travail inclut des pratiques de respiration, m\u00e9ditation, \u00e9lixirs et observation int\u00e9rieure. Les \u00e9lixirs sont des pr\u00e9parations naturelles. Ils ne constituent pas des m\u00e9dicaments et ne font l\u2019objet d\u2019aucune all\u00e9gation th\u00e9rapeutique. Le participant s\u2019engage librement dans ces pratiques.
 
 6. Interruption du parcours
 Le participant peut d\u00e9cider d\u2019interrompre le parcours. Cette d\u00e9cision doit \u00eatre accompagn\u00e9e d\u2019une s\u00e9ance de cl\u00f4ture. Aucune interruption ne se fait sans cet \u00e9change.
 
-7. Donn\u00e9es personnelles \u2014 RGPD
+7. Donn\u00e9es personnelles. RGPD
 Les donn\u00e9es personnelles collect\u00e9es (vid\u00e9os, journal, donn\u00e9es de naissance) sont trait\u00e9es de mani\u00e8re confidentielle, h\u00e9berg\u00e9es en Suisse (Infomaniak) et ne sont jamais partag\u00e9es avec des tiers. Droit d\u2019acc\u00e8s, rectification et suppression garantis.
 
 ---

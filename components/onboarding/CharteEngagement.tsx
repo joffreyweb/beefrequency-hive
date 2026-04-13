@@ -13,7 +13,9 @@ interface Props {
 
 export default function CharteEngagement({ lang, clientFirstName, clientName, onComplete }: Props) {
   const [checks, setChecks] = useState({ c1: false, c2: false, c3: false });
-  const [signature, setSignature] = useState(clientFirstName);
+  // Signature = Prénom + Nom (clientName complet), fallback sur prénom seul
+  const initialSig = (clientName && clientName.trim()) || clientFirstName || "";
+  const [signature, setSignature] = useState(initialSig);
   const [submitting, setSubmitting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
@@ -21,10 +23,11 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
 
   const T = (key: { EN: string; FR: string }) => key[lang];
 
-  // Pre-fill signature when clientFirstName changes
+  // Pre-fill signature when full name changes (firstName + lastName)
   useEffect(() => {
-    setSignature(clientFirstName);
-  }, [clientFirstName]);
+    const full = (clientName && clientName.trim()) || clientFirstName || "";
+    setSignature(full);
+  }, [clientFirstName, clientName]);
 
   // 10-second minimum timer for charter reading
   useEffect(() => {
@@ -143,7 +146,7 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
           {T(t.onboarding.charterSignedBy)}
         </p>
         <p className="font-display text-2xl text-brun-chaud italic">
-          {signature || clientFirstName}
+          {signature || clientName || clientFirstName}
         </p>
       </div>
 
