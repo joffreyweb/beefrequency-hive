@@ -203,18 +203,16 @@ export default function OnboardingPage() {
       {/* Step 1 — Welcome */}
       {step === 1 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          {/* Logo block — Welcome Screen (centré) */}
-          <div className="flex flex-col items-center justify-center w-full mb-9 mt-4">
+          {/* Logo block — Welcome Screen (centré verticalement et horizontalement) */}
+          <div className="flex flex-col items-center w-full mb-9 mt-4">
 
-            {/* Logo BeeFrequency — agrandi et centré horizontalement */}
-            <div className="w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center mb-6 mx-auto">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo_joffrey_transparent.png"
-                alt="BeeFrequency"
-                className="w-full h-full object-contain block mx-auto"
-              />
-            </div>
+            {/* Logo BeeFrequency — image carrée 512x512 (icon PWA) */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/icon-512.png"
+              alt="BeeFrequency"
+              className="w-64 h-64 sm:w-72 sm:h-72 object-contain mb-6"
+            />
 
             {/* BEE ⬡ FREQUENCY — même taille que Bienvenue, espacement serré */}
             <div className="flex items-center justify-center gap-1.5">

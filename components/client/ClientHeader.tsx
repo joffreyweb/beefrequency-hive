@@ -18,6 +18,11 @@ interface Reminders {
   eveningReminderTime: string;
 }
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 export default function ClientHeader() {
   const { lang } = useLanguage();
   const T = (key: { EN: string; FR: string }) => key[lang];
@@ -25,6 +30,11 @@ export default function ClientHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [info, setInfo] = useState<ClientInfo | null>(null);
   const [reminders, setReminders] = useState<Reminders | null>(null);
+
+  // PWA install state
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showIosModal, setShowIosModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -53,6 +63,54 @@ export default function ClientHeader() {
         .catch(() => {});
     }
   }, [menuOpen, reminders]);
+
+  // PWA install detection
+  useEffect(() => {
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    const onInstalled = () => setIsStandalone(true);
+    window.addEventListener("appinstalled", onInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  function isIos(): boolean {
+    if (typeof navigator === "undefined") return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent || "");
+  }
+
+  async function handleInstall() {
+    setMenuOpen(false);
+    if (deferredPrompt) {
+      // Android / Chrome desktop — native prompt
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === "accepted") {
+        setIsStandalone(true);
+      }
+      setDeferredPrompt(null);
+      return;
+    }
+    if (isIos()) {
+      // iOS Safari — show manual instructions modal
+      setShowIosModal(true);
+      return;
+    }
+    // Unknown — show iOS modal as fallback (most users on other browsers can't install anyway)
+    setShowIosModal(true);
+  }
 
   function handleSignOut() {
     fetch("/api/auth/logout", { method: "POST" }).then(() => {
@@ -224,6 +282,21 @@ export default function ClientHeader() {
           </Link>
         </div>
 
+        {/* Install app — seulement si pas déjà en standalone */}
+        {!isStandalone && (
+          <>
+            <div className="mx-6 border-t border-or-pale" />
+            <div className="px-6 py-4">
+              <button
+                onClick={handleInstall}
+                className="font-ui text-sm text-brun-chaud hover:text-or-sacre transition-colors text-left w-full"
+              >
+                📲 {T({ EN: "Install the app", FR: "Installer l'app" })}
+              </button>
+            </div>
+          </>
+        )}
+
         <div className="mx-6 border-t border-or-pale" />
 
         {/* Sign out */}
@@ -233,6 +306,67 @@ export default function ClientHeader() {
           </button>
         </div>
       </div>
+
+      {/* iOS install instructions modal */}
+      {showIosModal && (
+        <>
+          <div
+            className="fixed inset-0 z-[80] bg-black/40"
+            onClick={() => setShowIosModal(false)}
+          />
+          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
+            <div className="bg-creme-sacree border border-or-pale rounded-sm max-w-sm w-full p-6 shadow-xl">
+              <div className="flex items-start justify-between mb-4">
+                <h2 className="font-display text-xl text-brun-chaud">
+                  {T({ EN: "Install the app", FR: "Installer l'app" })}
+                </h2>
+                <button
+                  onClick={() => setShowIosModal(false)}
+                  className="text-brun-mid hover:text-brun-chaud text-xl leading-none"
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="font-ui text-sm text-brun-mid mb-4">
+                {T({
+                  EN: "On iPhone (Safari):",
+                  FR: "Sur iPhone (Safari) :",
+                })}
+              </p>
+              <ol className="font-ui text-sm text-brun-chaud space-y-3 list-decimal list-inside">
+                <li>
+                  {T({
+                    EN: "Tap the Share button (square with up arrow)",
+                    FR: "Appuie sur le bouton Partager (carré avec flèche)",
+                  })}
+                </li>
+                <li>
+                  {T({
+                    EN: "Scroll and tap \"Add to Home Screen\"",
+                    FR: "Fais défiler et appuie sur \"Sur l'écran d'accueil\"",
+                  })}
+                </li>
+                <li>
+                  {T({ EN: "Tap \"Add\"", FR: "Appuie sur \"Ajouter\"" })}
+                </li>
+              </ol>
+              <p className="font-ui text-xs text-brun-mid/60 italic mt-4">
+                {T({
+                  EN: "The app will appear on your home screen.",
+                  FR: "L'application apparaîtra sur ton écran d'accueil.",
+                })}
+              </p>
+              <button
+                onClick={() => setShowIosModal(false)}
+                className="mt-5 w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
+              >
+                {T({ EN: "Got it", FR: "Compris" })}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

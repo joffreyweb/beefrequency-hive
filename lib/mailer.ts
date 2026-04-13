@@ -151,8 +151,8 @@ export async function sendInvitationEmail({
     : `Hello${firstName ? " " + firstName : ""}`;
 
   const textBody = isFR
-    ? `${greeting},\n\nTon espace privé est prêt.\n\nClique ici pour activer ton accès :\n${inviteUrl}\n\nJoffrey`
-    : `${greeting},\n\nYour private space is ready.\n\nClick here to activate your access:\n${inviteUrl}\n\nJoffrey`;
+    ? `${greeting},\n\nTon espace privé est prêt.\n\nClique ici pour activer ton accès :\n${inviteUrl}\n\nInstalle la Hive sur ton téléphone pour un accès direct depuis ton écran d'accueil :\n— iPhone (Safari) : Partager → Sur l'écran d'accueil → Ajouter\n— Android (Chrome) : Menu (3 points) → Installer l'application\n\nJoffrey`
+    : `${greeting},\n\nYour private space is ready.\n\nClick here to activate your access:\n${inviteUrl}\n\nInstall the Hive on your phone for direct access from your home screen:\n— iPhone (Safari): Share → Add to Home Screen → Add\n— Android (Chrome): Menu (3 dots) → Install app\n\nJoffrey`;
 
   const intro = isFR ? "Ton espace privé est prêt." : "Your private space is ready.";
   const welcomeBlock = isFR
@@ -171,7 +171,6 @@ at your pace, in full trust,<br>
 accompanied at every step.
 </p>`;
   const ctaLabel = isFR ? "Accéder à mon espace" : "Access my space";
-  const linkNote = "";
 
   const innerContent = `
   <tr><td style="padding-bottom:24px;">
@@ -180,12 +179,12 @@ accompanied at every step.
     ${welcomeBlock}
   </td></tr>
 
-  <tr><td align="center" style="padding-bottom:24px;">
+  <tr><td align="center" style="padding-bottom:32px;">
     <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#B8821E;color:#FDFAF4;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px;">${ctaLabel}</a>
   </td></tr>
 
-  <tr><td>
-    <p style="font-family:Arial,sans-serif;font-size:12px;color:#6B4423;margin:0 0 8px 0;">${linkNote}</p>
+  <tr><td style="padding-top:24px;border-top:1px solid #E8D5A8;">
+    ${buildPwaBlock(isFR)}
   </td></tr>`;
 
   const htmlBody = wrapEmailHtml(isFR, innerContent);
