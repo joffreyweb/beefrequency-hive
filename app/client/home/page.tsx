@@ -85,10 +85,18 @@ export default async function ClientHomePage() {
   const lang = (client.language === "EN" ? "EN" : "FR") as Lang;
   const T = (key: { EN: string; FR: string }) => key[lang];
 
-  const dayNumber =
-    Math.floor(
-      (Date.now() - new Date(client.startDate).getTime()) / 86400000
-    ) + 1;
+  // Date de référence pour le programme — uniquement si produits reçus ET date passée
+  const programStart = client.detoxStartDate || client.programmeStartDate;
+  const programHasStarted =
+    client.produitsRecus &&
+    !!programStart &&
+    new Date(programStart).getTime() <= Date.now();
+
+  const dayNumber = programHasStarted
+    ? Math.floor(
+        (Date.now() - new Date(programStart!).getTime()) / 86400000
+      ) + 1
+    : 0;
 
   const displayName = client.intake?.firstName || client.user.name || "You";
 
@@ -111,6 +119,156 @@ export default async function ClientHomePage() {
     PRESENTIAL: { EN: "In-person", FR: "En pr\u00e9sentiel" },
     CEREMONY: { EN: "Ceremony", FR: "C\u00e9r\u00e9monie" },
   };
+
+  // ── PAGE "EN ATTENTE" — affichée tant que le programme n'a pas démarré ──
+  if (!pendingQuestionnaire && !programHasStarted) {
+    // 3 sous-états :
+    //   A. Colis pas envoyé          → "En préparation"
+    //   B. Colis envoyé, pas reçu    → "En route" + bouton (via ElixirReceivedBanner)
+    //   C. Reçu, démarrage à venir   → "Démarrage le {date}"
+    const stage: "preparing" | "shipped" | "starting" =
+      client.produitsRecus ? "starting"
+      : client.colisEnvoye ? "shipped"
+      : "preparing";
+
+    const startsAtFormatted = client.detoxStartDate
+      ? new Date(client.detoxStartDate).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        })
+      : null;
+
+    const STAGES = [
+      { key: "registered", label: T({ EN: "Registration", FR: "Inscription" }) },
+      { key: "preparing",  label: T({ EN: "Preparation",  FR: "Préparation" }) },
+      { key: "shipped",    label: T({ EN: "Shipped",       FR: "Envoyé" }) },
+      { key: "starting",   label: T({ EN: "Starting",     FR: "Démarrage" }) },
+    ];
+    const stageIdx = stage === "preparing" ? 1 : stage === "shipped" ? 2 : 3;
+
+    return (
+      <div className="space-y-8">
+        {/* Indicateur de progression */}
+        <div className="flex items-center justify-center gap-1 pt-4">
+          {STAGES.map((s, i) => {
+            const isPast = i < stageIdx;
+            const isCurrent = i === stageIdx;
+            return (
+              <div key={s.key} className="flex items-center">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div
+                    className={`w-3 h-3 rounded-full transition-colors ${
+                      isCurrent
+                        ? "bg-or-sacre ring-4 ring-or-sacre/20"
+                        : isPast
+                        ? "bg-foret"
+                        : "bg-or-pale"
+                    }`}
+                  />
+                  <span
+                    className={`font-caps text-[9px] uppercase tracking-wider ${
+                      isCurrent ? "text-or-sacre" : isPast ? "text-foret" : "text-brun-mid/40"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                {i < STAGES.length - 1 && (
+                  <div className={`w-10 h-px mx-1 mb-4 ${i < stageIdx ? "bg-foret" : "bg-or-pale"}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Élixirs reçus banner — affiche le bouton si colis envoyé */}
+        <ElixirReceivedBanner />
+
+        {/* Contenu — varie selon le sous-état */}
+        <div className="text-center py-6 max-w-md mx-auto">
+          <div className="text-5xl mb-6">🐝</div>
+
+          {stage === "preparing" && (
+            <>
+              <h1 className="font-display text-2xl text-brun-chaud mb-6">
+                {T({
+                  EN: "Your elixirs are being prepared.",
+                  FR: "Tes élixirs sont en préparation.",
+                })}
+              </h1>
+              <div className="font-ui text-sm text-brun-mid leading-relaxed space-y-3">
+                <p>
+                  {T({
+                    EN: "I am preparing your personalized protocol.",
+                    FR: "Je prépare ton protocole personnalisé.",
+                  })}
+                </p>
+                <p>
+                  {T({
+                    EN: "You will receive an email when your package is sent.",
+                    FR: "Tu recevras un email dès que ton colis sera envoyé.",
+                  })}
+                </p>
+              </div>
+            </>
+          )}
+
+          {stage === "shipped" && (
+            <>
+              <h1 className="font-display text-2xl text-brun-chaud mb-6">
+                {T({
+                  EN: "Your elixirs are on their way.",
+                  FR: "Tes élixirs sont en route.",
+                })}
+              </h1>
+              <div className="font-ui text-sm text-brun-mid leading-relaxed space-y-3">
+                <p>
+                  {T({
+                    EN: "When you receive them, confirm above to start your program.",
+                    FR: "Quand tu les reçois, confirme ci-dessus pour démarrer ton programme.",
+                  })}
+                </p>
+              </div>
+            </>
+          )}
+
+          {stage === "starting" && (
+            <>
+              <h1 className="font-display text-2xl text-brun-chaud mb-6">
+                {T({
+                  EN: "Your journey begins soon.",
+                  FR: "Ton voyage commence bientôt.",
+                })}
+              </h1>
+              <div className="font-ui text-sm text-brun-mid leading-relaxed space-y-3">
+                {startsAtFormatted && (
+                  <p className="font-display text-lg text-or-sacre">
+                    {T({ EN: "Starts ", FR: "Démarrage le " })}
+                    {startsAtFormatted}
+                  </p>
+                )}
+                <p>
+                  {T({
+                    EN: "Take this time to settle in. Your program will activate automatically.",
+                    FR: "Prends ce temps pour t'installer. Ton programme s'activera automatiquement.",
+                  })}
+                </p>
+              </div>
+            </>
+          )}
+
+          <p className="font-ui text-xs text-brun-mid/60 italic pt-6">
+            {T({
+              EN: "Your space remains accessible — Journal, Messages, Practices.",
+              FR: "Ton espace reste accessible — Journal, Messages, Pratiques.",
+            })}
+          </p>
+          <p className="font-display text-base text-brun-chaud pt-4">— Joffrey</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

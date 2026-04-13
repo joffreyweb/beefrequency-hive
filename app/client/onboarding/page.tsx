@@ -45,6 +45,8 @@ const INITIAL_FORM: FormData = {
 // Step 3 = Video Seuil 1
 // Step 4 = Charter (3 sub-steps managed by CharteEngagement)
 
+const STORAGE_KEY = "hive_onboarding_state";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { lang } = useLanguage();
@@ -52,8 +54,59 @@ export default function OnboardingPage() {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
 
   const T = (key: { EN: string; FR: string }) => key[lang];
+
+  // Restore state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.form) setForm((prev) => ({ ...prev, ...parsed.form }));
+        if (parsed.step && typeof parsed.step === "number") setStep(parsed.step);
+      }
+    } catch {
+      // Ignore
+    }
+    setRestored(true);
+  }, []);
+
+  // Persist state to localStorage on every change
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ form, step }));
+    } catch {
+      // Ignore
+    }
+  }, [form, step, restored]);
+
+  // Sync browser history with step navigation (browser back = previous step)
+  useEffect(() => {
+    if (!restored) return;
+    const handlePopState = (e: PopStateEvent) => {
+      const newStep = e.state?.step;
+      if (typeof newStep === "number" && newStep >= 1) {
+        setStep(newStep);
+      } else if (step > 1) {
+        // No state — go back one step instead of leaving the page
+        setStep((prev) => Math.max(1, prev - 1));
+        window.history.pushState({ step: Math.max(1, step - 1) }, "");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [restored, step]);
+
+  // Push history entry when step changes forward
+  useEffect(() => {
+    if (!restored) return;
+    if (typeof window !== "undefined") {
+      window.history.replaceState({ step }, "");
+    }
+  }, [step, restored]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -72,6 +125,14 @@ export default function OnboardingPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Helper to navigate to a step (forward = pushState)
+  function goToStep(newStep: number) {
+    setStep(newStep);
+    if (typeof window !== "undefined") {
+      window.history.pushState({ step: newStep }, "");
+    }
+  }
 
   function update(field: keyof FormData, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -122,6 +183,8 @@ export default function OnboardingPage() {
         return;
       }
 
+      // Onboarding complete — clear saved state
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
       router.push("/client/questionnaire-entry");
     } catch {
       setError("Something went wrong");
@@ -187,7 +250,7 @@ export default function OnboardingPage() {
             {T(t.onboarding.welcomeBody)}
           </p>
           <button
-            onClick={() => setStep(2)}
+            onClick={() => goToStep(2)}
             className="px-8 py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors"
           >
             {T(t.onboarding.welcomeButton)}
@@ -367,11 +430,17 @@ export default function OnboardingPage() {
 
                   {error && <p className="text-sm text-red-600 font-ui">{error}</p>}
 
-                  <div className="pt-4">
+                  <div className="pt-4 flex gap-3">
                     <button
-                      onClick={() => setStep(3)}
+                      onClick={() => goToStep(1)}
+                      className="flex-1 py-3 border border-brun-mid text-brun-mid rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-brun-mid hover:text-creme-sacree transition-colors"
+                    >
+                      {T(t.onboarding.backButton)}
+                    </button>
+                    <button
+                      onClick={() => goToStep(3)}
                       disabled={!isStep2Valid()}
-                      className="w-full py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex-[2] py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {T(t.onboarding.continueButton)}
                     </button>
@@ -395,7 +464,13 @@ export default function OnboardingPage() {
                       {T(t.onboarding.videoDescription)}
                     </p>
                   </div>
-                  <SeuilOneFlow lang={lang} onComplete={() => setStep(4)} />
+                  <SeuilOneFlow lang={lang} onComplete={() => goToStep(4)} />
+                  <button
+                    onClick={() => goToStep(2)}
+                    className="w-full py-2 border border-brun-mid text-brun-mid rounded-sharp uppercase font-caps text-xs tracking-wider hover:bg-brun-mid hover:text-creme-sacree transition-colors"
+                  >
+                    {T(t.onboarding.backButton)}
+                  </button>
                 </div>
               )}
 

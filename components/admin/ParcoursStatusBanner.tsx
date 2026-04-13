@@ -31,23 +31,32 @@ export default function ParcoursStatusBanner({
   const [editingDate, setEditingDate] = useState(false);
   const [newStartDate, setNewStartDate] = useState(startDate.split("T")[0]);
 
-  // Calcul jour detox
+  // Calcul jour detox — uniquement si la date de départ est passée
   let detoxDay = 0;
+  let detoxStarted = false;
   if (detoxStartDate) {
-    detoxDay = Math.max(1, Math.ceil((Date.now() - new Date(detoxStartDate).getTime()) / (1000 * 60 * 60 * 24)));
+    const diff = Math.floor((Date.now() - new Date(detoxStartDate).getTime()) / (1000 * 60 * 60 * 24));
+    if (diff >= 0) {
+      detoxDay = diff + 1;
+      detoxStarted = true;
+    }
   }
 
-  // Calcul jour programme
+  // Calcul jour programme — uniquement si la date est passée
   let programmeDay = 0;
-  const effStartDate = programmeStartDate || startDate;
-  if (effStartDate) {
-    programmeDay = Math.max(1, Math.ceil((Date.now() - new Date(effStartDate).getTime()) / (1000 * 60 * 60 * 24)));
+  let programmeStarted = false;
+  if (programmeStartDate) {
+    const diff = Math.floor((Date.now() - new Date(programmeStartDate).getTime()) / (1000 * 60 * 60 * 24));
+    if (diff >= 0) {
+      programmeDay = diff + 1;
+      programmeStarted = true;
+    }
   }
 
-  // Determine active stage
+  // Determine active stage — séquence stricte : inscrit → colis → recus → detox → programme
   function getActiveStage(): StageKey {
-    if (programmeStartDate && programmeDay > 0) return "programme";
-    if (detoxStartDate && detoxDay <= 10) return "detox";
+    if (programmeStarted && programmeDay > 0 && programmeDay <= 90) return "programme";
+    if (detoxStarted && detoxDay >= 1 && detoxDay <= 10) return "detox";
     if (produitsRecus) return "recus";
     if (colisEnvoye) return "colis";
     return "inscrit";
@@ -59,8 +68,8 @@ export default function ParcoursStatusBanner({
     { key: "inscrit", label: "Inscrit" },
     { key: "colis", label: "Colis envoye" },
     { key: "recus", label: "Produits recus" },
-    { key: "detox", label: "Detox en cours", sublabel: detoxStartDate ? `J${detoxDay}/10` : undefined },
-    { key: "programme", label: "Programme en cours", sublabel: programmeStartDate ? `J${programmeDay}/90` : undefined },
+    { key: "detox", label: "Detox en cours", sublabel: detoxStarted ? `J${detoxDay}/10` : detoxStartDate ? `Demarre le ${new Date(detoxStartDate).toLocaleDateString("fr-FR")}` : undefined },
+    { key: "programme", label: "Programme en cours", sublabel: programmeStarted ? `J${programmeDay}/90` : undefined },
   ];
 
   const stageOrder: StageKey[] = ["inscrit", "colis", "recus", "detox", "programme"];
