@@ -203,16 +203,16 @@ export default function OnboardingPage() {
       {/* Step 1 — Welcome */}
       {step === 1 && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          {/* Logo block — Welcome Screen */}
-          <div className="flex flex-col items-center w-full mb-9 mt-4">
+          {/* Logo block — Welcome Screen (centré) */}
+          <div className="flex flex-col items-center justify-center w-full mb-9 mt-4">
 
-            {/* Logo BeeFrequency */}
-            <div className="w-40 h-40 flex items-center justify-center mb-4">
+            {/* Logo BeeFrequency — centré horizontalement */}
+            <div className="w-40 h-40 flex items-center justify-center mb-4 mx-auto">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo_joffrey_transparent.png"
                 alt="BeeFrequency"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain block mx-auto"
               />
             </div>
 
@@ -491,14 +491,6 @@ export default function OnboardingPage() {
               {/* Step 4 — Video Seuil 1 (après Convention) */}
               {step === 4 && (
                 <div className="space-y-4">
-                  <div>
-                    <h2 className="font-display text-xl text-brun-chaud">
-                      {T(t.onboarding.videoTitle)}
-                    </h2>
-                    <p className="font-ui text-sm text-brun-mid mt-2">
-                      {T(t.onboarding.videoInstruction)}
-                    </p>
-                  </div>
                   <div className="bg-cire-chaude border border-or-pale rounded-sm p-4">
                     <p className="font-display text-sm text-brun-chaud leading-relaxed italic">
                       {T(t.onboarding.videoDescription)}

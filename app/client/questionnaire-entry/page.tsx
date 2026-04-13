@@ -115,46 +115,48 @@ export default function QuestionnaireEntryPage() {
     );
   }
 
-  // Écran d'accueil
+  // Écran d'accueil — centré verticalement avec espacement équilibré
   if (showWelcome) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-        <p className="font-display text-lg text-brun-chaud leading-relaxed max-w-md mb-8 whitespace-pre-line">
-          {T({
-            EN: `Before starting your journey, I need to read you.
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 text-center">
+        <div className="max-w-md w-full flex flex-col items-center gap-8">
+          <p className="font-display text-lg text-brun-chaud leading-relaxed whitespace-pre-line">
+            {T({
+              EN: `Before starting your journey, I need to read you.
 
 This questionnaire is the first layer of our work together.
 It allows me to prepare your protocol with precision, to respect
 your system, and to welcome you where you truly are.
 
-Take the time you need — you can stop and come back at any moment.
+Take the time you need. You can stop and come back at any moment.
 
 All your answers remain strictly confidential.`,
-            FR: `Avant de commencer ton parcours, j'ai besoin de te lire.
+              FR: `Avant de commencer ton parcours, j'ai besoin de te lire.
 
 Ce questionnaire est la première couche de notre travail ensemble.
 Il me permet de préparer ton protocole avec précision, de respecter
 ton système, et de t'accueillir là où tu en es vraiment.
 
-Prends le temps qu'il te faut — tu peux t'arrêter et revenir à tout moment.
+Prends le temps qu'il te faut. Tu peux t'arrêter et revenir à tout moment.
 
 Toutes tes réponses restent strictement confidentielles.`,
-          })}
-        </p>
+            })}
+          </p>
 
-        <p className="font-ui text-sm text-brun-mid/60 italic mb-8">
-          — Joffrey Deleplanque &middot; BeeFrequency
-        </p>
+          <p className="font-ui text-sm text-brun-mid/60 italic">
+            — Joffrey Deleplanque &middot; BeeFrequency
+          </p>
 
-        <button
-          onClick={() => setShowWelcome(false)}
-          className="px-6 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
-        >
-          {T({
-            EN: "Start reading my terrain →",
-            FR: "Commencer la lecture de mon terrain →",
-          })}
-        </button>
+          <button
+            onClick={() => setShowWelcome(false)}
+            className="px-6 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
+          >
+            {T({
+              EN: "Start reading my terrain →",
+              FR: "Commencer la lecture de mon terrain →",
+            })}
+          </button>
+        </div>
       </div>
     );
   }

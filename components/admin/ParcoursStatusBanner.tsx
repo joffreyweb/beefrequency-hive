@@ -124,12 +124,17 @@ export default function ParcoursStatusBanner({
         {stages.map((stage, i) => {
           const isPast = i < activeIdx;
           const isCurrent = i === activeIdx;
-          const isFuture = i > activeIdx;
+
+          // Seule "colis envoyé" est cliquable manuellement par l'admin
+          // Les autres étapes s'activent via des actions client (J'ai reçu) ou dates (Detox/Programme)
+          const isManuallyClickable = stage.key === "colis" && !colisEnvoye;
 
           return (
             <div key={stage.key} className="flex items-center flex-1">
               <div
-                className={`flex-1 rounded-lg px-3 py-2 text-center transition-all cursor-pointer ${
+                className={`flex-1 rounded-lg px-3 py-2 text-center transition-all ${
+                  isManuallyClickable ? "cursor-pointer hover:ring-2 hover:ring-or-sacre/40" : ""
+                } ${
                   isCurrent
                     ? "bg-or-sacre text-white"
                     : isPast
@@ -137,10 +142,13 @@ export default function ParcoursStatusBanner({
                     : "bg-brun-mid/5 text-brun-mid/40"
                 }`}
                 onClick={() => {
-                  if (stage.key === "colis" && !colisEnvoye) updateStage("colisEnvoye", true);
-                  if (stage.key === "recus" && colisEnvoye && !produitsRecus) updateStage("produitsRecus", true);
-                  if (stage.key === "detox" && produitsRecus && !detoxStartDate) updateStage("detoxStartDate", new Date().toISOString());
-                  if (stage.key === "programme" && !programmeStartDate && detoxStartDate) updateStage("programmeStartDate", new Date().toISOString());
+                  if (stage.key === "colis" && !colisEnvoye) {
+                    if (window.confirm("Marquer le colis comme envoyé ?")) {
+                      updateStage("colisEnvoye", true);
+                    }
+                  }
+                  // Les autres étapes ne sont plus cliquables — elles s'activent automatiquement
+                  // via /api/client/elixir-received (J'ai reçu) et les dates
                 }}
               >
                 <p className="text-xs font-ui font-medium leading-tight">{stage.label}</p>

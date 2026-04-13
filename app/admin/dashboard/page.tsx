@@ -165,18 +165,36 @@ export default async function AdminDashboard() {
 
   // Prepare client overview data
   const clientOverviews = activeClients.map((c) => {
-    const dayNumber = Math.floor((Date.now() - new Date(c.startDate).getTime()) / 86400000) + 1;
+    // Programme n'a démarré que si produits reçus ET date de départ atteinte
+    const programStart = c.detoxStartDate || c.programmeStartDate;
+    const programHasStarted =
+      c.produitsRecus &&
+      !!programStart &&
+      new Date(programStart).getTime() <= Date.now();
+
+    const dayNumber = programHasStarted
+      ? Math.floor((Date.now() - new Date(programStart!).getTime()) / 86400000) + 1
+      : 0;
+
     const displayName = c.intake?.firstName || c.user.name || "Client";
 
-    // Determine current cycle
-    let currentCycle = "Cycle 1";
-    let currentWeek = Math.ceil(dayNumber / 7);
-    if (dayNumber <= 21) { currentCycle = "Cycle 1"; currentWeek = Math.ceil(dayNumber / 7); }
-    else if (dayNumber <= 31) { currentCycle = "Break 1"; currentWeek = Math.ceil((dayNumber - 21) / 7); }
-    else if (dayNumber <= 52) { currentCycle = "Cycle 2"; currentWeek = Math.ceil((dayNumber - 31) / 7); }
-    else if (dayNumber <= 62) { currentCycle = "Break 2"; currentWeek = Math.ceil((dayNumber - 52) / 7); }
-    else if (dayNumber <= 83) { currentCycle = "Cycle 3"; currentWeek = Math.ceil((dayNumber - 62) / 7); }
-    else { currentCycle = "Break 3"; currentWeek = Math.ceil((dayNumber - 83) / 7); }
+    // Stage label pour l'affichage (si programme pas démarré)
+    let stageLabel = "Inscrit";
+    if (c.produitsRecus && !programHasStarted) stageLabel = "Démarrage bientôt";
+    else if (c.colisEnvoye && !c.produitsRecus) stageLabel = "Colis envoyé";
+    else if (!c.colisEnvoye && !c.produitsRecus) stageLabel = "Inscrit";
+
+    // Determine current cycle (uniquement si programme démarré)
+    let currentCycle = stageLabel;
+    let currentWeek = 0;
+    if (programHasStarted) {
+      if (dayNumber <= 21) { currentCycle = "Cycle 1"; currentWeek = Math.ceil(dayNumber / 7); }
+      else if (dayNumber <= 31) { currentCycle = "Break 1"; currentWeek = Math.ceil((dayNumber - 21) / 7); }
+      else if (dayNumber <= 52) { currentCycle = "Cycle 2"; currentWeek = Math.ceil((dayNumber - 31) / 7); }
+      else if (dayNumber <= 62) { currentCycle = "Break 2"; currentWeek = Math.ceil((dayNumber - 52) / 7); }
+      else if (dayNumber <= 83) { currentCycle = "Cycle 3"; currentWeek = Math.ceil((dayNumber - 62) / 7); }
+      else { currentCycle = "Break 3"; currentWeek = Math.ceil((dayNumber - 83) / 7); }
+    }
 
     const lastCheckin = c.dailyCheckins[0];
     const nextSession = c.sessions[0];
@@ -253,7 +271,9 @@ export default async function AdminDashboard() {
                     <div>
                       <p className="font-display text-base text-brun-chaud">{client.name}</p>
                       <p className="font-ui text-xs text-brun-mid">
-                        Day {client.dayNumber} / {client.totalDays} &middot; {client.currentCycle} &middot; Semaine {client.currentWeek}
+                        {client.dayNumber > 0
+                          ? `Day ${client.dayNumber} / ${client.totalDays} · ${client.currentCycle} · Semaine ${client.currentWeek}`
+                          : client.currentCycle}
                       </p>
                     </div>
                   </div>
@@ -266,16 +286,18 @@ export default async function AdminDashboard() {
                   </span>
                 </div>
 
-                {/* Progress bar */}
-                <div className="w-full h-2 rounded-full bg-or-pale/50 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-or-sacre transition-all"
-                    style={{ width: `${Math.min((client.dayNumber / client.totalDays) * 100, 100)}%` }}
-                  />
-                </div>
-
-                {/* Timeline */}
-                <ClientTimeline dayNumber={client.dayNumber} />
+                {/* Progress bar + Timeline — uniquement si programme démarré */}
+                {client.dayNumber > 0 && (
+                  <>
+                    <div className="w-full h-2 rounded-full bg-or-pale/50 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-or-sacre transition-all"
+                        style={{ width: `${Math.min((client.dayNumber / client.totalDays) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <ClientTimeline dayNumber={client.dayNumber} />
+                  </>
+                )}
 
                 {/* Quick info row — 1 col mobile, 2 cols sm, 3 cols lg */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 text-xs font-ui">
