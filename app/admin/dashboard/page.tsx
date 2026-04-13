@@ -213,19 +213,19 @@ export default async function AdminDashboard() {
         Le Cockpit
       </h1>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">Clients actifs</p>
-          <p className="font-display text-3xl text-or-sacre">{activeClientsCount}</p>
+      {/* KPI cards — 1 col mobile, 3 cols desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-4 sm:p-5 flex sm:block items-center justify-between">
+          <p className="font-caps text-[11px] sm:text-xs text-brun-mid uppercase tracking-wider whitespace-nowrap">Clients actifs</p>
+          <p className="font-display text-2xl sm:text-3xl text-or-sacre">{activeClientsCount}</p>
         </div>
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">S&eacute;ances aujourd&apos;hui</p>
-          <p className="font-display text-3xl text-or-sacre">{todaySessions.length}</p>
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-4 sm:p-5 flex sm:block items-center justify-between">
+          <p className="font-caps text-[11px] sm:text-xs text-brun-mid uppercase tracking-wider whitespace-nowrap">S&eacute;ances aujourd&apos;hui</p>
+          <p className="font-display text-2xl sm:text-3xl text-or-sacre">{todaySessions.length}</p>
         </div>
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider">Messages non lus</p>
-          <p className={`font-display text-3xl ${unreadMessages > 0 ? "text-red-500" : "text-or-sacre"}`}>
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-4 sm:p-5 flex sm:block items-center justify-between">
+          <p className="font-caps text-[11px] sm:text-xs text-brun-mid uppercase tracking-wider whitespace-nowrap">Messages non lus</p>
+          <p className={`font-display text-2xl sm:text-3xl ${unreadMessages > 0 ? "text-red-500" : "text-or-sacre"}`}>
             {unreadMessages}
           </p>
         </div>
@@ -277,8 +277,8 @@ export default async function AdminDashboard() {
                 {/* Timeline */}
                 <ClientTimeline dayNumber={client.dayNumber} />
 
-                {/* Quick info row */}
-                <div className="grid grid-cols-3 gap-3 text-xs font-ui">
+                {/* Quick info row — 1 col mobile, 2 cols sm, 3 cols lg */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 text-xs font-ui">
                   {/* Check-ins */}
                   <div>
                     <p className="text-brun-mid/60 mb-1">Derniers check-ins</p>
@@ -343,7 +343,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Agenda + Upcoming + Actions */}
-      <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-6 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_1fr] gap-4 lg:gap-6 min-h-0">
         {/* Agenda du jour */}
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] overflow-y-auto">
           <div className="p-5">

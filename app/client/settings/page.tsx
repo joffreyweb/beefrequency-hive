@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
 import type { Lang } from "@/lib/translations";
 import MySessionsSection from "@/components/client/MySessionsSection";
+import InstallPwaSection from "@/components/client/InstallPwaSection";
 
 const DAYS_FR: Record<string, string> = {
   monday: "Lundi",
@@ -550,6 +551,9 @@ export default function ClientSettingsPage() {
       </div>
 
       {/* Mes seances */}
+      {/* Installer l'application */}
+      <InstallPwaSection lang={lang} />
+
       <MySessionsSection lang={lang} />
     </div>
   );
