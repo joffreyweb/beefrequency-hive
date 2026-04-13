@@ -121,12 +121,15 @@ export function isElixirDayMatch(frequency: string, date: Date): boolean {
 
 // --- Helpers dates ---
 
-/** Retourne le lundi suivant (ou le jour même si c'est un lundi) */
+/** Retourne le lundi suivant (toujours strictement dans le futur, jamais aujourd'hui).
+ *  Garantit que l'étape "Produits reçus" apparaît entre le clic client et le démarrage
+ *  du programme, même si le clic a lieu un lundi. */
 export function getNextMonday(date: Date | string): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0=dim, 1=lun
-  const daysUntilMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
+  const day = d.getDay(); // 0=dim, 1=lun ... 6=sam
+  // Toujours le prochain lundi STRICT : dimanche→+1, lundi→+7, mardi→+6, ... samedi→+2
+  const daysUntilMonday = day === 0 ? 1 : day === 1 ? 7 : 8 - day;
   d.setDate(d.getDate() + daysUntilMonday);
   return d;
 }

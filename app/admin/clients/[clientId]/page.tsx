@@ -147,13 +147,20 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
     },
   });
 
-  // Calcul du jour du parcours
-  const dayNumber = Math.max(
-    1,
-    Math.ceil(
-      (Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)
-    )
-  );
+  // Calcul du jour du parcours — uniquement si produits reçus ET date de départ atteinte
+  const programStart = client.detoxStartDate || client.programmeStartDate;
+  const programHasStarted =
+    client.produitsRecus &&
+    !!programStart &&
+    new Date(programStart).getTime() <= Date.now();
+  const dayNumber = programHasStarted
+    ? Math.max(
+        1,
+        Math.ceil(
+          (Date.now() - new Date(programStart!).getTime()) / (1000 * 60 * 60 * 24)
+        )
+      )
+    : 0;
 
   // Initiales du client (2 premieres lettres du nom en majuscules)
   const initials = (client.user.name ?? "??").slice(0, 2).toUpperCase();
@@ -209,7 +216,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
             <span className={`text-xs font-ui px-2 py-0.5 rounded-full ${statusStyle}`}>
               {STATUS_LABELS[client.status]}
             </span>
-            <span className="text-xs font-ui text-brun-mid/50">J+{dayNumber}</span>
+            <span className="text-xs font-ui text-brun-mid/50">
+              {dayNumber > 0 ? `J+${dayNumber}` : "Pré-démarrage"}
+            </span>
             {client.isLegacy && (
               <span className="text-[9px] font-ui px-1.5 py-0.5 rounded-full bg-brun-mid/10 text-brun-mid">Legacy</span>
             )}
