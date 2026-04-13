@@ -206,8 +206,8 @@ export default function OnboardingPage() {
           {/* Logo block — Welcome Screen (centré) */}
           <div className="flex flex-col items-center justify-center w-full mb-9 mt-4">
 
-            {/* Logo BeeFrequency — centré horizontalement */}
-            <div className="w-40 h-40 flex items-center justify-center mb-4 mx-auto">
+            {/* Logo BeeFrequency — agrandi et centré horizontalement */}
+            <div className="w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center mb-6 mx-auto">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo_joffrey_transparent.png"

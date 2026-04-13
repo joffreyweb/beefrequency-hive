@@ -148,9 +148,10 @@ export default async function ClientHomePage() {
     const stageIdx = stage === "preparing" ? 1 : stage === "shipped" ? 2 : 3;
 
     return (
-      <div className="space-y-8">
+      // Centrage vertical dans le main flex-1 du layout client
+      <div className="min-h-[calc(100vh-10rem)] flex flex-col justify-center items-center gap-8 py-8">
         {/* Indicateur de progression */}
-        <div className="flex items-center justify-center gap-1 pt-4">
+        <div className="flex items-center justify-center gap-1">
           {STAGES.map((s, i) => {
             const isPast = i < stageIdx;
             const isCurrent = i === stageIdx;
@@ -183,10 +184,12 @@ export default async function ClientHomePage() {
         </div>
 
         {/* Élixirs reçus banner — affiche le bouton si colis envoyé */}
-        <ElixirReceivedBanner />
+        <div className="w-full">
+          <ElixirReceivedBanner />
+        </div>
 
         {/* Contenu — varie selon le sous-état */}
-        <div className="text-center py-6 max-w-md mx-auto">
+        <div className="text-center max-w-md mx-auto">
           <div className="text-5xl mb-6">🐝</div>
 
           {stage === "preparing" && (
