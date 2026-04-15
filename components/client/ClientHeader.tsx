@@ -32,12 +32,30 @@ export default function ClientHeader() {
   const [reminders, setReminders] = useState<Reminders | null>(null);
 
   // PWA install state
+  type InstallModal =
+    | null
+    | "ios"
+    | "android"
+    | "mac-safari"
+    | "mac-chrome"
+    | "windows-chrome"
+    | "windows-edge"
+    | "firefox"
+    | "generic";
+
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
-  const [showIosModal, setShowIosModal] = useState(false);
-  const [showDesktopModal, setShowDesktopModal] = useState(false);
+  const [platform, setPlatform] = useState({
+    isIOS: false,
+    isAndroid: false,
+    isMac: false,
+    isWindows: false,
+    isSafari: false,
+    isChrome: false,
+    isFirefox: false,
+    isEdge: false,
+  });
+  const [installModal, setInstallModal] = useState<InstallModal>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -74,15 +92,21 @@ export default function ClientHeader() {
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     setIsStandalone(standalone);
 
-    // Platform detection
-    // iPadOS 13+ reports "MacIntel" as platform by default (Request Desktop Site),
-    // so we also detect via touch points to catch iPads pretending to be Mac.
+    // Platform detection — iPadOS 13+ reports "MacIntel" by default (Request Desktop),
+    // so we use touch points to catch iPads pretending to be Mac
     const ua = navigator.userAgent || "";
     const uaIos = /iPhone|iPad|iPod/i.test(ua);
     const iPadOsAsMac =
       navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-    setIsIOS(uaIos || iPadOsAsMac);
-    setIsAndroid(/Android/i.test(ua));
+    const isIOS = uaIos || iPadOsAsMac;
+    const isAndroid = /Android/i.test(ua);
+    const isMac = /Macintosh/i.test(ua) && !isIOS;
+    const isWindows = /Windows/i.test(ua);
+    const isEdge = /Edg/i.test(ua);
+    const isChrome = /Chrome/i.test(ua) && !isEdge;
+    const isSafari = /Safari/i.test(ua) && !isChrome && !isEdge;
+    const isFirefox = /Firefox/i.test(ua);
+    setPlatform({ isIOS, isAndroid, isMac, isWindows, isSafari, isChrome, isFirefox, isEdge });
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -103,25 +127,40 @@ export default function ClientHeader() {
     setMenuOpen(false);
     if (isStandalone) return;
 
-    // Android with native install prompt available
-    if (isAndroid && deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === "accepted") {
-        setIsStandalone(true);
+    const { isIOS, isAndroid, isMac, isWindows, isSafari, isChrome, isFirefox, isEdge } = platform;
+
+    // Try native install prompt first (Android Chrome, Desktop Chrome, Edge)
+    if (deferredPrompt && (isAndroid || isChrome || isEdge)) {
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          setIsStandalone(true);
+        }
+      } finally {
+        setDeferredPrompt(null);
       }
-      setDeferredPrompt(null);
       return;
     }
 
-    // iOS Safari — manual instructions
+    // Route to the appropriate instruction modal
     if (isIOS) {
-      setShowIosModal(true);
-      return;
+      setInstallModal("ios");
+    } else if (isAndroid) {
+      setInstallModal("android");
+    } else if (isMac && isSafari) {
+      setInstallModal("mac-safari");
+    } else if (isMac && isChrome) {
+      setInstallModal("mac-chrome");
+    } else if (isWindows && isChrome) {
+      setInstallModal("windows-chrome");
+    } else if (isWindows && isEdge) {
+      setInstallModal("windows-edge");
+    } else if (isFirefox) {
+      setInstallModal("firefox");
+    } else {
+      setInstallModal("generic");
     }
-
-    // Desktop or Android without prompt — show "mobile only" modal
-    setShowDesktopModal(true);
   }
 
   function handleSignOut() {
@@ -319,58 +358,32 @@ export default function ClientHeader() {
         </div>
       </div>
 
-      {/* iOS install instructions modal */}
-      {showIosModal && (
+      {/* Adaptive install modal — content varies by platform */}
+      {installModal && (
         <>
           <div
             className="fixed inset-0 z-[80] bg-black/40"
-            onClick={() => setShowIosModal(false)}
+            onClick={() => setInstallModal(null)}
           />
           <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
-            <div className="bg-creme-sacree border border-or-pale rounded-sm max-w-sm w-full p-6 shadow-xl">
+            <div className="bg-creme-sacree border border-or-pale rounded-sm max-w-sm w-full p-6 shadow-xl max-h-[85vh] overflow-y-auto">
               <div className="flex items-start justify-between mb-4">
                 <h2 className="font-display text-xl text-brun-chaud">
-                  {T({ EN: "Install the app", FR: "Installer l'app" })}
+                  📲 {T({ EN: "Install the app", FR: "Installer l'app" })}
                 </h2>
                 <button
-                  onClick={() => setShowIosModal(false)}
+                  onClick={() => setInstallModal(null)}
                   className="text-brun-mid hover:text-brun-chaud text-xl leading-none"
                   aria-label="Close"
                 >
                   ×
                 </button>
               </div>
-              <p className="font-ui text-sm text-brun-mid mb-4">
-                {T({
-                  EN: "On iPhone (Safari):",
-                  FR: "Sur iPhone (Safari) :",
-                })}
-              </p>
-              <ol className="font-ui text-sm text-brun-chaud space-y-3 list-decimal list-inside">
-                <li>
-                  {T({
-                    EN: "Tap the Share button (square with up arrow)",
-                    FR: "Appuie sur le bouton Partager (carré avec flèche)",
-                  })}
-                </li>
-                <li>
-                  {T({
-                    EN: "Scroll and tap \"Add to Home Screen\"",
-                    FR: "Fais défiler et appuie sur \"Sur l'écran d'accueil\"",
-                  })}
-                </li>
-                <li>
-                  {T({ EN: "Tap \"Add\"", FR: "Appuie sur \"Ajouter\"" })}
-                </li>
-              </ol>
-              <p className="font-ui text-xs text-brun-mid/60 italic mt-4">
-                {T({
-                  EN: "The app will appear on your home screen.",
-                  FR: "L'application apparaîtra sur ton écran d'accueil.",
-                })}
-              </p>
+
+              <InstallInstructions variant={installModal} T={T} />
+
               <button
-                onClick={() => setShowIosModal(false)}
+                onClick={() => setInstallModal(null)}
                 className="mt-5 w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
               >
                 {T({ EN: "Got it", FR: "Compris" })}
@@ -379,53 +392,187 @@ export default function ClientHeader() {
           </div>
         </>
       )}
+    </>
+  );
+}
 
-      {/* Desktop install modal — "mobile only" */}
-      {showDesktopModal && (
-        <>
-          <div
-            className="fixed inset-0 z-[80] bg-black/40"
-            onClick={() => setShowDesktopModal(false)}
-          />
-          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
-            <div className="bg-creme-sacree border border-or-pale rounded-sm max-w-sm w-full p-6 shadow-xl">
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="font-display text-xl text-brun-chaud">
-                  📱 {T({ EN: "Install the app", FR: "Installer l'app" })}
-                </h2>
-                <button
-                  onClick={() => setShowDesktopModal(false)}
-                  className="text-brun-mid hover:text-brun-chaud text-xl leading-none"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-              <p className="font-ui text-sm text-brun-mid mb-4">
-                {T({
-                  EN: "Installation is available on mobile only.",
-                  FR: "L'installation est disponible uniquement sur mobile.",
-                })}
-              </p>
-              <p className="font-ui text-sm text-brun-mid mb-4">
-                {T({
-                  EN: "Open this link on your phone to install the app like a real app.",
-                  FR: "Ouvre ce lien sur ton téléphone pour installer l'application comme une vraie app.",
-                })}
-              </p>
-              <p className="font-ui text-xs text-brun-mid/60 italic mb-5">
-                hive.joffreydeleplanque.com
-              </p>
-              <button
-                onClick={() => setShowDesktopModal(false)}
-                className="w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
-              >
-                {T({ EN: "Got it", FR: "Compris" })}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+// ── Install instructions content — varies per platform ──
+
+function InstallInstructions({
+  variant,
+  T,
+}: {
+  variant:
+    | "ios"
+    | "android"
+    | "mac-safari"
+    | "mac-chrome"
+    | "windows-chrome"
+    | "windows-edge"
+    | "firefox"
+    | "generic";
+  T: (key: { EN: string; FR: string }) => string;
+}) {
+  const subtitleCls = "font-ui text-sm text-brun-mid mb-4";
+  const stepsCls = "font-ui text-sm text-brun-chaud space-y-3 list-decimal list-inside";
+  const footerCls = "font-ui text-xs text-brun-mid/60 italic mt-4";
+
+  if (variant === "ios") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({ EN: "On iPhone (Safari):", FR: "Sur iPhone (Safari) :" })}
+        </p>
+        <ol className={stepsCls}>
+          <li>{T({ EN: "Tap the Share button (square with up arrow)", FR: "Appuie sur le bouton Partager (carré avec flèche)" })}</li>
+          <li>{T({ EN: "Scroll and tap \"Add to Home Screen\"", FR: "Fais défiler et appuie sur \"Sur l'écran d'accueil\"" })}</li>
+          <li>{T({ EN: "Tap \"Add\"", FR: "Appuie sur \"Ajouter\"" })}</li>
+        </ol>
+        <p className={footerCls}>
+          {T({ EN: "The app will appear on your home screen.", FR: "L'application apparaîtra sur ton écran d'accueil." })}
+        </p>
+      </>
+    );
+  }
+
+  if (variant === "android") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({ EN: "On Android:", FR: "Sur Android :" })}
+        </p>
+        <ol className={stepsCls}>
+          <li>{T({ EN: "Open the menu (⋮ three dots top right)", FR: "Ouvre le menu (⋮ trois points en haut à droite)" })}</li>
+          <li>{T({ EN: "Tap \"Install app\" or \"Add to Home screen\"", FR: "Appuie sur \"Installer l'application\" ou \"Ajouter à l'écran d'accueil\"" })}</li>
+          <li>{T({ EN: "Confirm the installation", FR: "Confirme l'installation" })}</li>
+        </ol>
+        <p className={footerCls}>
+          {T({ EN: "The app will appear on your home screen.", FR: "L'application apparaîtra sur ton écran d'accueil." })}
+        </p>
+      </>
+    );
+  }
+
+  if (variant === "mac-safari") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({ EN: "On Mac (Safari):", FR: "Sur Mac (Safari) :" })}
+        </p>
+        <ol className={stepsCls}>
+          <li>{T({ EN: "Click \"File\" in the menu bar", FR: "Clique sur \"Fichier\" dans la barre de menu" })}</li>
+          <li>{T({ EN: "Select \"Add to Dock\"", FR: "Sélectionne \"Ajouter au Dock\"" })}</li>
+          <li>{T({ EN: "Click \"Add\"", FR: "Clique sur \"Ajouter\"" })}</li>
+        </ol>
+        <p className={footerCls}>
+          {T({ EN: "The app will appear in your Dock.", FR: "L'application apparaîtra dans ton Dock." })}
+        </p>
+      </>
+    );
+  }
+
+  if (variant === "mac-chrome") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({ EN: "On Mac (Chrome):", FR: "Sur Mac (Chrome) :" })}
+        </p>
+        <ol className={stepsCls}>
+          <li>{T({ EN: "Click the install icon in the address bar (⊕)", FR: "Clique sur l'icône d'installation dans la barre d'adresse (⊕)" })}</li>
+          <li>{T({ EN: "Or go to Menu (⋮) → \"Install Hive…\"", FR: "Ou va dans Menu (⋮) → \"Installer Hive…\"" })}</li>
+          <li>{T({ EN: "Click \"Install\"", FR: "Clique sur \"Installer\"" })}</li>
+        </ol>
+        <p className={footerCls}>
+          {T({ EN: "The app will open like a native app.", FR: "L'application s'ouvrira comme une app native." })}
+        </p>
+      </>
+    );
+  }
+
+  if (variant === "windows-chrome") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({ EN: "On Windows (Chrome):", FR: "Sur Windows (Chrome) :" })}
+        </p>
+        <ol className={stepsCls}>
+          <li>{T({ EN: "Click the install icon in the address bar (⊕)", FR: "Clique sur l'icône d'installation dans la barre d'adresse (⊕)" })}</li>
+          <li>{T({ EN: "Or go to Menu (⋮) → \"Install Hive…\"", FR: "Ou va dans Menu (⋮) → \"Installer Hive…\"" })}</li>
+          <li>{T({ EN: "Click \"Install\"", FR: "Clique sur \"Installer\"" })}</li>
+        </ol>
+        <p className={footerCls}>
+          {T({ EN: "The app will appear in your Start menu.", FR: "L'application apparaîtra dans ton menu Démarrer." })}
+        </p>
+      </>
+    );
+  }
+
+  if (variant === "windows-edge") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({ EN: "On Windows (Edge):", FR: "Sur Windows (Edge) :" })}
+        </p>
+        <ol className={stepsCls}>
+          <li>{T({ EN: "Click the install icon in the address bar", FR: "Clique sur l'icône d'installation dans la barre d'adresse" })}</li>
+          <li>{T({ EN: "Or Menu (⋯) → \"Apps\" → \"Install this site as an app\"", FR: "Ou Menu (⋯) → \"Applications\" → \"Installer ce site en tant qu'application\"" })}</li>
+          <li>{T({ EN: "Click \"Install\"", FR: "Clique sur \"Installer\"" })}</li>
+        </ol>
+        <p className={footerCls}>
+          {T({ EN: "The app will appear in your Start menu.", FR: "L'application apparaîtra dans ton menu Démarrer." })}
+        </p>
+      </>
+    );
+  }
+
+  if (variant === "firefox") {
+    return (
+      <>
+        <p className={subtitleCls}>
+          {T({
+            EN: "Firefox does not support installing web apps on desktop.",
+            FR: "Firefox ne supporte pas l'installation d'applications web sur desktop.",
+          })}
+        </p>
+        <p className="font-ui text-sm text-brun-chaud mb-2">
+          {T({ EN: "To install Hive:", FR: "Pour installer Hive :" })}
+        </p>
+        <ul className="font-ui text-sm text-brun-chaud space-y-2 list-disc list-inside">
+          <li>{T({ EN: "On Mac: open this link in Safari", FR: "Sur Mac : ouvre ce lien dans Safari" })}</li>
+          <li>{T({ EN: "On Windows: open this link in Chrome or Edge", FR: "Sur Windows : ouvre ce lien dans Chrome ou Edge" })}</li>
+          <li>{T({ EN: "Or open this link on your phone", FR: "Ou ouvre ce lien sur ton téléphone" })}</li>
+        </ul>
+      </>
+    );
+  }
+
+  // generic fallback
+  return (
+    <>
+      <p className={subtitleCls}>
+        {T({ EN: "To install Hive as an app:", FR: "Pour installer Hive comme une application :" })}
+      </p>
+      <div className="space-y-3">
+        <div>
+          <p className="font-display text-sm text-brun-chaud mb-1">
+            {T({ EN: "On mobile:", FR: "Sur mobile :" })}
+          </p>
+          <ul className="font-ui text-xs text-brun-chaud space-y-1 list-disc list-inside">
+            <li>{T({ EN: "iPhone: Share → Add to Home Screen", FR: "iPhone : Partager → Sur l'écran d'accueil" })}</li>
+            <li>{T({ EN: "Android: Menu → Install app", FR: "Android : Menu → Installer l'application" })}</li>
+          </ul>
+        </div>
+        <div>
+          <p className="font-display text-sm text-brun-chaud mb-1">
+            {T({ EN: "On desktop:", FR: "Sur desktop :" })}
+          </p>
+          <ul className="font-ui text-xs text-brun-chaud space-y-1 list-disc list-inside">
+            <li>{T({ EN: "Safari Mac: File → Add to Dock", FR: "Safari Mac : Fichier → Ajouter au Dock" })}</li>
+            <li>{T({ EN: "Chrome/Edge: ⊕ icon in address bar", FR: "Chrome/Edge : icône ⊕ dans la barre d'adresse" })}</li>
+          </ul>
+        </div>
+      </div>
+      <p className={footerCls}>hive.joffreydeleplanque.com</p>
     </>
   );
 }
