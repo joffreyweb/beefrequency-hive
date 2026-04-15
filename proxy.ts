@@ -46,10 +46,12 @@ export async function proxy(request: NextRequest) {
     }
 
     // Onboarding guard : bloquer /client/* tant que l'onboarding n'est pas complété
+    // Exceptions : /client/onboarding (le flux lui-même) et /client/help (aide accessible tout le temps)
     if (
       role === "CLIENT" &&
       pathname.startsWith("/client") &&
-      !pathname.startsWith("/client/onboarding")
+      !pathname.startsWith("/client/onboarding") &&
+      !pathname.startsWith("/client/help")
     ) {
       const onboardingDone = request.cookies.get("onboarding_completed")?.value;
       if (!onboardingDone) {

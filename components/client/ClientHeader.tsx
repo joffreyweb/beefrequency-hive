@@ -348,6 +348,18 @@ export default function ClientHeader() {
           </>
         )}
 
+        {/* Aide installation — toujours visible */}
+        <div className="mx-6 border-t border-or-pale" />
+        <div className="px-6 py-4">
+          <Link
+            href="/client/help/install"
+            onClick={() => setMenuOpen(false)}
+            className="font-ui text-sm text-brun-chaud hover:text-or-sacre transition-colors"
+          >
+            💡 {T({ EN: "Install help", FR: "Aide installation" })}
+          </Link>
+        </div>
+
         <div className="mx-6 border-t border-or-pale" />
 
         {/* Sign out */}
@@ -382,9 +394,18 @@ export default function ClientHeader() {
 
               <InstallInstructions variant={installModal} T={T} />
 
+              {/* Link to detailed help page */}
+              <Link
+                href="/client/help/install"
+                onClick={() => setInstallModal(null)}
+                className="block text-center mt-4 font-ui text-xs text-or-sacre underline hover:text-ambre-vif transition-colors"
+              >
+                {T({ EN: "Need detailed help?", FR: "Besoin d'aide détaillée ?" })}
+              </Link>
+
               <button
                 onClick={() => setInstallModal(null)}
-                className="mt-5 w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
+                className="mt-3 w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
               >
                 {T({ EN: "Got it", FR: "Compris" })}
               </button>

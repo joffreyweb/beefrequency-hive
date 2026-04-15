@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
 import type { Lang } from "@/lib/translations";
+import Link from "next/link";
 import MySessionsSection from "@/components/client/MySessionsSection";
 import InstallPwaSection from "@/components/client/InstallPwaSection";
 
@@ -553,6 +554,22 @@ export default function ClientSettingsPage() {
       {/* Mes seances */}
       {/* Installer l'application */}
       <InstallPwaSection lang={lang} />
+
+      {/* Aide */}
+      <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-3">
+        <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid">
+          {T({ EN: "HELP", FR: "AIDE" })}
+        </h2>
+        <Link
+          href="/client/help/install"
+          className="flex items-center justify-between py-2 hover:bg-creme-sacree -mx-2 px-2 rounded transition-colors"
+        >
+          <span className="font-ui text-sm text-brun-chaud">
+            💡 {T({ EN: "How to install the app", FR: "Comment installer l'app" })}
+          </span>
+          <span className="text-or-sacre">›</span>
+        </Link>
+      </div>
 
       <MySessionsSection lang={lang} />
     </div>
