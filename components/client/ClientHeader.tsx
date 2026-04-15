@@ -73,8 +73,15 @@ export default function ClientHeader() {
     setIsStandalone(standalone);
 
     // Mobile detection — show install button only on iPhone/iPad/Android
+    // iPadOS 13+ reports "MacIntel" as platform by default (Request Desktop Site),
+    // so we also detect via touch points to catch iPads pretending to be Mac.
     const ua = navigator.userAgent || "";
-    setIsMobile(/iPhone|iPad|iPod|Android/i.test(ua));
+    const uaMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+    const iPadOsAsMac =
+      typeof navigator !== "undefined" &&
+      navigator.platform === "MacIntel" &&
+      navigator.maxTouchPoints > 1;
+    setIsMobile(uaMobile || iPadOsAsMac);
 
     const handler = (e: Event) => {
       e.preventDefault();
