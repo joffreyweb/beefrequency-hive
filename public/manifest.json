@@ -1,6 +1,6 @@
 {
-  "name": "Hive — BeeFrequency",
-  "short_name": "Hive",
+  "name": "BeeFrequency",
+  "short_name": "BeeFrequency",
   "description": "Ton espace de transformation — BeeFrequency",
   "start_url": "/",
   "scope": "/",

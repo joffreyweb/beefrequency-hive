@@ -22,7 +22,7 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  title: "Hive · BeeFrequency",
+  title: "BeeFrequency",
   description: "Espace de pilotage — From poison to nectar",
   manifest: "/manifest.json",
   icons: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hive",
+    title: "BeeFrequency",
   },
   other: {
     "mobile-web-app-capable": "yes",
