@@ -16,8 +16,11 @@ export async function proxy(request: NextRequest) {
     publicPaths.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
+    pathname.startsWith("/icons") ||
     pathname.startsWith("/uploads") ||
-    pathname === "/manifest.json"
+    pathname === "/manifest.json" ||
+    pathname === "/logo_joffrey_transparent.png" ||
+    pathname === "/tracking.js"
   ) {
     return NextResponse.next();
   }
