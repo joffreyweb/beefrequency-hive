@@ -34,8 +34,10 @@ export default function ClientHeader() {
   // PWA install state
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [showIosModal, setShowIosModal] = useState(false);
+  const [showDesktopModal, setShowDesktopModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -72,16 +74,15 @@ export default function ClientHeader() {
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     setIsStandalone(standalone);
 
-    // Mobile detection — show install button only on iPhone/iPad/Android
+    // Platform detection
     // iPadOS 13+ reports "MacIntel" as platform by default (Request Desktop Site),
     // so we also detect via touch points to catch iPads pretending to be Mac.
     const ua = navigator.userAgent || "";
-    const uaMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+    const uaIos = /iPhone|iPad|iPod/i.test(ua);
     const iPadOsAsMac =
-      typeof navigator !== "undefined" &&
-      navigator.platform === "MacIntel" &&
-      navigator.maxTouchPoints > 1;
-    setIsMobile(uaMobile || iPadOsAsMac);
+      navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    setIsIOS(uaIos || iPadOsAsMac);
+    setIsAndroid(/Android/i.test(ua));
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -98,15 +99,12 @@ export default function ClientHeader() {
     };
   }, []);
 
-  function isIos(): boolean {
-    if (typeof navigator === "undefined") return false;
-    return /iPad|iPhone|iPod/.test(navigator.userAgent || "");
-  }
-
   async function handleInstall() {
     setMenuOpen(false);
-    if (deferredPrompt) {
-      // Android / Chrome desktop — native prompt
+    if (isStandalone) return;
+
+    // Android with native install prompt available
+    if (isAndroid && deferredPrompt) {
       await deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
       if (choice.outcome === "accepted") {
@@ -115,13 +113,15 @@ export default function ClientHeader() {
       setDeferredPrompt(null);
       return;
     }
-    if (isIos()) {
-      // iOS Safari — show manual instructions modal
+
+    // iOS Safari — manual instructions
+    if (isIOS) {
       setShowIosModal(true);
       return;
     }
-    // Unknown — show iOS modal as fallback (most users on other browsers can't install anyway)
-    setShowIosModal(true);
+
+    // Desktop or Android without prompt — show "mobile only" modal
+    setShowDesktopModal(true);
   }
 
   function handleSignOut() {
@@ -294,8 +294,8 @@ export default function ClientHeader() {
           </Link>
         </div>
 
-        {/* Install app — uniquement sur mobile ET si pas déjà en standalone */}
-        {isMobile && !isStandalone && (
+        {/* Install app — toujours visible sauf si déjà en standalone */}
+        {!isStandalone && (
           <>
             <div className="mx-6 border-t border-or-pale" />
             <div className="px-6 py-4">
@@ -372,6 +372,53 @@ export default function ClientHeader() {
               <button
                 onClick={() => setShowIosModal(false)}
                 className="mt-5 w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
+              >
+                {T({ EN: "Got it", FR: "Compris" })}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Desktop install modal — "mobile only" */}
+      {showDesktopModal && (
+        <>
+          <div
+            className="fixed inset-0 z-[80] bg-black/40"
+            onClick={() => setShowDesktopModal(false)}
+          />
+          <div className="fixed inset-0 z-[90] flex items-center justify-center px-4">
+            <div className="bg-creme-sacree border border-or-pale rounded-sm max-w-sm w-full p-6 shadow-xl">
+              <div className="flex items-start justify-between mb-4">
+                <h2 className="font-display text-xl text-brun-chaud">
+                  📱 {T({ EN: "Install the app", FR: "Installer l'app" })}
+                </h2>
+                <button
+                  onClick={() => setShowDesktopModal(false)}
+                  className="text-brun-mid hover:text-brun-chaud text-xl leading-none"
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="font-ui text-sm text-brun-mid mb-4">
+                {T({
+                  EN: "Installation is available on mobile only.",
+                  FR: "L'installation est disponible uniquement sur mobile.",
+                })}
+              </p>
+              <p className="font-ui text-sm text-brun-mid mb-4">
+                {T({
+                  EN: "Open this link on your phone to install the app like a real app.",
+                  FR: "Ouvre ce lien sur ton téléphone pour installer l'application comme une vraie app.",
+                })}
+              </p>
+              <p className="font-ui text-xs text-brun-mid/60 italic mb-5">
+                hive.joffreydeleplanque.com
+              </p>
+              <button
+                onClick={() => setShowDesktopModal(false)}
+                className="w-full py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
               >
                 {T({ EN: "Got it", FR: "Compris" })}
               </button>
