@@ -34,6 +34,7 @@ export default function ClientHeader() {
   // PWA install state
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [showIosModal, setShowIosModal] = useState(false);
 
   useEffect(() => {
@@ -70,6 +71,10 @@ export default function ClientHeader() {
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     setIsStandalone(standalone);
+
+    // Mobile detection — show install button only on iPhone/iPad/Android
+    const ua = navigator.userAgent || "";
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(ua));
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -282,8 +287,8 @@ export default function ClientHeader() {
           </Link>
         </div>
 
-        {/* Install app — seulement si pas déjà en standalone */}
-        {!isStandalone && (
+        {/* Install app — uniquement sur mobile ET si pas déjà en standalone */}
+        {isMobile && !isStandalone && (
           <>
             <div className="mx-6 border-t border-or-pale" />
             <div className="px-6 py-4">
