@@ -201,22 +201,22 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
             {
               key: "d1",
               text: T({
-                EN: "Read and approved — I have read and understood the general conditions of accompaniment",
-                FR: "Lu et approuvé — J'ai lu et compris les conditions générales d'accompagnement",
+                EN: "Read and approved: I have read and understood the general conditions of accompaniment",
+                FR: "Lu et approuvé : J'ai lu et compris les conditions générales d'accompagnement",
               }),
             },
             {
               key: "d2",
               text: T({
-                EN: "Read and approved — I accept the non-medical nature of this accompaniment",
-                FR: "Lu et approuvé — J'accepte la nature non médicale de cet accompagnement",
+                EN: "Read and approved: I accept the non-medical nature of this accompaniment",
+                FR: "Lu et approuvé : J'accepte la nature non médicale de cet accompagnement",
               }),
             },
             {
               key: "d3",
               text: T({
-                EN: "Read and approved — I commit in full awareness and under my responsibility",
-                FR: "Lu et approuvé — Je m'engage en pleine conscience et sous ma responsabilité",
+                EN: "Read and approved: I commit in full awareness and under my responsibility",
+                FR: "Lu et approuvé : Je m'engage en pleine conscience et sous ma responsabilité",
               }),
             },
           ].map(({ key, text }) => (

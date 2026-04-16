@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
     const consentRecord = consent
       ? [
           `CONSENTEMENT SIGNÉ LE ${signedAt}`,
-          consent.d1_conditions_generales ? "✓ Lu et approuvé — Conditions générales d'accompagnement" : "✗ Non accepté",
-          consent.d2_nature_non_medicale ? "✓ Lu et approuvé — Nature non médicale" : "✗ Non accepté",
-          consent.d3_pleine_conscience ? "✓ Lu et approuvé — Pleine conscience et responsabilité" : "✗ Non accepté",
+          consent.d1_conditions_generales ? "✓ Lu et approuvé : Conditions générales d'accompagnement" : "✗ Non accepté",
+          consent.d2_nature_non_medicale ? "✓ Lu et approuvé : Nature non médicale" : "✗ Non accepté",
+          consent.d3_pleine_conscience ? "✓ Lu et approuvé : Pleine conscience et responsabilité" : "✗ Non accepté",
           `Signature : ${signature}`,
         ].join("\n")
       : null;
