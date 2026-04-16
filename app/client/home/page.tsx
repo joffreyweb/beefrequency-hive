@@ -281,6 +281,39 @@ export default async function ClientHomePage() {
             </>
           )}
 
+          {/* Prochain RDV — visible même en phase d'attente */}
+          {upcomingSessions.length > 0 && (
+            <div className="mt-6 w-full bg-cire-chaude border border-or-pale rounded-lg p-4 text-center">
+              <p className="text-xs text-brun-mid mb-1">
+                📅 {T({ EN: "Your next appointment", FR: "Ton prochain rendez-vous" })}
+              </p>
+              <p className="font-display text-lg text-brun-chaud">
+                {new Date(upcomingSessions[0].scheduledAt).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+                {" "}
+                {T({ EN: "at", FR: "à" })}
+                {" "}
+                {new Date(upcomingSessions[0].scheduledAt).toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+              {upcomingSessions[0].zoomLink && (
+                <a
+                  href={upcomingSessions[0].zoomLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 text-xs font-ui text-or-sacre hover:text-ambre-vif"
+                >
+                  {T(t.home.joinZoom)} →
+                </a>
+              )}
+            </div>
+          )}
+
           <p className="font-ui text-xs text-brun-mid/60 italic pt-6">
             {T({
               EN: "Your space remains accessible : Journal, Messages, Practices.",

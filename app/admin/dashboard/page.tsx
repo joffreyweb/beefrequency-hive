@@ -92,8 +92,8 @@ export default async function AdminDashboard() {
             select: { totalSessions: true },
           },
           appointments: {
-            where: { sessionPackId: { not: null }, status: { not: "CANCELLED" } },
-            select: { id: true },
+            where: { status: { not: "CANCELLED" } },
+            select: { id: true, scheduledAt: true, zoomJoinUrl: true, sessionPackId: true },
           },
         },
         orderBy: { startDate: "asc" },
@@ -233,6 +233,19 @@ export default async function AdminDashboard() {
 
     const lastCheckin = c.dailyCheckins[0];
     const nextSession = c.sessions[0];
+    // Find next upcoming appointment (future, non-cancelled)
+    const now = Date.now();
+    const nextAppointment = c.appointments
+      .filter((a) => new Date(a.scheduledAt).getTime() > now)
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
+    // Use session OR appointment, whichever is sooner
+    const nextRdv = [
+      nextSession ? { date: nextSession.scheduledAt, zoom: nextSession.zoomLink } : null,
+      nextAppointment ? { date: nextAppointment.scheduledAt, zoom: nextAppointment.zoomJoinUrl } : null,
+    ].filter(Boolean).sort((a, b) => new Date(a!.date).getTime() - new Date(b!.date).getTime())[0];
+
+    // Pack count — only count appointments linked to a session pack
+    const packAppts = c.appointments.filter((a) => a.sessionPackId);
 
     return {
       id: c.id,
@@ -250,13 +263,13 @@ export default async function AdminDashboard() {
         name: rx.elixir.name,
         dosage: rx.dosage || "",
       })),
-      nextSession: nextSession ? {
-        date: nextSession.scheduledAt.toISOString(),
-        zoomLink: nextSession.zoomLink,
+      nextSession: nextRdv ? {
+        date: new Date(nextRdv.date).toISOString(),
+        zoomLink: nextRdv.zoom,
       } : null,
       packTotal: c.sessionPacks.reduce((sum, p) => sum + p.totalSessions, 0),
-      packUsed: c.appointments.length,
-      packRemaining: c.sessionPacks.reduce((sum, p) => sum + p.totalSessions, 0) - c.appointments.length,
+      packUsed: packAppts.length,
+      packRemaining: c.sessionPacks.reduce((sum, p) => sum + p.totalSessions, 0) - packAppts.length,
     };
   });
 
