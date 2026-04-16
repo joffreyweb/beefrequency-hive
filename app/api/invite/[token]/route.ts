@@ -165,6 +165,7 @@ export async function POST(
           where: { id: existingUser.id },
           data: {
             password: hashedPassword,
+            lastLoginAt: new Date(),
             ...(name?.trim() ? { name: name.trim() } : {}),
           },
         });
@@ -198,6 +199,7 @@ export async function POST(
             password: hashedPassword,
             role: "CLIENT",
             name: name?.trim() || invite.email.split("@")[0],
+            lastLoginAt: new Date(),
           },
         });
 
