@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { t } from "@/lib/translations";
 import type { Lang } from "@/lib/translations";
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (element: HTMLElement, options: Record<string, unknown>) => void;
+    };
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +20,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  const renderTurnstile = useCallback(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.turnstile &&
+      turnstileRef.current &&
+      turnstileRef.current.childElementCount === 0
+    ) {
+      window.turnstile.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "",
+        callback: (token: string) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(""),
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    renderTurnstile();
+  }, [renderTurnstile]);
 
   // Detect language from browser or default FR
   const browserLang =
@@ -29,7 +59,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, turnstileToken }),
       });
 
       const data = await res.json();
@@ -114,6 +144,9 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Turnstile widget */}
+          <div ref={turnstileRef} className="flex justify-center" />
+
           <button
             type="submit"
             disabled={loading}
@@ -122,6 +155,12 @@ export default function LoginPage() {
             {loading ? T(t.login.loading) : T(t.login.button)}
           </button>
         </form>
+
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad"
+          strategy="afterInteractive"
+          onLoad={() => renderTurnstile()}
+        />
 
         <div className="text-center mt-4">
           <a

@@ -5,13 +5,43 @@ import { signToken, setAuthCookie } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, turnstileToken } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email et mot de passe requis" },
         { status: 400 }
       );
+    }
+
+    // Vérification Turnstile (si configuré)
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    if (turnstileSecret) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          { error: "Vérification de sécurité requise" },
+          { status: 400 }
+        );
+      }
+
+      const verifyRes = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            secret: turnstileSecret,
+            response: turnstileToken,
+          }),
+        }
+      );
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return NextResponse.json(
+          { error: "Vérification de sécurité échouée" },
+          { status: 403 }
+        );
+      }
     }
 
     // Recherche utilisateur
