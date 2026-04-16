@@ -7,13 +7,7 @@ import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientProgramSection from "@/components/admin/ClientProgramSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
-
-// Labels lisibles pour les offres
-const OFFER_LABELS: Record<string, string> = {
-  HIVE_EXPERIENCE: "Hive Experience",
-  THE_PASSAGE: "The Passage",
-  SOUVERAINETE: "Souverainete",
-};
+import { OFFER_LABELS } from "@/lib/offer-labels";
 
 // Labels lisibles pour les statuts
 const STATUS_LABELS: Record<string, string> = {

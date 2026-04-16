@@ -2,23 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import ClientsGrid from "./ClientsGrid";
 
-// Labels lisibles pour les offres
-const OFFER_LABELS: Record<string, string> = {
-  CONVERSATION_EXPLORATOIRE: "Conversation exploratoire privée",
-  SESSION_SEUIL: "Session Seuil",
-  LE_NECTAR_CYCLE: "Le Nectar Cycle",
-  LE_PASSAGE_1_1: "Le Passage 1:1",
-  LES_CYCLES_DE_LA_RUCHE: "Les Cycles de la Ruche",
-  CEREMONIE_RESET: "Cérémonie Reset",
-  LA_RUCHE_VIVANTE: "La Ruche Vivante",
-  SOUVERAINETE: "Souveraineté",
-  LA_CHAMBRE_DE_LA_REINE: "La Chambre de la Reine",
-  SOS_URGENCE_VIP: "SOS \u00b7 Urgence VIP",
-  LE_FIL_DE_LA_RUCHE: "Le Fil de la Ruche",
-  // Legacy
-  HIVE_EXPERIENCE: "Hive Experience",
-  THE_PASSAGE: "The Passage",
-};
+import { OFFER_LABELS } from "@/lib/offer-labels";
 
 export default async function ClientsListPage() {
   // Chargement de tous les clients avec pendingActions count

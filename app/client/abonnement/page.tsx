@@ -3,17 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
-
-const OFFER_LABELS: Record<string, Record<string, string>> = {
-  LE_NECTAR_CYCLE: { FR: "Le Nectar Cycle", EN: "Le Nectar Cycle" },
-  LE_PASSAGE_1_1: { FR: "Le Passage 1:1", EN: "Le Passage 1:1" },
-  LES_CYCLES_DE_LA_RUCHE: { FR: "Les Cycles de la Ruche", EN: "The Hive Cycles" },
-  CEREMONIE_RESET: { FR: "Cérémonie Reset", EN: "Reset Ceremony" },
-  LA_RUCHE_VIVANTE: { FR: "La Ruche Vivante", EN: "The Living Hive" },
-  SOUVERAINETE: { FR: "Souveraineté", EN: "Sovereignty" },
-  CONVERSATION_EXPLORATOIRE: { FR: "Conversation exploratoire", EN: "Exploratory Conversation" },
-  SESSION_SEUIL: { FR: "Session Seuil", EN: "Threshold Session" },
-};
+import { formatOfferName } from "@/lib/offer-labels";
 
 export default async function AbonnementPage() {
   const session = await getSession();
@@ -69,8 +59,7 @@ export default async function AbonnementPage() {
     ? Math.ceil((now.getTime() - new Date(currentPhase.startDate).getTime()) / 86400000) + 1
     : 0;
 
-  const offerLabel =
-    OFFER_LABELS[client.offerType]?.[lang] || client.offerType;
+  const offerLabel = formatOfferName(client.offerType);
 
   return (
     <div className="space-y-6 pb-8">
