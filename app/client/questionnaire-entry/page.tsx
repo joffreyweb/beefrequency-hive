@@ -165,19 +165,19 @@ Toutes tes réponses restent strictement confidentielles.`,
   const section = SECTIONS[currentSection];
   const sectionAnswers = answers[section.id] || {};
   const allAnswered = true; // All questions are optional
-  const isLastSection = currentSection === 7;
+  const isLastSection = currentSection === SECTIONS.length - 1;
 
   return (
     <div className="space-y-6 pb-8">
       {/* Barre de progression */}
       <div className="flex items-center justify-between mb-2">
         <span className="font-caps text-xs text-brun-mid uppercase tracking-wider">
-          Section {currentSection + 1}/8
+          Section {currentSection + 1}/{SECTIONS.length}
         </span>
         <div className="flex-1 mx-3 h-1.5 bg-creme-sacree rounded-full overflow-hidden">
           <div
             className="h-full bg-or-sacre rounded-full transition-all duration-300"
-            style={{ width: `${((currentSection + 1) / 8) * 100}%` }}
+            style={{ width: `${((currentSection + 1) / SECTIONS.length) * 100}%` }}
           />
         </div>
       </div>
@@ -195,7 +195,10 @@ Toutes tes réponses restent strictement confidentielles.`,
 
       {/* Questions */}
       <div className="space-y-5">
-        {section.questions.map((q) => (
+        {section.questions.map((q) => {
+          // Hide question cards that are conditionals (rendered inline by their parent checkbox)
+          if (section.questions.some((other) => other.conditional === q.id)) return null;
+          return (
           <div key={q.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
             <p className="font-ui text-sm text-brun-chaud mb-3">{q.text}</p>
 
@@ -229,17 +232,80 @@ Toutes tes réponses restent strictement confidentielles.`,
               </div>
             )}
 
+            {q.type === "checkbox" && q.options && (() => {
+              // Parse checked values from stored JSON array string
+              let checked: string[] = [];
+              try { checked = JSON.parse(sectionAnswers[q.id] || "[]"); } catch { checked = []; }
+              const hasChecked = checked.length > 0;
+
+              return (
+                <>
+                  <div className="space-y-2">
+                    {q.options.map((opt) => {
+                      const isChecked = checked.includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className="flex items-center gap-3 cursor-pointer group"
+                          onClick={() => {
+                            const next = isChecked
+                              ? checked.filter((v) => v !== opt.value)
+                              : [...checked, opt.value];
+                            updateAnswer(section.id, q.id, JSON.stringify(next));
+                          }}
+                        >
+                          <div
+                            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                              isChecked
+                                ? "border-or-sacre bg-or-sacre"
+                                : "border-brun-mid/30 group-hover:border-or-sacre/50"
+                            }`}
+                          >
+                            {isChecked && (
+                              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                          <span className="font-ui text-sm text-brun-chaud">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {/* Conditional textarea — visible if any checkbox is checked */}
+                  {q.conditional && hasChecked && (
+                    <div className="mt-4">
+                      <p className="font-ui text-sm text-brun-chaud mb-2">
+                        {T({ EN: "Please specify:", FR: "Précisez :" })}
+                      </p>
+                      <textarea
+                        value={sectionAnswers[q.conditional] || ""}
+                        onChange={(e) => updateAnswer(section.id, q.conditional!, e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 bg-creme-sacree border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none focus:outline-none focus:border-or-sacre transition-colors"
+                        placeholder={T({ EN: "Details about your situation...", FR: "Détails sur ta situation..." })}
+                      />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
             {q.type === "textarea" && (
-              <textarea
-                value={sectionAnswers[q.id] || ""}
-                onChange={(e) => updateAnswer(section.id, q.id, e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 bg-creme-sacree border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none focus:outline-none focus:border-or-sacre transition-colors"
-                placeholder={T({ EN: "Your answer...", FR: "Ta réponse..." })}
-              />
+              // Skip if this textarea is rendered inline as a conditional of a checkbox question
+              section.questions.some((other) => other.conditional === q.id)
+                ? null
+                : <textarea
+                    value={sectionAnswers[q.id] || ""}
+                    onChange={(e) => updateAnswer(section.id, q.id, e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 bg-creme-sacree border border-or-pale rounded-sm text-sm font-ui text-brun-chaud resize-none focus:outline-none focus:border-or-sacre transition-colors"
+                    placeholder={T({ EN: "Your answer...", FR: "Ta réponse..." })}
+                  />
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Navigation */}

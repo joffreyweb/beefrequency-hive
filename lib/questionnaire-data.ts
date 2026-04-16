@@ -10,8 +10,9 @@ export interface QuestionOption {
 export interface Question {
   id: string;
   text: string;
-  type: "mcq" | "textarea";
+  type: "mcq" | "textarea" | "checkbox";
   options?: QuestionOption[];
+  conditional?: string; // ID of a textarea that appears if any checkbox is checked
 }
 
 export interface Section {
@@ -269,6 +270,38 @@ export const SECTIONS: Section[] = [
       },
       {
         id: "s8q4", text: "Y a-t-il autre chose que tu souhaites me signaler avant de commencer ton parcours ?", type: "textarea",
+      },
+    ],
+  },
+
+  // ─── Section 9 — SANTÉ & SÉCURITÉ ───
+  {
+    id: "screening",
+    number: 9,
+    icon: "🛡️",
+    title: "SANTÉ & SÉCURITÉ — Screening",
+    intro: "Ces informations sont essentielles pour adapter ton accompagnement en toute sécurité. Elles restent strictement confidentielles.",
+    questions: [
+      {
+        id: "s9_checks",
+        text: "As-tu actuellement ou récemment l'un des éléments suivants :",
+        type: "checkbox",
+        options: [
+          { value: "antidepresseur", label: "Antidépresseur ou psychotrope" },
+          { value: "changement_traitement", label: "Changement récent de traitement" },
+          { value: "bipolarite", label: "Bipolarité / manie / psychose" },
+          { value: "idees_suicidaires", label: "Idées suicidaires ou dépression sévère" },
+          { value: "epilepsie", label: "Épilepsie / convulsions" },
+          { value: "substances", label: "Usage de substances psychoactives" },
+          { value: "complements_humeur", label: "Prise de compléments influençant l'humeur" },
+          { value: "instabilite_psychique", label: "Instabilité psychique importante" },
+        ],
+        conditional: "s9_details",
+      },
+      {
+        id: "s9_details",
+        text: "Précisez :",
+        type: "textarea",
       },
     ],
   },
