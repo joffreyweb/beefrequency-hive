@@ -249,12 +249,12 @@ export async function POST(
       path: "/",
     });
 
-    // Set onboarding cookie only if actually completed (not for legacy — they must do it)
+    // Set onboarding cookie if legacy or already completed
     const clientRecord = await prisma.client.findUnique({
       where: { userId: user.id },
-      select: { onboardingCompleted: true },
+      select: { onboardingCompleted: true, isLegacy: true },
     });
-    if (clientRecord?.onboardingCompleted) {
+    if (clientRecord?.onboardingCompleted || clientRecord?.isLegacy) {
       response.cookies.set("onboarding_completed", "1", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

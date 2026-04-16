@@ -54,9 +54,16 @@ export async function POST(request: NextRequest) {
       language: language || "FR",
       isLegacy: isLegacy || false,
       startDate: clientStartDate,
-      // Legacy: pre-configure detoxStartDate for phase calculation
-      // but client still goes through full onboarding (convention + questionnaire)
-      ...(isLegacy ? { detoxStartDate: clientStartDate } : {}),
+      onboardingCompleted: isLegacy ? true : false,
+      ...(isLegacy ? {
+        charteSignee: true,
+        charteSignedAt: new Date(),
+        colisEnvoye: true,
+        colisEnvoyeAt: new Date(),
+        produitsRecus: true,
+        produitsRecusAt: new Date(),
+        detoxStartDate: clientStartDate,
+      } : {}),
     },
   });
 
