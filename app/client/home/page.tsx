@@ -361,7 +361,7 @@ export default async function ClientHomePage() {
       {/* Name + Day number */}
       <div className="text-center">
         <h1 className="font-display text-2xl text-brun-chaud">
-          {displayName} &mdash; <span className="text-or-sacre">{T(t.home.day)} {dayNumber}</span>
+          {displayName} · <span className="text-or-sacre">{T(t.home.day)} {dayNumber}</span>
         </h1>
       </div>
 

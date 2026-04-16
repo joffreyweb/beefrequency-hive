@@ -45,7 +45,8 @@ export async function GET() {
   // Phases du programme (7 phases : detox + 3 cycles + 3 intégrations)
   let phases = null;
   let activeInfo = null;
-  const programmeStart = client.programmeStartDate || null;
+  // Use programmeStartDate if set, otherwise fall back to detoxStartDate (legacy clients)
+  const programmeStart = client.programmeStartDate || client.detoxStartDate || null;
 
   if (programmeStart) {
     const computed = computePhases(programmeStart);

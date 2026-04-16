@@ -73,7 +73,7 @@ export default function TimelineWidget() {
   return (
     <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
       <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-4">
-        {T({ EN: "My Journey — Overview", FR: "Mon Passage — Vue globale" })}
+        {T({ EN: "My Journey", FR: "Mon Passage" })}
       </h2>
 
       {/* Phase active + jours restants */}
@@ -85,7 +85,7 @@ export default function TimelineWidget() {
           <p className="font-ui text-sm text-or-sacre">
             {T({ EN: "Day", FR: "Jour" })} {activePhase.dayInPhase}/{activePhase.durationDays}
             <span className="text-brun-mid/60 ml-2">
-              — {daysRemaining} {T({ EN: "remaining", FR: "restant" })}
+              · {daysRemaining} {T({ EN: "remaining", FR: "restant" })}
               {daysRemaining > 1 && lang === "FR" ? "s" : ""}
             </span>
           </p>

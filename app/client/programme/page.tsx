@@ -334,7 +334,7 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
   }
 
   const steps = [
-    // 0 — Intro
+    // 0 ·Intro
     <div key="intro" className="text-center space-y-10 py-8">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
         <p className="font-caps text-xs text-brun-mid/50 uppercase tracking-widest mb-6">My morning</p>
@@ -348,21 +348,21 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
       </motion.div>
     </div>,
 
-    // 1 — Energy
+    // 1 ·Energy
     <div key="energie" className="space-y-8 py-4">
       <StepHeader label="Energy" question="How is your energy this morning?" />
       <SliderStep value={checkin.energyLevel ?? 5} onChange={v => setCheckin(prev => ({ ...prev, energyLevel: v }))} guidance="Without analyzing." />
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 2 — Sleep
+    // 2 ·Sleep
     <div key="sommeil" className="space-y-8 py-4">
       <StepHeader label="Sleep" question="How did you sleep?" />
       <SliderStep value={checkin.sleepQuality ?? 5} onChange={v => setCheckin(prev => ({ ...prev, sleepQuality: v }))} guidance="Just feel." />
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 3 — Sleep type
+    // 3 ·Sleep type
     <div key="sleep-type" className="space-y-8 py-4">
       <StepHeader label="Sleep type" question="What describes your night?" />
       <div className="flex flex-wrap gap-2">
@@ -374,7 +374,7 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 4 — Dreams
+    // 4 ·Dreams
     <div key="reves" className="space-y-6 py-4">
       <StepHeader label="Dreams" question="Did anything stay with you?" />
       <div className="flex gap-3">
@@ -400,7 +400,7 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 5 — Morning feeling
+    // 5 ·Morning feeling
     <div key="ressenti" className="space-y-6 py-4">
       <StepHeader label="Feeling" question="What I feel this morning." />
       <VoiceTextarea
@@ -412,7 +412,7 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
       <ContinueBtn onClick={next} />
     </div>,
 
-    // 6 — Morning validation
+    // 6 ·Morning validation
     <div key="done-matin" className="text-center space-y-8 py-12">
       <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}
         className="font-display text-3xl text-brun-chaud">Noted.</motion.h2>
@@ -471,7 +471,7 @@ function EveningCheckin({ checkin, setCheckin }: {
           {[
             { field: "gratitudeMoment" as const, ph: "A moment that touched me..." },
             { field: "gratitudeSensation" as const, ph: "Something I received..." },
-            { field: "gratitudeRecu" as const, ph: "What emerged — joy, anger, doubt, lightness..." },
+            { field: "gratitudeRecu" as const, ph: "What emerged ·joy, anger, doubt, lightness..." },
             { field: "gratitudeSoi" as const, ph: "What I observe in myself tonight..." },
           ].map(({ field, ph }) => (
             <input key={field} type="text" value={checkin[field] ?? ""}
@@ -550,10 +550,10 @@ function BreakCheckin({ checkin, setCheckin }: {
       <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">My feeling</h3>
       <VoiceTextarea value={checkin.freeFeeling ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, freeFeeling: v }))}
-        placeholder="Free writing — what is moving through me right now..." rows={5} />
+        placeholder="Free writing ·what is moving through me right now..." rows={5} />
       <input type="text" value={checkin.closingSentence ?? ""}
         onChange={e => setCheckin(prev => ({ ...prev, closingSentence: e.target.value }))}
-        placeholder="Closing — 1 sentence..."
+        placeholder="Closing ·1 sentence..."
         className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic" />
     </section>
   );
@@ -609,7 +609,7 @@ function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo
   return (
     <div className="space-y-4">
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{phase.label} — {phase.durationDays} days</h3>
+        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{phase.label} ·{phase.durationDays} days</h3>
         <div className="grid grid-cols-7 gap-2">
           {days.map(d => {
             const dateStr = formatISODate(d);
