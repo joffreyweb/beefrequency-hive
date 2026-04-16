@@ -36,7 +36,7 @@ export default function QuestionnaireEntryPage() {
           }
           if (data.entry.status === "IN_PROGRESS") {
             setShowWelcome(false);
-            setCurrentSection(Math.min(data.entry.sectionsDone, 7));
+            setCurrentSection(Math.min(data.entry.sectionsDone, SECTIONS.length - 1));
           }
           if (data.entry.status === "SUBMITTED") {
             router.push("/client/home");
@@ -76,7 +76,7 @@ export default function QuestionnaireEntryPage() {
 
   async function handleNext() {
     await saveSection(currentSection);
-    if (currentSection < 7) {
+    if (currentSection < SECTIONS.length - 1) {
       setCurrentSection(currentSection + 1);
       window.scrollTo(0, 0);
     }

@@ -225,21 +225,21 @@ export async function sendPWAEmail({
     ? `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
 Ton espace est actif. 🐝<br><br>
 Savais-tu que tu peux installer la Hive<br>
-directement sur ton téléphone — comme une vraie app ?<br>
+directement sur ton téléphone comme une vraie app ?<br>
 Un simple geste, et tu y accèdes en une touche,<br>
 sans ouvrir de navigateur.
 </p>`
     : `<p style="font-family:Georgia,serif;font-size:16px;color:#2C1A0E;line-height:1.8;margin:0 0 24px 0;">
 Your space is active. 🐝<br><br>
 Did you know you can install the Hive<br>
-directly on your phone — like a real app?<br>
+directly on your phone like a real app?<br>
 One simple gesture, and you access it in one tap,<br>
 without opening a browser.
 </p>`;
 
   const textBody = isFR
-    ? `${greeting},\n\nTon espace est actif. 🐝\n\nSavais-tu que tu peux installer la Hive directement sur ton téléphone — comme une vraie app ?\nUn simple geste, et tu y accèdes en une touche, sans ouvrir de navigateur.\n\nRendez-vous sur https://hive.joffreydeleplanque.com dans Safari (iPhone) ou Chrome (Android) pour l'installer.\n\nJoffrey`
-    : `${greeting},\n\nYour space is active. 🐝\n\nDid you know you can install the Hive directly on your phone — like a real app?\nOne simple gesture, and you access it in one tap, without opening a browser.\n\nGo to https://hive.joffreydeleplanque.com in Safari (iPhone) or Chrome (Android) to install it.\n\nJoffrey`;
+    ? `${greeting},\n\nTon espace est actif. 🐝\n\nSavais-tu que tu peux installer la Hive directement sur ton téléphone comme une vraie app ?\nUn simple geste, et tu y accèdes en une touche, sans ouvrir de navigateur.\n\nRendez-vous sur https://hive.joffreydeleplanque.com dans Safari (iPhone) ou Chrome (Android) pour l'installer.\n\nJoffrey`
+    : `${greeting},\n\nYour space is active. 🐝\n\nDid you know you can install the Hive directly on your phone like a real app?\nOne simple gesture, and you access it in one tap, without opening a browser.\n\nGo to https://hive.joffreydeleplanque.com in Safari (iPhone) or Chrome (Android) to install it.\n\nJoffrey`;
 
   const innerContent = `
   <tr><td style="padding-bottom:24px;">
