@@ -46,8 +46,8 @@ export async function PATCH(
   if (body.totalSessions !== undefined) {
     updateData.totalSessions = parseInt(body.totalSessions) || 0;
   }
-  if (body.usedSessions !== undefined) {
-    updateData.usedSessions = parseInt(body.usedSessions) || 0;
+  if (body.usedSessionsManual !== undefined) {
+    updateData.usedSessionsManual = body.usedSessionsManual === null ? null : (parseInt(body.usedSessionsManual) || 0);
   }
   if (body.subscriptionNotes !== undefined) {
     updateData.subscriptionNotes = body.subscriptionNotes || null;

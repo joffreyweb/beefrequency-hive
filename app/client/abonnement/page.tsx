@@ -43,8 +43,6 @@ export default async function AbonnementPage() {
   // Sessions: manual fields OR session pack total
   const packTotal = client.sessionPacks.reduce((sum, p) => sum + p.totalSessions, 0);
   const totalSessions = client.totalSessions || packTotal || 0;
-  const usedSessions = client.usedSessions || 0;
-  const remainingSessions = Math.max(0, totalSessions - usedSessions);
 
   const pastAppointments = client.appointments.filter(
     (a) => new Date(a.scheduledAt).getTime() < now.getTime()
@@ -52,6 +50,14 @@ export default async function AbonnementPage() {
   const upcomingAppointments = client.appointments.filter(
     (a) => new Date(a.scheduledAt).getTime() >= now.getTime()
   );
+
+  // Auto count: past non-cancelled appointments
+  const autoUsedSessions = pastAppointments.length;
+  // Manual override takes priority when set
+  const usedSessions = client.usedSessionsManual != null
+    ? client.usedSessionsManual
+    : autoUsedSessions;
+  const remainingSessions = Math.max(0, totalSessions - usedSessions);
 
   // Current phase
   const currentPhase = client.clientPhases.find((p) => {

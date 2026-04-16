@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 interface Props {
   clientId: string;
   totalSessions: number;
-  usedSessions: number;
+  usedSessionsManual: number | null;
+  autoUsedSessions: number;
   subscriptionNotes: string | null;
   startDate: string;
   offerType: string;
@@ -15,7 +16,8 @@ interface Props {
 export default function SubscriptionSection({
   clientId,
   totalSessions: initTotal,
-  usedSessions: initUsed,
+  usedSessionsManual: initManual,
+  autoUsedSessions,
   subscriptionNotes: initNotes,
   startDate: initStart,
   offerType,
@@ -25,11 +27,13 @@ export default function SubscriptionSection({
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     totalSessions: initTotal || 0,
-    usedSessions: initUsed || 0,
+    usedSessionsManual: initManual as number | null,
     subscriptionNotes: initNotes || "",
   });
 
-  const remaining = Math.max(0, form.totalSessions - form.usedSessions);
+  const usedSessions = form.usedSessionsManual != null ? form.usedSessionsManual : autoUsedSessions;
+  const remaining = Math.max(0, form.totalSessions - usedSessions);
+  const isManual = form.usedSessionsManual != null;
 
   async function handleSave() {
     setSaving(true);
@@ -39,7 +43,7 @@ export default function SubscriptionSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           totalSessions: form.totalSessions,
-          usedSessions: form.usedSessions,
+          usedSessionsManual: form.usedSessionsManual,
           subscriptionNotes: form.subscriptionNotes || null,
         }),
       });
@@ -84,7 +88,13 @@ export default function SubscriptionSection({
           </div>
           <div>
             <p className="font-caps text-[10px] text-brun-mid/60 uppercase tracking-wider">Séances utilisées</p>
-            <p className="font-ui text-lg text-brun-chaud">{form.usedSessions}</p>
+            <p className="font-ui text-lg text-brun-chaud">
+              {usedSessions}
+              {isManual
+                ? <span className="text-[10px] text-amber-600 ml-1">(manuel)</span>
+                : <span className="text-[10px] text-brun-mid/50 ml-1">(auto)</span>
+              }
+            </p>
           </div>
           <div>
             <p className="font-caps text-[10px] text-brun-mid/60 uppercase tracking-wider">Restantes</p>
@@ -113,12 +123,21 @@ export default function SubscriptionSection({
             </div>
             <div>
               <label className="block text-xs font-ui text-brun-mid mb-1">Séances utilisées</label>
-              <input
-                type="number"
-                value={form.usedSessions}
-                onChange={(e) => setForm((p) => ({ ...p, usedSessions: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={form.usedSessionsManual ?? ""}
+                  onChange={(e) => setForm((p) => ({
+                    ...p,
+                    usedSessionsManual: e.target.value === "" ? null : parseInt(e.target.value) || 0,
+                  }))}
+                  placeholder={`Auto: ${autoUsedSessions}`}
+                  className="w-24 px-3 py-2 border border-or-pale rounded-sharp bg-white text-brun-chaud font-ui text-sm focus:outline-none focus:border-or-sacre"
+                />
+                <span className="text-[10px] font-ui text-brun-mid/60">
+                  Vide = auto ({autoUsedSessions} RDV passés)
+                </span>
+              </div>
             </div>
           </div>
           <div>

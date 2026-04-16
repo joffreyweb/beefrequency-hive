@@ -106,9 +106,9 @@ model Client {
   engagementAcceptedAt  DateTime?
   engagementText        String?      @db.Text
 
-  // Abonnement / séances manuelles
+  // Abonnement / séances
   totalSessions         Int?     @default(0)
-  usedSessions          Int?     @default(0)
+  usedSessionsManual    Int?     @map("usedSessions") // null = auto (count past appointments)
   subscriptionNotes     String?
 
   // kDrive archivage

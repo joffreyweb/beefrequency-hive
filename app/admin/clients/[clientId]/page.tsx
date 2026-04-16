@@ -114,8 +114,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       // RDV
       appointments: {
         where: { status: { not: "CANCELLED" } },
-        select: { id: true },
-        take: 1,
+        select: { id: true, scheduledAt: true },
       },
     },
   });
@@ -289,7 +288,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       <SubscriptionSection
         clientId={clientId}
         totalSessions={client.totalSessions || 0}
-        usedSessions={client.usedSessions || 0}
+        usedSessionsManual={client.usedSessionsManual ?? null}
+        autoUsedSessions={client.appointments.filter((a) => new Date(a.scheduledAt).getTime() < Date.now()).length}
         subscriptionNotes={client.subscriptionNotes || null}
         startDate={client.startDate.toISOString()}
         offerType={OFFER_LABELS[client.offerType] ?? client.offerType}
