@@ -263,6 +263,16 @@ export default function OnboardingPage() {
           >
             {T(t.onboarding.welcomeButton)}
           </button>
+
+          {/* Spam notice */}
+          <div className="mt-8 px-5 py-3 bg-cire-chaude border border-or-pale/50 rounded-sm max-w-sm">
+            <p className="font-ui text-xs text-brun-mid/70 leading-relaxed">
+              {T({
+                EN: "📬 You'll receive important emails during your journey. Remember to check your spam folder and add our address to your contacts.",
+                FR: "📬 Tu recevras des emails importants pendant ton parcours. Pense à vérifier tes spams et ajouter notre adresse à tes contacts.",
+              })}
+            </p>
+          </div>
         </div>
       )}
 

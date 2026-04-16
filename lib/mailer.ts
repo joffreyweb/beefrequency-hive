@@ -107,6 +107,10 @@ function buildPwaBlock(isFR: boolean): string {
 // ═══════════════════════════════════════
 
 function wrapEmailHtml(isFR: boolean, innerContent: string): string {
+  const spamNotice = isFR
+    ? `Si tu ne trouves pas nos emails, v&eacute;rifie tes spams et ajoute info@joffreydeleplanque.com &agrave; tes contacts.`
+    : `If you can't find our emails, check your spam folder and add info@joffreydeleplanque.com to your contacts.`;
+
   return `<!DOCTYPE html>
 <html lang="${isFR ? "fr" : "en"}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
@@ -117,6 +121,11 @@ function wrapEmailHtml(isFR: boolean, innerContent: string): string {
 ${innerContent}
   <tr><td style="padding-top:32px;">
     <p style="font-family:Georgia,serif;font-size:15px;color:#2C1A0E;margin:0;">Joffrey</p>
+  </td></tr>
+  <tr><td style="padding-top:24px;border-top:1px solid #E8D5A8;margin-top:16px;">
+    <p style="font-family:Arial,sans-serif;font-size:12px;color:#6B4423;line-height:1.6;margin:16px 0 0 0;">
+      &#x1F4A1; ${spamNotice}
+    </p>
   </td></tr>
 </table>
 </td></tr>
