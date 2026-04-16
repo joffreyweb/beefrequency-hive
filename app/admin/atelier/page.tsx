@@ -26,9 +26,9 @@ const cards: AtelierCard[] = [
     color: "#7A5514",
   },
   {
-    href: "/admin/elixirs",
-    title: "Catalogue \u00e9lixirs",
-    description: "G\u00e9rer les \u00e9lixirs et suivre les stocks",
+    href: "/admin/elixir-library",
+    title: "Catalogue élixirs",
+    description: "Gérer les élixirs et suivre les stocks",
     icon: "\uD83E\uDDEA",
     color: "#D4A042",
   },
