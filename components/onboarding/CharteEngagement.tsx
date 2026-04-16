@@ -13,6 +13,7 @@ interface Props {
 
 export default function CharteEngagement({ lang, clientFirstName, clientName, onComplete }: Props) {
   const [checks, setChecks] = useState({ c1: false, c2: false, c3: false });
+  const [consent, setConsent] = useState({ d1: false, d2: false, d3: false });
   // Signature = Prénom + Nom (clientName complet), fallback sur prénom seul
   const initialSig = (clientName && clientName.trim()) || clientFirstName || "";
   const [signature, setSignature] = useState(initialSig);
@@ -50,7 +51,8 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
   }, []);
 
   const allChecked = checks.c1 && checks.c2 && checks.c3;
-  const canSubmit = allChecked && scrolledToBottom && timerDone;
+  const allConsent = consent.d1 && consent.d2 && consent.d3;
+  const canSubmit = allChecked && allConsent && scrolledToBottom && timerDone;
 
   const charterText = lang === "FR" ? t.charterFR : t.charterEN;
 
@@ -64,6 +66,11 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
         body: JSON.stringify({
           signature: signature || clientName,
           signedAt: new Date().toISOString(),
+          consent: {
+            d1_conditions_generales: consent.d1,
+            d2_nature_non_medicale: consent.d2,
+            d3_pleine_conscience: consent.d3,
+          },
         }),
       });
 
@@ -138,6 +145,92 @@ export default function CharteEngagement({ lang, clientFirstName, clientName, on
             <span className="font-ui text-sm text-brun-chaud leading-relaxed">{text}</span>
           </label>
         ))}
+      </div>
+
+      {/* Déclaration & Consentement */}
+      <div className="border-t border-or-sacre/30 pt-6 mt-2">
+        <h3 className="font-display text-lg text-brun-chaud mb-4 text-center">
+          {T({
+            EN: "Participant Declaration & Consent",
+            FR: "Déclaration & Consentement du participant",
+          })}
+        </h3>
+
+        <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 text-sm font-ui text-brun-chaud leading-relaxed space-y-4 mb-5">
+          <p>
+            {T({
+              EN: "I acknowledge having read and understood the framework of this accompaniment, its non-medical nature, as well as the conditions of engagement, cancellation and responsibility associated with it.",
+              FR: "Je reconnais avoir pris connaissance du cadre de cet accompagnement, de sa nature non médicale, ainsi que des conditions d'engagement, d'annulation et de responsabilité qui y sont liées.",
+            })}
+          </p>
+          <p>
+            {T({
+              EN: "I understand that no guarantee of absence of risk can be given and that in case of doubt about the compatibility of this accompaniment with my personal, physical, psychological or medical situation, it is my responsibility to consult my doctor or a competent health professional.",
+              FR: "Je comprends qu'aucune garantie d'absence de risque ne peut être donnée et qu'en cas de doute sur la compatibilité de cet accompagnement avec ma situation personnelle, physique, psychique ou médicale, il m'appartient de consulter mon médecin ou un professionnel de santé compétent.",
+            })}
+          </p>
+          <p>
+            {T({
+              EN: "I declare that I freely engage in the proposed practices, in full awareness, without external pressure, and under my sole responsibility.",
+              FR: "Je déclare m'engager librement dans les pratiques proposées, en pleine conscience, sans pression extérieure, et sous ma seule responsabilité.",
+            })}
+          </p>
+          <p>
+            {T({
+              EN: "I acknowledge that the meditations, breathwork, elixirs and tools offered may influence my feelings, perceptions or inner state, without constituting a medical act, diagnosis or treatment.",
+              FR: "Je reconnais que les méditations, respirations, élixirs et outils proposés peuvent influencer mon ressenti, mes perceptions ou mon état intérieur, sans constituer un acte médical, un diagnostic ou un traitement.",
+            })}
+          </p>
+          <p>
+            {T({
+              EN: "I remain at all times fully responsible for myself, my choices, my rhythm, and how I use the proposed tools.",
+              FR: "Je demeure à tout moment pleinement responsable de moi-même, de mes choix, de mon rythme, ainsi que de la manière dont j'utilise les outils proposés.",
+            })}
+          </p>
+          <p>
+            {T({
+              EN: "In case of doubt, discomfort or need for clarification, I commit to opening dialogue and requesting the necessary clarifications before continuing.",
+              FR: "En cas de doute, d'inconfort ou de besoin de clarification, je m'engage à ouvrir le dialogue et à demander les éclaircissements nécessaires avant de poursuivre.",
+            })}
+          </p>
+        </div>
+
+        {/* Consent checkboxes */}
+        <div className="space-y-3">
+          {[
+            {
+              key: "d1",
+              text: T({
+                EN: "Read and approved — I have read and understood the general conditions of accompaniment",
+                FR: "Lu et approuvé — J'ai lu et compris les conditions générales d'accompagnement",
+              }),
+            },
+            {
+              key: "d2",
+              text: T({
+                EN: "Read and approved — I accept the non-medical nature of this accompaniment",
+                FR: "Lu et approuvé — J'accepte la nature non médicale de cet accompagnement",
+              }),
+            },
+            {
+              key: "d3",
+              text: T({
+                EN: "Read and approved — I commit in full awareness and under my responsibility",
+                FR: "Lu et approuvé — Je m'engage en pleine conscience et sous ma responsabilité",
+              }),
+            },
+          ].map(({ key, text }) => (
+            <label key={key} className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consent[key as keyof typeof consent]}
+                onChange={(e) => setConsent(prev => ({ ...prev, [key]: e.target.checked }))}
+                className="mt-0.5 accent-or-sacre w-4 h-4 flex-shrink-0"
+              />
+              <span className="font-ui text-sm text-brun-chaud leading-relaxed">{text}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Signature — auto-filled with first name */}

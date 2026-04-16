@@ -10,7 +10,18 @@ export async function POST(request: NextRequest) {
     const payload = await verifyToken(token);
     if (!payload) return NextResponse.json({ error: "Token invalide" }, { status: 401 });
 
-    const { signature, signedAt } = await request.json();
+    const { signature, signedAt, consent } = await request.json();
+
+    // Build consent text archive for legal record
+    const consentRecord = consent
+      ? [
+          `CONSENTEMENT SIGNÉ LE ${signedAt}`,
+          consent.d1_conditions_generales ? "✓ Lu et approuvé — Conditions générales d'accompagnement" : "✗ Non accepté",
+          consent.d2_nature_non_medicale ? "✓ Lu et approuvé — Nature non médicale" : "✗ Non accepté",
+          consent.d3_pleine_conscience ? "✓ Lu et approuvé — Pleine conscience et responsabilité" : "✗ Non accepté",
+          `Signature : ${signature}`,
+        ].join("\n")
+      : null;
 
     await prisma.client.update({
       where: { userId: payload.userId },
@@ -18,6 +29,12 @@ export async function POST(request: NextRequest) {
         charteSignee: true,
         charteSignature: signature,
         charteSignedAt: new Date(signedAt),
+        // Store consent record in engagementText alongside any existing text
+        ...(consentRecord
+          ? {
+              engagementText: consentRecord,
+            }
+          : {}),
       },
     });
 
