@@ -46,6 +46,10 @@ export default async function ClientHomePage() {
         where: { status: "SCHEDULED", scheduledAt: { gte: new Date() } },
         orderBy: { scheduledAt: "asc" },
       },
+      appointments: {
+        where: { status: { not: "CANCELLED" }, scheduledAt: { gte: new Date() } },
+        orderBy: { scheduledAt: "asc" },
+      },
       clientPractices: {
         where: { isActive: true },
         include: { practice: true },
@@ -111,7 +115,23 @@ export default async function ClientHomePage() {
       ? allMessages[(dayNumber - 1) % allMessages.length]
       : null;
 
-  const upcomingSessions = client.sessions;
+  // Merge Sessions + Appointments into a unified list
+  const upcomingSessions = [
+    ...client.sessions.map((s) => ({
+      id: s.id,
+      scheduledAt: s.scheduledAt,
+      duration: s.duration,
+      type: s.type,
+      zoomLink: s.zoomLink,
+    })),
+    ...client.appointments.map((a) => ({
+      id: a.id,
+      scheduledAt: a.scheduledAt,
+      duration: a.durationMin,
+      type: a.meetingType === "zoom" ? "ONLINE" : "PRESENTIAL",
+      zoomLink: a.zoomJoinUrl,
+    })),
+  ].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   const todayPractice = client.clientPractices[0] ?? null;
 
   const sessionTypeLabels: Record<string, Record<Lang, string>> = {
