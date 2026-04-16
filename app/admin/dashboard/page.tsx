@@ -46,7 +46,7 @@ export default async function AdminDashboard() {
   const todayStart = new Date(midnightRef.getTime() - offsetMs);
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments, unreadMessagesByClient, recentQuestionnaireEntries, recentSignatures, recentElixirReceived] =
+  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments, workflowClients] =
     await Promise.all([
       prisma.client.count({ where: { status: "ACTIVE" } }),
       prisma.session.findMany({
@@ -117,86 +117,42 @@ export default async function AdminDashboard() {
         take: 5,
         include: { client: { include: { user: { select: { name: true } } } } },
       }),
-      // "À traiter" — messages non lus par client
-      prisma.message.groupBy({
-        by: ["senderId"],
-        where: { readAt: null, receiver: { role: "ADMIN" } },
-        _count: true,
-      }),
-      // "À traiter" — questionnaires d'entrée soumis récemment
-      prisma.questionnaireEntry.findMany({
-        where: { status: "SUBMITTED", submittedAt: { gte: new Date(Date.now() - 7 * 86400000) } },
-        include: { client: { include: { user: { select: { name: true } } } } },
-        orderBy: { submittedAt: "desc" },
-      }),
-      // "À traiter" — conventions signées récemment
+      // "À traiter" — clients actifs avec workflow incomplet
       prisma.client.findMany({
-        where: { charteSignee: true, charteSignedAt: { gte: new Date(Date.now() - 7 * 86400000) } },
-        include: { user: { select: { name: true } } },
+        where: {
+          status: "ACTIVE",
+          charteSignee: true,
+          // Au moins une action manquante
+          OR: [
+            { colisEnvoye: false },
+            { appointments: { none: { status: { not: "CANCELLED" } } } },
+          ],
+        },
+        include: {
+          user: { select: { name: true } },
+          intake: { select: { firstName: true } },
+          questionnaireEntry: { select: { status: true, submittedAt: true } },
+          appointments: {
+            where: { status: { not: "CANCELLED" } },
+            select: { id: true },
+            take: 1,
+          },
+        },
         orderBy: { charteSignedAt: "desc" },
-      }),
-      // "À traiter" — élixirs reçus récemment
-      prisma.client.findMany({
-        where: { produitsRecus: true, produitsRecusAt: { gte: new Date(Date.now() - 7 * 86400000) } },
-        include: { user: { select: { name: true } } },
-        orderBy: { produitsRecusAt: "desc" },
       }),
     ]);
 
-  // Build "À traiter" items
-  type ActionItem = { id: string; icon: string; label: string; href: string; time: string; type: string };
-  const aTraiter: ActionItem[] = [];
-
-  // Messages non lus
-  for (const msg of unreadMessagesByClient) {
-    const sender = await prisma.user.findUnique({ where: { id: msg.senderId }, select: { name: true, client: { select: { id: true } } } });
-    if (sender?.client) {
-      aTraiter.push({
-        id: `msg-${msg.senderId}`,
-        icon: "💬",
-        label: `${msg._count} message${msg._count > 1 ? "s" : ""} non lu${msg._count > 1 ? "s" : ""} de ${sender.name}`,
-        href: `/admin/messages`,
-        time: "",
-        type: "message",
-      });
-    }
-  }
-
-  // Questionnaires soumis
-  for (const qe of recentQuestionnaireEntries) {
-    aTraiter.push({
-      id: `qe-${qe.id}`,
-      icon: "📋",
-      label: `Questionnaire soumis par ${qe.client.user.name}`,
-      href: `/admin/clients/${qe.clientId}`,
-      time: qe.submittedAt ? new Date(qe.submittedAt).toLocaleDateString("fr-FR") : "",
-      type: "questionnaire",
-    });
-  }
-
-  // Conventions signées
-  for (const c of recentSignatures) {
-    aTraiter.push({
-      id: `sig-${c.id}`,
-      icon: "✍️",
-      label: `Convention signée par ${c.user.name}`,
-      href: `/admin/clients/${c.id}`,
-      time: c.charteSignedAt ? new Date(c.charteSignedAt).toLocaleDateString("fr-FR") : "",
-      type: "convention",
-    });
-  }
-
-  // Élixirs reçus
-  for (const c of recentElixirReceived) {
-    aTraiter.push({
-      id: `elx-${c.id}`,
-      icon: "📦",
-      label: `Élixirs reçus par ${c.user.name}`,
-      href: `/admin/clients/${c.id}`,
-      time: c.produitsRecusAt ? new Date(c.produitsRecusAt).toLocaleDateString("fr-FR") : "",
-      type: "elixir",
-    });
-  }
+  // Build "À traiter" workflow per client
+  const aTraiterClients = workflowClients.map((c) => ({
+    id: c.id,
+    name: c.intake?.firstName || c.user.name || "Client",
+    href: `/admin/clients/${c.id}`,
+    charteSignee: c.charteSignee,
+    questionnaireSubmitted: c.questionnaireEntry?.status === "SUBMITTED",
+    colisEnvoye: c.colisEnvoye,
+    hasAppointment: c.appointments.length > 0,
+    date: c.charteSignedAt ? new Date(c.charteSignedAt).toLocaleDateString("fr-FR") : "",
+  }));
 
   // Merge Sessions + Appointments into unified list
   const APPT_TYPE_LABELS: Record<string, string> = { zoom: "En ligne", presentiel: "Présentiel" };
@@ -328,32 +284,78 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* À traiter */}
-      {aTraiter.length > 0 && (
+      {/* À traiter — workflow par client */}
+      {aTraiterClients.length > 0 && (
         <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider">
               À traiter
             </h2>
             <span className="px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-ui font-medium rounded-full">
-              {aTraiter.length}
+              {aTraiterClients.length}
             </span>
           </div>
-          <div className="space-y-2">
-            {aTraiter.map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="flex items-center justify-between p-3 border border-or-pale/40 rounded-lg hover:border-or-sacre transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{item.icon}</span>
-                  <p className="text-sm font-ui text-brun-chaud">{item.label}</p>
+          <div className="space-y-4">
+            {aTraiterClients.map((wc) => (
+              <div key={wc.id} className="border border-or-pale/40 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <a href={wc.href} className="flex items-center gap-2 hover:text-or-sacre transition-colors">
+                    <span>🐝</span>
+                    <span className="font-display text-base text-brun-chaud">{wc.name}</span>
+                  </a>
+                  {wc.date && <span className="text-xs font-ui text-brun-mid/40">{wc.date}</span>}
                 </div>
-                {item.time && (
-                  <span className="text-xs font-ui text-brun-mid/40 shrink-0">{item.time}</span>
-                )}
-              </a>
+                <div className="space-y-2 text-sm font-ui">
+                  {/* Done items */}
+                  {wc.charteSignee && (
+                    <p className="text-foret flex items-center gap-2">
+                      <span>✅</span> Convention signée
+                    </p>
+                  )}
+                  {wc.questionnaireSubmitted && (
+                    <p className="text-foret flex items-center gap-2">
+                      <span>✅</span> Questionnaire soumis
+                    </p>
+                  )}
+                  {/* Actions needed */}
+                  {!wc.colisEnvoye && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-brun-mid flex items-center gap-2">
+                        <span>☐</span> Envoyer le colis
+                      </p>
+                      <a
+                        href={wc.href}
+                        className="text-xs font-ui text-or-sacre hover:text-ambre-vif px-2 py-1 bg-or-sacre/10 rounded transition-colors"
+                      >
+                        📦 Marquer envoyé
+                      </a>
+                    </div>
+                  )}
+                  {wc.colisEnvoye && (
+                    <p className="text-foret flex items-center gap-2">
+                      <span>✅</span> Colis envoyé
+                    </p>
+                  )}
+                  {!wc.hasAppointment && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-brun-mid flex items-center gap-2">
+                        <span>☐</span> Programmer 1er RDV
+                      </p>
+                      <a
+                        href={`/admin/agenda`}
+                        className="text-xs font-ui text-or-sacre hover:text-ambre-vif px-2 py-1 bg-or-sacre/10 rounded transition-colors"
+                      >
+                        📅 Créer RDV
+                      </a>
+                    </div>
+                  )}
+                  {wc.hasAppointment && (
+                    <p className="text-foret flex items-center gap-2">
+                      <span>✅</span> RDV programmé
+                    </p>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </div>

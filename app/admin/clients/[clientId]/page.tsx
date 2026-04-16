@@ -5,6 +5,7 @@ import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientProgramSection from "@/components/admin/ClientProgramSection";
+import ClientActionBanner from "@/components/admin/ClientActionBanner";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -107,6 +108,14 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       analysis: true,
       // Intake onboarding
       intake: true,
+      // Questionnaire d'entrée
+      questionnaireEntry: { select: { status: true } },
+      // RDV
+      appointments: {
+        where: { status: { not: "CANCELLED" } },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
 
@@ -264,6 +273,15 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
         programmeStartDate={client.programmeStartDate ? client.programmeStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
+      />
+
+      {/* Actions requises */}
+      <ClientActionBanner
+        clientId={clientId}
+        charteSignee={client.charteSignee}
+        questionnaireSubmitted={client.questionnaireEntry?.status === "SUBMITTED"}
+        colisEnvoye={client.colisEnvoye}
+        hasAppointment={client.appointments.length > 0}
       />
 
       {/* Programme assigné */}
