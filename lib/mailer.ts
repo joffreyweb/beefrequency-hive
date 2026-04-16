@@ -29,23 +29,14 @@ export const transporter = nodemailer.createTransport(
     },
   } as nodemailer.TransportOptions,
   {
-    // Default headers applied to ALL emails sent via this transporter
+    // Default options applied to ALL emails sent via this transporter
     replyTo: fromEmail,
     headers: {
       "List-Unsubscribe": `<mailto:${fromEmail}?subject=unsubscribe>`,
       "X-Mailer": "BeeFrequency Hive",
     },
-  }
+  } as Record<string, unknown>
 );
-
-// Override generateMessageId to use our domain instead of VPS hostname
-transporter.use("compile", (mail, callback) => {
-  mail.message.setHeader(
-    "Message-ID",
-    `<${Date.now()}.${Math.random().toString(36).slice(2)}@${MAIL_DOMAIN}>`
-  );
-  callback();
-});
 
 const mailFrom = () =>
   `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "info@joffreydeleplanque.com"}>`;
