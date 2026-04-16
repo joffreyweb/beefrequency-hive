@@ -165,31 +165,33 @@ export default function InvitePage({
     <div className="min-h-screen bg-creme-sacree flex items-center justify-center px-4">
       <meta name="supported-color-schemes" content="light" />
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 max-w-md w-full">
-        {/* Language toggle — FIRST GESTURE */}
-        <div className="flex justify-center gap-3 mb-8">
-          <button
-            onClick={() => setLang("EN")}
-            className={`px-5 py-2.5 rounded-lg border-2 transition-all duration-200 ${
-              lang === "EN"
-                ? "bg-or-sacre border-or-sacre text-white"
-                : "bg-creme-sacree border-or-pale text-brun-chaud hover:border-or-sacre/50"
-            }`}
-          >
-            <span className="font-ui text-sm font-normal">EN</span>
-            <span className="font-ui text-[10px] block mt-0.5 opacity-70">English</span>
-          </button>
-          <button
-            onClick={() => setLang("FR")}
-            className={`px-5 py-2.5 rounded-lg border-2 transition-all duration-200 ${
-              lang === "FR"
-                ? "bg-or-sacre border-or-sacre text-white"
-                : "bg-creme-sacree border-or-pale text-brun-chaud hover:border-or-sacre/50"
-            }`}
-          >
-            <span className="font-ui text-sm font-normal">FR</span>
-            <span className="font-ui text-[10px] block mt-0.5 opacity-70">Fran&ccedil;ais</span>
-          </button>
-        </div>
+        {/* Language toggle — hidden for Legacy (admin-defined language) */}
+        {!inviteData.isLegacy && (
+          <div className="flex justify-center gap-3 mb-8">
+            <button
+              onClick={() => setLang("EN")}
+              className={`px-5 py-2.5 rounded-lg border-2 transition-all duration-200 ${
+                lang === "EN"
+                  ? "bg-or-sacre border-or-sacre text-white"
+                  : "bg-creme-sacree border-or-pale text-brun-chaud hover:border-or-sacre/50"
+              }`}
+            >
+              <span className="font-ui text-sm font-normal">EN</span>
+              <span className="font-ui text-[10px] block mt-0.5 opacity-70">English</span>
+            </button>
+            <button
+              onClick={() => setLang("FR")}
+              className={`px-5 py-2.5 rounded-lg border-2 transition-all duration-200 ${
+                lang === "FR"
+                  ? "bg-or-sacre border-or-sacre text-white"
+                  : "bg-creme-sacree border-or-pale text-brun-chaud hover:border-or-sacre/50"
+              }`}
+            >
+              <span className="font-ui text-sm font-normal">FR</span>
+              <span className="font-ui text-[10px] block mt-0.5 opacity-70">Fran&ccedil;ais</span>
+            </button>
+          </div>
+        )}
 
         {/* Title + subtitle */}
         <div className="text-center mb-6">
