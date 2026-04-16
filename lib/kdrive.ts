@@ -41,13 +41,47 @@ export function isKDriveConfigured(): boolean {
 /** Trouver un sous-dossier par nom dans un dossier parent */
 async function findChildFolder(parentId: string, name: string): Promise<string | null> {
   const driveId = getDriveId();
-  const res = await fetch(`${API_BASE}/drive/${driveId}/files/${parentId}/files?type=dir`, {
-    headers: getHeaders(),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  const folder = data.data?.find((f: { name: string }) => f.name === name);
-  return folder?.id ?? null;
+
+  // Method 1: list children with types=dir
+  try {
+    const res = await fetch(`${API_BASE}/drive/${driveId}/files/${parentId}/files?types=dir&per_page=200`, {
+      headers: getHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const items = data.data || data.result || [];
+      const folder = (Array.isArray(items) ? items : []).find(
+        (f: { name: string }) => f.name === name
+      );
+      if (folder?.id) return String(folder.id);
+    }
+  } catch {
+    // Fallback to method 2
+  }
+
+  // Method 2: search by name
+  try {
+    const res = await fetch(
+      `${API_BASE}/drive/${driveId}/files/search?query=${encodeURIComponent(name)}&types=dir&per_page=50`,
+      { headers: getHeaders() }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const items = data.data || [];
+      const match = items.find(
+        (f: { name: string; parent_id?: number }) =>
+          f.name === name && String(f.parent_id) === String(parentId)
+      );
+      if (match?.id) return String(match.id);
+      // Fallback: accept first name match even without parent check
+      const loose = items.find((f: { name: string }) => f.name === name);
+      if (loose?.id) return String(loose.id);
+    }
+  } catch {
+    // Both methods failed
+  }
+
+  return null;
 }
 
 /** Creer un dossier sur kDrive (ou retourner l'existant) */
@@ -62,29 +96,36 @@ async function createFolder(parentId: string, name: string): Promise<string> {
   if (!res.ok) {
     const errorText = await res.text();
 
-    // Le dossier existe deja — on recupere son ID
+    // Le dossier existe deja — on recupere son ID via search
     if (errorText.includes("destination_already_exists")) {
+      console.log(`[kDrive] Dossier "${name}" existe deja dans ${parentId}, recherche ID...`);
       const existingId = await findChildFolder(parentId, name);
-      if (existingId) return existingId;
+      if (existingId) {
+        console.log(`[kDrive] Trouvé: ${name} = ${existingId}`);
+        return existingId;
+      }
+      console.error(`[kDrive] Dossier "${name}" existe mais introuvable par search`);
     }
 
     throw new Error(`kDrive createFolder failed: ${res.status} ${errorText}`);
   }
 
   const data = await res.json();
-  return data.data.id;
+  return String(data.data.id);
 }
 
-/** Chercher un dossier par chemin */
+/** Chercher un dossier par chemin (search API) */
 async function findFolderByPath(path: string): Promise<string | null> {
   const driveId = getDriveId();
-  const res = await fetch(`${API_BASE}/drive/${driveId}/files/search?query=${encodeURIComponent(path)}&types=dir`, {
-    headers: getHeaders(),
-  });
+  const res = await fetch(
+    `${API_BASE}/drive/${driveId}/files/search?query=${encodeURIComponent(path)}&types=dir`,
+    { headers: getHeaders() }
+  );
 
   if (!res.ok) return null;
   const data = await res.json();
-  return data.data?.[0]?.id || null;
+  const id = data.data?.[0]?.id;
+  return id ? String(id) : null;
 }
 
 /**
