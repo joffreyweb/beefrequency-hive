@@ -90,13 +90,13 @@ export default function ParcoursStatusBanner({
   }
 
   async function handleUpdateStartDate() {
-    if (!window.confirm("Modifier la date de depart du programme ? Cette action est exceptionnelle.")) return;
+    if (!window.confirm("Modifier la date de depart du programme ? Cette action recalcule toutes les phases.")) return;
     setLoading("startDate");
     try {
-      await fetch(`/api/admin/clients/${clientId}/parcours-stage`, {
+      await fetch("/api/client-phases", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ programmeStartDate: newStartDate }),
+        body: JSON.stringify({ clientId, startDate: newStartDate }),
       });
       setEditingDate(false);
       router.refresh();
