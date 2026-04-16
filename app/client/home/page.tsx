@@ -60,6 +60,7 @@ export default async function ClientHomePage() {
         include: { elixir: true },
         orderBy: { createdAt: "desc" },
       },
+      questionnaireEntry: { select: { status: true } },
     },
   });
 
@@ -345,6 +346,44 @@ export default async function ClientHomePage() {
 
       {/* Élixirs reçus banner */}
       <ElixirReceivedBanner />
+
+      {/* Legacy onboarding banner — persistent until completed */}
+      {client.isLegacy && (!client.charteSignee || client.questionnaireEntry?.status !== "SUBMITTED") && (
+        <div className="bg-amber-50 border border-amber-200 rounded-sm p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl shrink-0">📋</span>
+            <div className="flex-1">
+              <p className="font-display text-base text-amber-900">
+                {T({ EN: "Complete your file", FR: "Complète ton dossier" })}
+              </p>
+              <p className="font-ui text-sm text-amber-700 mt-1">
+                {T({
+                  EN: "To personalize your accompaniment, take a few minutes to complete these steps.",
+                  FR: "Pour personnaliser ton accompagnement, prends quelques minutes pour remplir ces éléments.",
+                })}
+              </p>
+              <div className="flex flex-wrap gap-3 mt-3">
+                {!client.charteSignee && (
+                  <Link
+                    href="/client/onboarding"
+                    className="inline-flex items-center gap-1.5 bg-amber-600 text-white px-4 py-2 rounded-[2px] font-ui text-xs uppercase tracking-wider hover:bg-amber-700 transition-colors"
+                  >
+                    ✍️ {T({ EN: "Sign convention", FR: "Signer la convention" })}
+                  </Link>
+                )}
+                {client.questionnaireEntry?.status !== "SUBMITTED" && (
+                  <Link
+                    href="/client/questionnaire-entry"
+                    className="inline-flex items-center gap-1.5 bg-amber-600 text-white px-4 py-2 rounded-[2px] font-ui text-xs uppercase tracking-wider hover:bg-amber-700 transition-colors"
+                  >
+                    📝 {T({ EN: "Fill questionnaire", FR: "Remplir le questionnaire" })}
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Wisdom message */}
       {wisdomMessage && (
