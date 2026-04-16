@@ -166,15 +166,33 @@ Toutes tes réponses restent strictement confidentielles.`,
   const sectionAnswers = answers[section.id] || {};
   const isLastSection = currentSection === SECTIONS.length - 1;
 
-  // Validation screening section: must check items OR confirm "aucun ne me concerne"
-  let canProceed = true;
-  if (section.id === "screening") {
-    let hasChecks = false;
-    try { hasChecks = JSON.parse(sectionAnswers["s9_checks"] || "[]").length > 0; } catch { hasChecks = false; }
-    let hasConfirm = false;
-    try { hasConfirm = JSON.parse(sectionAnswers["s9_confirm"] || "[]").includes("confirmed"); } catch { hasConfirm = false; }
-    canProceed = hasChecks || hasConfirm;
+  // Validate section: all MCQ questions must have an answer selected
+  function isSectionValid(): boolean {
+    for (const q of section.questions) {
+      // Skip conditional textareas (shown inline, always optional)
+      if (section.questions.some((other) => other.conditional === q.id)) continue;
+
+      if (q.type === "mcq") {
+        // MCQ: must have a selection
+        if (!sectionAnswers[q.id]) return false;
+      }
+      // textarea: always optional
+      // checkbox: handled separately below for screening
+    }
+
+    // Screening section: must have checked items OR confirmed "aucun"
+    if (section.id === "screening") {
+      let hasChecks = false;
+      try { hasChecks = JSON.parse(sectionAnswers["s9_checks"] || "[]").length > 0; } catch { hasChecks = false; }
+      let hasConfirm = false;
+      try { hasConfirm = JSON.parse(sectionAnswers["s9_confirm"] || "[]").includes("confirmed"); } catch { hasConfirm = false; }
+      if (!hasChecks && !hasConfirm) return false;
+    }
+
+    return true;
   }
+
+  const canProceed = isSectionValid();
 
   return (
     <div className="space-y-6 pb-8">
@@ -328,13 +346,18 @@ Toutes tes réponses restent strictement confidentielles.`,
           </button>
         )}
 
-        {/* Screening validation message */}
-        {section.id === "screening" && !canProceed && (
+        {/* Validation message */}
+        {!canProceed && (
           <p className="font-ui text-xs text-red-500 text-center py-1">
-            {T({
-              EN: "Please check at least one item, or confirm that none apply to you.",
-              FR: "Coche au moins un élément, ou confirme qu'aucun ne te concerne.",
-            })}
+            {section.id === "screening"
+              ? T({
+                  EN: "Please check at least one item, or confirm that none apply to you.",
+                  FR: "Coche au moins un élément, ou confirme qu'aucun ne te concerne.",
+                })
+              : T({
+                  EN: "Please answer all questions before continuing.",
+                  FR: "Réponds à toutes les questions avant de continuer.",
+                })}
           </p>
         )}
 
