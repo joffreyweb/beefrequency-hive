@@ -322,6 +322,19 @@ export default function ClientHeader() {
 
         <div className="mx-6 border-t border-or-pale" />
 
+        {/* Abonnement link */}
+        <div className="px-6 py-4">
+          <Link
+            href="/client/abonnement"
+            onClick={() => setMenuOpen(false)}
+            className="font-ui text-sm text-brun-chaud hover:text-or-sacre transition-colors"
+          >
+            🎫 {T({ EN: "My subscription", FR: "Mon abonnement" })}
+          </Link>
+        </div>
+
+        <div className="mx-6 border-t border-or-pale" />
+
         {/* Settings link */}
         <div className="px-6 py-4">
           <Link

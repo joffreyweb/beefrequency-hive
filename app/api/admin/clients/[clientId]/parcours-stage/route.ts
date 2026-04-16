@@ -42,6 +42,17 @@ export async function PATCH(
     updateData.programmeStartDate = body.programmeStartDate ? new Date(body.programmeStartDate) : null;
   }
 
+  // Subscription fields
+  if (body.totalSessions !== undefined) {
+    updateData.totalSessions = parseInt(body.totalSessions) || 0;
+  }
+  if (body.usedSessions !== undefined) {
+    updateData.usedSessions = parseInt(body.usedSessions) || 0;
+  }
+  if (body.subscriptionNotes !== undefined) {
+    updateData.subscriptionNotes = body.subscriptionNotes || null;
+  }
+
   await prisma.client.update({
     where: { id: clientId },
     data: updateData,

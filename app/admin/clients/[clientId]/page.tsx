@@ -6,6 +6,7 @@ import ClientActions from "./ClientActions";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientProgramSection from "@/components/admin/ClientProgramSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
+import SubscriptionSection from "@/components/admin/SubscriptionSection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -282,6 +283,16 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         questionnaireSubmitted={client.questionnaireEntry?.status === "SUBMITTED"}
         colisEnvoye={client.colisEnvoye}
         hasAppointment={client.appointments.length > 0}
+      />
+
+      {/* Abonnement */}
+      <SubscriptionSection
+        clientId={clientId}
+        totalSessions={client.totalSessions || 0}
+        usedSessions={client.usedSessions || 0}
+        subscriptionNotes={client.subscriptionNotes || null}
+        startDate={client.startDate.toISOString()}
+        offerType={OFFER_LABELS[client.offerType] ?? client.offerType}
       />
 
       {/* Programme assigné */}
