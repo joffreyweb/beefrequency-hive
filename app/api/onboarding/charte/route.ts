@@ -23,13 +23,12 @@ export async function POST(request: NextRequest) {
         ].join("\n")
       : null;
 
-    await prisma.client.update({
+    const updatedClient = await prisma.client.update({
       where: { userId: payload.userId },
       data: {
         charteSignee: true,
         charteSignature: signature,
         charteSignedAt: new Date(signedAt),
-        // Store consent record in engagementText alongside any existing text
         ...(consentRecord
           ? {
               engagementText: consentRecord,
@@ -37,6 +36,11 @@ export async function POST(request: NextRequest) {
           : {}),
       },
     });
+
+    // Archive convention PDF to kDrive (fire-and-forget)
+    import("@/lib/kdrive-archive")
+      .then(({ archiveConventionToKDrive }) => archiveConventionToKDrive(updatedClient.id))
+      .catch((err) => console.error("[charte] kDrive archive error:", err));
 
     return NextResponse.json({ success: true });
   } catch (error) {

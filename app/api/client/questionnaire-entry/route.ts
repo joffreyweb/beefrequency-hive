@@ -95,10 +95,15 @@ export async function POST() {
     where: { id: entry.id },
     data: {
       status: "SUBMITTED",
-      sectionsDone: 8,
+      sectionsDone: 9,
       submittedAt: new Date(),
     },
   });
+
+  // Archive questionnaire to kDrive (fire-and-forget)
+  import("@/lib/kdrive-archive")
+    .then(({ archiveQuestionnaireToKDrive }) => archiveQuestionnaireToKDrive(client.id))
+    .catch((err) => console.error("[questionnaire-entry] kDrive archive error:", err));
 
   // Email notification admin
   const adminEmail = process.env.FROM_EMAIL || "admin@beefrequency.com";

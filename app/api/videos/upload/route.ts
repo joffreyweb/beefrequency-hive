@@ -46,6 +46,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Archive video to kDrive (fire-and-forget)
+    const client = await prisma.client.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (client) {
+      const fullPath = join(dir, filename);
+      import("@/lib/kdrive-archive")
+        .then(({ archiveVideoToKDrive }) => archiveVideoToKDrive(client.id, seuil, fullPath))
+        .catch((err) => console.error("[video upload] kDrive archive error:", err));
+    }
+
     return NextResponse.json({ success: true, path: videoPath });
   } catch (error) {
     console.error("[video upload] erreur:", error);

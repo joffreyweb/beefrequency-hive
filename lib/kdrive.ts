@@ -142,22 +142,39 @@ export async function createClientFolder(clientName: string, clientId: string): 
 }
 
 /** Uploader un fichier dans un dossier kDrive */
-export async function uploadToKDrive(folderId: string, fileName: string, content: Buffer | string): Promise<boolean> {
+export async function uploadToKDrive(folderId: string, fileName: string, content: Buffer): Promise<boolean> {
   if (!isKDriveConfigured()) return false;
 
   try {
     const driveId = getDriveId();
+    // Infomaniak kDrive upload API — multipart form-data with file
+    const formData = new FormData();
+    const blob = new Blob([new Uint8Array(content)]);
+    formData.append("file", blob, fileName);
+
     const res = await fetch(`${API_BASE}/drive/${driveId}/files/${folderId}/upload`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.INFOMANIAK_API_TOKEN}`,
       },
-      body: typeof content === "string" ? new Blob([content]) : new Blob([new Uint8Array(content)]),
+      body: formData,
     });
 
-    return res.ok;
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[kDrive] Upload failed ${res.status}: ${errText}`);
+      return false;
+    }
+
+    console.log(`[kDrive] Upload OK: ${fileName} → folder ${folderId}`);
+    return true;
   } catch (error) {
     console.error("[kDrive] Erreur upload:", error);
     return false;
   }
+}
+
+/** Trouver le sous-dossier d'un client par nom (Contrats, Videos, etc.) */
+export async function getClientSubfolder(rootFolderId: string, subfolderName: string): Promise<string | null> {
+  return findChildFolder(rootFolderId, subfolderName);
 }
