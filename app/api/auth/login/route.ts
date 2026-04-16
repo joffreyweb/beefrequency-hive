@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { signToken, setAuthCookie } from "@/lib/auth";
+import { signToken } from "@/lib/auth";
+
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+
+function parseDuration(duration: string): number {
+  const match = duration.match(/^(\d+)([smhd])$/);
+  if (!match) return 7 * 24 * 60 * 60;
+  const value = parseInt(match[1]);
+  const unit = match[2];
+  switch (unit) {
+    case "s": return value;
+    case "m": return value * 60;
+    case "h": return value * 3600;
+    case "d": return value * 86400;
+    default: return 7 * 86400;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,16 +87,23 @@ export async function POST(request: NextRequest) {
       data: { lastLoginAt: new Date() },
     });
 
-    // Génération JWT et cookie
+    // Génération JWT
     const token = await signToken({
       userId: user.id,
       role: user.role,
       email: user.email,
     });
 
-    await setAuthCookie(token);
+    // Cookie config — unified on the response object
+    const isSecure = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax" as const,
+      path: "/",
+    };
 
-    // Si CLIENT avec onboarding complété, poser le cookie pour le middleware
+    // Build response with ALL cookies on the same object
     const response = NextResponse.json({
       user: {
         id: user.id,
@@ -90,6 +113,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // JWT cookie
+    response.cookies.set("token", token, {
+      ...cookieOptions,
+      maxAge: parseDuration(JWT_EXPIRES_IN),
+    });
+
+    // Onboarding cookie (CLIENT only)
     if (user.role === "CLIENT") {
       const client = await prisma.client.findUnique({
         where: { userId: user.id },
@@ -97,10 +127,7 @@ export async function POST(request: NextRequest) {
       });
       if (client?.onboardingCompleted) {
         response.cookies.set("onboarding_completed", "1", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          path: "/",
+          ...cookieOptions,
           maxAge: 60 * 60 * 24 * 365,
         });
       }
