@@ -6,8 +6,8 @@
 import { getBusySlots } from "./caldav";
 import { prisma } from "./prisma";
 
-const WORK_START_HOUR = 9;
-const WORK_END_HOUR = 21;
+const WORK_START_HOUR = 6;
+const WORK_END_HOUR = 23;
 const TZ = "Europe/Brussels";
 
 /** Create a Date for a given hour in Europe/Brussels on the same calendar day */
