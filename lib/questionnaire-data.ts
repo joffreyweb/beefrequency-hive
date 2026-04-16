@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════
-// Questionnaire d'Entrée BeeFrequency — 8 sections
+// Questionnaire d'Entrée BeeFrequency ·8 sections
 // ═══════════════════════════════════════
 
 export interface QuestionOption {
@@ -25,12 +25,12 @@ export interface Section {
 }
 
 export const SECTIONS: Section[] = [
-  // ─── Section 1 — LA FRÉQUENCE ───
+  // ─── Section 1 ·LA FRÉQUENCE ───
   {
     id: "frequence",
     number: 1,
     icon: "🐝",
-    title: "LA FRÉQUENCE — Sensibilités & Réactivité de ton Système Immunitaire",
+    title: "LA FRÉQUENCE ·Sensibilités & Réactivité de ton Système Immunitaire",
     intro: "Ces informations me permettent d'évaluer la réactivité de ton système et d'adapter avec soin tout protocole impliquant le venin ou les produits de la ruche.",
     questions: [
       {
@@ -76,12 +76,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 2 — LE TERRAIN ───
+  // ─── Section 2 ·LE TERRAIN ───
   {
     id: "terrain",
     number: 2,
     icon: "🌿",
-    title: "LE TERRAIN — Intestin, Microbiome & Équilibre Digestif",
+    title: "LE TERRAIN ·Intestin, Microbiome & Équilibre Digestif",
     intro: "L'intestin est le premier terrain de toute transformation. Ces questions m'aident à évaluer l'état de ton microbiome et à adapter les fondations de ton protocole.",
     questions: [
       {
@@ -107,12 +107,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 3 — LES ÉMONCTOIRES ───
+  // ─── Section 3 ·LES ÉMONCTOIRES ───
   {
     id: "emonctoires",
     number: 3,
     icon: "🔥",
-    title: "LES ÉMONCTOIRES — Drainage, Vitalité du Foie & Voies d'Élimination",
+    title: "LES ÉMONCTOIRES ·Drainage, Vitalité du Foie & Voies d'Élimination",
     intro: "Le bon fonctionnement de tes organes de drainage est essentiel avant tout protocole. Ces informations guident la préparation de ton terrain.",
     questions: [
       {
@@ -138,12 +138,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 4 — LE MENTAL & LA CHIMIE ───
+  // ─── Section 4 ·LE MENTAL & LA CHIMIE ───
   {
     id: "mental",
     number: 4,
     icon: "🧠",
-    title: "LE MENTAL & LA CHIMIE — Clarté, Détox Cellulaire & Équilibre Neurochimique",
+    title: "LE MENTAL & LA CHIMIE ·Clarté, Détox Cellulaire & Équilibre Neurochimique",
     intro: "La capacité naturelle de ton corps à se détoxifier influence directement ta clarté mentale, ton humeur et ta résilience. Ces questions évaluent cet équilibre invisible.",
     questions: [
       {
@@ -169,12 +169,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 5 — LE FLUX ───
+  // ─── Section 5 ·LE FLUX ───
   {
     id: "flux",
     number: 5,
     icon: "❤️",
-    title: "LE FLUX — Circulation, Inflammation & Vitalité du Sang",
+    title: "LE FLUX ·Circulation, Inflammation & Vitalité du Sang",
     intro: "La qualité de ta circulation et l'état inflammatoire de ton corps conditionnent la vitesse et la profondeur de ta transformation.",
     questions: [
       {
@@ -200,12 +200,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 6 — L'EAU ───
+  // ─── Section 6 ·L'EAU ───
   {
     id: "eau",
     number: 6,
     icon: "💧",
-    title: "L'EAU — Hydratation, Minéralité & Équilibre Électrolytique",
+    title: "L'EAU ·Hydratation, Minéralité & Équilibre Électrolytique",
     intro: "L'eau est le premier vecteur de toute transformation cellulaire. Un équilibre électrolytique sain est un prérequis fondamental à tout protocole de soutien.",
     questions: [
       {
@@ -227,12 +227,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 7 — LE RYTHME & LES CYCLES ───
+  // ─── Section 7 ·LE RYTHME & LES CYCLES ───
   {
     id: "rythme",
     number: 7,
     icon: "🌿",
-    title: "LE RYTHME & LES CYCLES — Saisons, Cycles Naturels & Intelligence du Corps",
+    title: "LE RYTHME & LES CYCLES ·Saisons, Cycles Naturels & Intelligence du Corps",
     intro: "Tout protocole vivant respecte les cycles. Ces questions me permettent de t'accompagner en cohérence avec ta nature profonde et les rythmes qui te gouvernent.",
     questions: [
       {
@@ -254,13 +254,13 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 8 — TON UNIVERS ───
+  // ─── Section 8 ·TON UNIVERS ───
   {
     id: "univers",
     number: 8,
     icon: "🗺️",
-    title: "TON UNIVERS — Contexte, Intentions & Ce Que Tu Portes",
-    intro: "Ces questions ouvertes sont les plus importantes. Elles me permettent de te voir, toi — pas seulement ton corps.",
+    title: "TON UNIVERS ·Contexte, Intentions & Ce Que Tu Portes",
+    intro: "Ces questions ouvertes sont les plus importantes. Elles me permettent de te voir, toi ·pas seulement ton corps.",
     questions: [
       {
         id: "s8q2", text: "Prends-tu actuellement des compléments alimentaires ? Si oui, lesquels ?", type: "textarea",
@@ -274,12 +274,12 @@ export const SECTIONS: Section[] = [
     ],
   },
 
-  // ─── Section 9 — SANTÉ & SÉCURITÉ ───
+  // ─── Section 9 ·SANTÉ & SÉCURITÉ ───
   {
     id: "screening",
     number: 9,
     icon: "🛡️",
-    title: "SANTÉ & SÉCURITÉ — Screening",
+    title: "SANTÉ & SÉCURITÉ ·Screening",
     intro: "Ces informations sont essentielles pour adapter ton accompagnement en toute sécurité. Elles restent strictement confidentielles.",
     questions: [
       {
@@ -302,6 +302,12 @@ export const SECTIONS: Section[] = [
         id: "s9_details",
         text: "Précisez :",
         type: "textarea",
+      },
+      {
+        id: "s9_confirm",
+        text: "Aucun de ces éléments ne me concerne.",
+        type: "checkbox",
+        options: [{ value: "confirmed", label: "Aucun de ces éléments ne me concerne" }],
       },
     ],
   },

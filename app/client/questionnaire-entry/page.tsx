@@ -164,8 +164,17 @@ Toutes tes réponses restent strictement confidentielles.`,
   // Section courante
   const section = SECTIONS[currentSection];
   const sectionAnswers = answers[section.id] || {};
-  const allAnswered = true; // All questions are optional
   const isLastSection = currentSection === SECTIONS.length - 1;
+
+  // Validation screening section: must check items OR confirm "aucun ne me concerne"
+  let canProceed = true;
+  if (section.id === "screening") {
+    let hasChecks = false;
+    try { hasChecks = JSON.parse(sectionAnswers["s9_checks"] || "[]").length > 0; } catch { hasChecks = false; }
+    let hasConfirm = false;
+    try { hasConfirm = JSON.parse(sectionAnswers["s9_confirm"] || "[]").includes("confirmed"); } catch { hasConfirm = false; }
+    canProceed = hasChecks || hasConfirm;
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -319,10 +328,20 @@ Toutes tes réponses restent strictement confidentielles.`,
           </button>
         )}
 
+        {/* Screening validation message */}
+        {section.id === "screening" && !canProceed && (
+          <p className="font-ui text-xs text-red-500 text-center py-1">
+            {T({
+              EN: "Please check at least one item, or confirm that none apply to you.",
+              FR: "Coche au moins un élément, ou confirme qu'aucun ne te concerne.",
+            })}
+          </p>
+        )}
+
         {isLastSection ? (
           <button
             onClick={handleSubmit}
-            disabled={!allAnswered || submitting}
+            disabled={!canProceed || submitting}
             className="flex-1 py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-widest rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-40"
           >
             {submitting
@@ -332,7 +351,7 @@ Toutes tes réponses restent strictement confidentielles.`,
         ) : (
           <button
             onClick={handleNext}
-            disabled={!allAnswered || saving}
+            disabled={!canProceed || saving}
             className="flex-1 py-3 bg-or-sacre text-white font-ui text-xs uppercase tracking-widest rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-40"
           >
             {saving

@@ -57,7 +57,7 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
             {statusLabel}
           </span>
           <span className="text-[10px] font-ui text-brun-mid/50">
-            {entry.sectionsDone}/8 sections
+            {entry.sectionsDone}/{SECTIONS.length} sections
           </span>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
         <div
           className="h-full rounded-full transition-all"
           style={{
-            width: `${(entry.sectionsDone / 8) * 100}%`,
+            width: `${(entry.sectionsDone / SECTIONS.length) * 100}%`,
             background: entry.status === "SUBMITTED"
               ? "linear-gradient(90deg, #2D5A3D, #4A8F5A)"
               : "linear-gradient(90deg, #B8821E, #D4A84B)",
@@ -91,20 +91,55 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
 
             <div className="space-y-2">
               {section.questions.map((q) => {
+                // Skip conditional textareas — shown inline with their parent
+                if (section.questions.some((other) => other.conditional === q.id)) return null;
+
                 const answer = sectionAnswers[q.id];
                 if (!answer) return null;
 
-                // Trouver le label de la réponse pour les MCQ
-                let displayAnswer = answer;
+                // Format display based on question type
+                let displayAnswer: React.ReactNode = answer;
                 if (q.type === "mcq" && q.options) {
                   const opt = q.options.find((o) => o.value === answer);
                   if (opt) displayAnswer = opt.label;
+                } else if (q.type === "checkbox" && q.options) {
+                  try {
+                    const checked = JSON.parse(answer) as string[];
+                    if (checked.length === 0) {
+                      displayAnswer = <span className="text-brun-mid/50 italic">Aucun</span>;
+                    } else {
+                      displayAnswer = (
+                        <ul className="space-y-0.5 mt-1">
+                          {checked.map((val) => {
+                            const opt = q.options?.find((o) => o.value === val);
+                            return (
+                              <li key={val} className="flex items-center gap-1.5">
+                                <span className="text-or-sacre text-xs">✓</span>
+                                <span>{opt ? opt.label : val}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      );
+                    }
+                  } catch {
+                    displayAnswer = answer;
+                  }
                 }
+
+                // Show conditional textarea inline if present
+                const conditionalAnswer = q.conditional ? sectionAnswers[q.conditional] : null;
 
                 return (
                   <div key={q.id} className="border-b border-or-pale/30 pb-2 last:border-0 last:pb-0">
                     <p className="font-ui text-xs text-brun-mid/60">{q.text}</p>
-                    <p className="font-ui text-sm text-brun-chaud mt-0.5">{displayAnswer}</p>
+                    <div className="font-ui text-sm text-brun-chaud mt-0.5">{displayAnswer}</div>
+                    {conditionalAnswer && (
+                      <div className="mt-1 pl-3 border-l-2 border-or-sacre/30">
+                        <p className="font-ui text-xs text-brun-mid/60">Précisions :</p>
+                        <p className="font-ui text-sm text-brun-chaud mt-0.5">{conditionalAnswer}</p>
+                      </div>
+                    )}
                   </div>
                 );
               })}

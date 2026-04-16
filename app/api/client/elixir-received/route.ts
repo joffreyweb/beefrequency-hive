@@ -52,6 +52,16 @@ export async function POST() {
     },
   });
 
+  // Notification admin — élixirs reçus
+  import("@/lib/notifications")
+    .then(({ notifyAdmin }) => notifyAdmin({
+      clientId: client.id,
+      title: `Élixirs reçus : ${clientName}`,
+      description: `Le programme détox démarrera le ${mondayStart.toLocaleDateString("fr-FR")}.`,
+      urgency: "amber",
+    }))
+    .catch(() => {});
+
   // Email notification à l'admin
   const adminEmail = process.env.FROM_EMAIL || "admin@beefrequency.com";
   try {

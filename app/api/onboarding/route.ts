@@ -213,12 +213,22 @@ export async function POST(request: Request) {
       // Fire and forget — on ignore les erreurs réseau
     });
 
+    // Notification admin — onboarding terminé
+    import("@/lib/notifications")
+      .then(({ notifyAdmin }) => notifyAdmin({
+        clientId: client.id,
+        title: `Onboarding terminé : ${firstName.trim()}`,
+        description: "Le client a complété son onboarding (infos personnelles + convention + vidéo).",
+        urgency: "green",
+      }))
+      .catch(() => {});
+
     // Pose un cookie pour que le middleware autorise l'accès /client/*
     const response = NextResponse.json({ success: true });
     response.cookies.set("onboarding_completed", "1", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 365, // 1 an
     });

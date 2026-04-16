@@ -105,6 +105,16 @@ export async function POST() {
     .then(({ archiveQuestionnaireToKDrive }) => archiveQuestionnaireToKDrive(client.id))
     .catch((err) => console.error("[questionnaire-entry] kDrive archive error:", err));
 
+  // Notification admin — questionnaire soumis
+  import("@/lib/notifications")
+    .then(({ notifyAdmin }) => notifyAdmin({
+      clientId: client.id,
+      title: `Questionnaire soumis : ${clientName}`,
+      description: "Le client a soumis son questionnaire d'entrée (9 sections).",
+      urgency: "amber",
+    }))
+    .catch(() => {});
+
   // Email notification admin
   const adminEmail = process.env.FROM_EMAIL || "admin@beefrequency.com";
   const clientName = client.intake?.firstName || client.user.name;
