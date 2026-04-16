@@ -124,8 +124,8 @@ export default function InvitePage({
         return;
       }
 
-      // Legacy clients go directly to dashboard, others to onboarding
-      router.push(inviteData?.isLegacy ? "/client/home" : "/client/onboarding");
+      // All clients go to onboarding (legacy included — they must sign convention + fill questionnaire)
+      router.push("/client/onboarding");
     } catch {
       setError(t.invite.errorServer[lang || "FR"]);
       setSubmitting(false);
