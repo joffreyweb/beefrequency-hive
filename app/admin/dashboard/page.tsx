@@ -46,7 +46,7 @@ export default async function AdminDashboard() {
   const todayStart = new Date(midnightRef.getTime() - offsetMs);
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments] =
+  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments, unreadMessagesByClient, recentQuestionnaireEntries, recentSignatures, recentElixirReceived] =
     await Promise.all([
       prisma.client.count({ where: { status: "ACTIVE" } }),
       prisma.session.findMany({
@@ -117,7 +117,86 @@ export default async function AdminDashboard() {
         take: 5,
         include: { client: { include: { user: { select: { name: true } } } } },
       }),
+      // "À traiter" — messages non lus par client
+      prisma.message.groupBy({
+        by: ["senderId"],
+        where: { readAt: null, receiver: { role: "ADMIN" } },
+        _count: true,
+      }),
+      // "À traiter" — questionnaires d'entrée soumis récemment
+      prisma.questionnaireEntry.findMany({
+        where: { status: "SUBMITTED", submittedAt: { gte: new Date(Date.now() - 7 * 86400000) } },
+        include: { client: { include: { user: { select: { name: true } } } } },
+        orderBy: { submittedAt: "desc" },
+      }),
+      // "À traiter" — conventions signées récemment
+      prisma.client.findMany({
+        where: { charteSignee: true, charteSignedAt: { gte: new Date(Date.now() - 7 * 86400000) } },
+        include: { user: { select: { name: true } } },
+        orderBy: { charteSignedAt: "desc" },
+      }),
+      // "À traiter" — élixirs reçus récemment
+      prisma.client.findMany({
+        where: { produitsRecus: true, produitsRecusAt: { gte: new Date(Date.now() - 7 * 86400000) } },
+        include: { user: { select: { name: true } } },
+        orderBy: { produitsRecusAt: "desc" },
+      }),
     ]);
+
+  // Build "À traiter" items
+  type ActionItem = { id: string; icon: string; label: string; href: string; time: string; type: string };
+  const aTraiter: ActionItem[] = [];
+
+  // Messages non lus
+  for (const msg of unreadMessagesByClient) {
+    const sender = await prisma.user.findUnique({ where: { id: msg.senderId }, select: { name: true, client: { select: { id: true } } } });
+    if (sender?.client) {
+      aTraiter.push({
+        id: `msg-${msg.senderId}`,
+        icon: "💬",
+        label: `${msg._count} message${msg._count > 1 ? "s" : ""} non lu${msg._count > 1 ? "s" : ""} de ${sender.name}`,
+        href: `/admin/messages`,
+        time: "",
+        type: "message",
+      });
+    }
+  }
+
+  // Questionnaires soumis
+  for (const qe of recentQuestionnaireEntries) {
+    aTraiter.push({
+      id: `qe-${qe.id}`,
+      icon: "📋",
+      label: `Questionnaire soumis par ${qe.client.user.name}`,
+      href: `/admin/clients/${qe.clientId}`,
+      time: qe.submittedAt ? new Date(qe.submittedAt).toLocaleDateString("fr-FR") : "",
+      type: "questionnaire",
+    });
+  }
+
+  // Conventions signées
+  for (const c of recentSignatures) {
+    aTraiter.push({
+      id: `sig-${c.id}`,
+      icon: "✍️",
+      label: `Convention signée par ${c.user.name}`,
+      href: `/admin/clients/${c.id}`,
+      time: c.charteSignedAt ? new Date(c.charteSignedAt).toLocaleDateString("fr-FR") : "",
+      type: "convention",
+    });
+  }
+
+  // Élixirs reçus
+  for (const c of recentElixirReceived) {
+    aTraiter.push({
+      id: `elx-${c.id}`,
+      icon: "📦",
+      label: `Élixirs reçus par ${c.user.name}`,
+      href: `/admin/clients/${c.id}`,
+      time: c.produitsRecusAt ? new Date(c.produitsRecusAt).toLocaleDateString("fr-FR") : "",
+      type: "elixir",
+    });
+  }
 
   // Merge Sessions + Appointments into unified list
   const APPT_TYPE_LABELS: Record<string, string> = { zoom: "En ligne", presentiel: "Présentiel" };
@@ -248,6 +327,37 @@ export default async function AdminDashboard() {
           </p>
         </div>
       </div>
+
+      {/* À traiter */}
+      {aTraiter.length > 0 && (
+        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider">
+              À traiter
+            </h2>
+            <span className="px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-ui font-medium rounded-full">
+              {aTraiter.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {aTraiter.map((item) => (
+              <a
+                key={item.id}
+                href={item.href}
+                className="flex items-center justify-between p-3 border border-or-pale/40 rounded-lg hover:border-or-sacre transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{item.icon}</span>
+                  <p className="text-sm font-ui text-brun-chaud">{item.label}</p>
+                </div>
+                {item.time && (
+                  <span className="text-xs font-ui text-brun-mid/40 shrink-0">{item.time}</span>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Client overview list */}
       <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
