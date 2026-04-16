@@ -12,47 +12,20 @@ console.log("[mailer] SMTP config:", {
   passVar: process.env.SMTP_PASS ? "SMTP_PASS" : process.env.SMTP_PASSWORD ? "SMTP_PASSWORD" : "(none)",
 });
 
-const MAIL_DOMAIN = "joffreydeleplanque.com";
-
-const fromEmail = process.env.FROM_EMAIL || "info@joffreydeleplanque.com";
-
-export const transporter = nodemailer.createTransport(
-  {
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 465,
-    secure: process.env.SMTP_SECURE === "true",
-    // @ts-ignore — family est supporté par nodemailer mais absent du type
-    family: 4,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: smtpPass,
-    },
-  } as nodemailer.TransportOptions,
-  {
-    // Default options applied to ALL emails sent via this transporter
-    replyTo: fromEmail,
-    headers: {
-      "List-Unsubscribe": `<mailto:${fromEmail}?subject=unsubscribe>`,
-      "X-Mailer": "BeeFrequency Hive",
-    },
-  } as Record<string, unknown>
-);
+export const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: process.env.SMTP_SECURE === "true",
+  // @ts-ignore — family est supporté par nodemailer mais absent du type
+  family: 4,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: smtpPass,
+  },
+} as nodemailer.TransportOptions);
 
 const mailFrom = () =>
-  `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "info@joffreydeleplanque.com"}>`;
-
-/** Headers anti-spam ajoutés à chaque email */
-export function antiSpamHeaders() {
-  const fromEmail = process.env.FROM_EMAIL || "info@joffreydeleplanque.com";
-  return {
-    messageId: `<${Date.now()}.${Math.random().toString(36).slice(2)}@${MAIL_DOMAIN}>`,
-    replyTo: fromEmail,
-    headers: {
-      "List-Unsubscribe": `<mailto:${fromEmail}?subject=unsubscribe>`,
-      "X-Mailer": "BeeFrequency Hive",
-    },
-  };
-}
+  `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`;
 
 // ═══════════════════════════════════════
 // BLOC PWA réutilisable (iPhone + Android)
