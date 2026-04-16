@@ -283,8 +283,8 @@ export default async function ClientHomePage() {
 
           <p className="font-ui text-xs text-brun-mid/60 italic pt-6">
             {T({
-              EN: "Your space remains accessible — Journal, Messages, Practices.",
-              FR: "Ton espace reste accessible — Journal, Messages, Pratiques.",
+              EN: "Your space remains accessible : Journal, Messages, Practices.",
+              FR: "Ton espace reste accessible : Journal, Messages, Pratiques.",
             })}
           </p>
           <p className="font-display text-base text-brun-chaud pt-4">— Joffrey</p>
