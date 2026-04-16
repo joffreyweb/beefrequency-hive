@@ -188,17 +188,22 @@ export async function uploadToKDrive(folderId: string, fileName: string, content
 
   try {
     const driveId = getDriveId();
-    // Infomaniak kDrive upload API — multipart form-data with file
-    const formData = new FormData();
-    const blob = new Blob([new Uint8Array(content)]);
-    formData.append("file", blob, fileName);
+    const totalSize = content.length;
 
-    const res = await fetch(`${API_BASE}/drive/${driveId}/files/${folderId}/upload`, {
+    // Infomaniak kDrive upload API — binary body + query params
+    const params = new URLSearchParams({
+      directory_id: folderId,
+      file_name: fileName,
+      total_size: String(totalSize),
+    });
+
+    const res = await fetch(`${API_BASE}/drive/${driveId}/upload?${params}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.INFOMANIAK_API_TOKEN}`,
+        "Content-Type": "application/octet-stream",
       },
-      body: formData,
+      body: new Uint8Array(content) as unknown as BodyInit,
     });
 
     if (!res.ok) {
@@ -207,7 +212,8 @@ export async function uploadToKDrive(folderId: string, fileName: string, content
       return false;
     }
 
-    console.log(`[kDrive] Upload OK: ${fileName} → folder ${folderId}`);
+    const data = await res.json();
+    console.log(`[kDrive] Upload OK: ${fileName} → folder ${folderId} (file id: ${data.data?.id})`);
     return true;
   } catch (error) {
     console.error("[kDrive] Erreur upload:", error);
