@@ -18,6 +18,7 @@ interface InviteData {
   email: string;
   offerType: string;
   language?: string;
+  isLegacy?: boolean;
 }
 
 export default function InvitePage({
@@ -123,7 +124,8 @@ export default function InvitePage({
         return;
       }
 
-      router.push("/client/onboarding");
+      // Legacy clients go directly to dashboard, others to onboarding
+      router.push(inviteData?.isLegacy ? "/client/home" : "/client/onboarding");
     } catch {
       setError(t.invite.errorServer[lang || "FR"]);
       setSubmitting(false);

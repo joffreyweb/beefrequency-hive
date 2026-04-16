@@ -54,7 +54,17 @@ export async function POST(request: NextRequest) {
       language: language || "FR",
       isLegacy: isLegacy || false,
       startDate: clientStartDate,
-      onboardingCompleted: isLegacy ? true : false, // Legacy skip onboarding
+      onboardingCompleted: isLegacy ? true : false,
+      // Legacy clients bypass all pre-programme steps
+      ...(isLegacy ? {
+        charteSignee: true,
+        charteSignedAt: new Date(),
+        colisEnvoye: true,
+        colisEnvoyeAt: new Date(),
+        produitsRecus: true,
+        produitsRecusAt: new Date(),
+        detoxStartDate: clientStartDate,
+      } : {}),
     },
   });
 
@@ -73,7 +83,7 @@ export async function POST(request: NextRequest) {
   });
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const inviteLink = `${baseUrl}/register?token=${inviteToken.token}`;
+  const inviteLink = `${baseUrl}/invite/${inviteToken.token}`;
 
   // Send welcome email
   if (process.env.SMTP_HOST) {

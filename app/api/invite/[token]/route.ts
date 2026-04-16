@@ -45,13 +45,14 @@ export async function GET(
     // Vérifie si l'utilisateur existe déjà (pré-créé par admin)
     const existingUser = await prisma.user.findUnique({
       where: { email: invite.email },
-      select: { name: true },
+      select: { name: true, client: { select: { isLegacy: true } } },
     });
 
     return NextResponse.json({
       email: invite.email,
       offerType: invite.offerType,
       language: invite.language,
+      isLegacy: existingUser?.client?.isLegacy || false,
       existingUser: existingUser
         ? { name: existingUser.name }
         : null,
@@ -222,16 +223,20 @@ export async function POST(
       });
     }
 
-    // Generation du JWT et set du cookie
+    // Generation du JWT
     const jwt = await signToken({
       userId: user.id,
       role: user.role,
       email: user.email,
     });
 
-    await setAuthCookie(jwt);
+    // Check if legacy or onboarding completed
+    const clientRecord = await prisma.client.findUnique({
+      where: { userId: user.id },
+      select: { onboardingCompleted: true, isLegacy: true },
+    });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
@@ -239,6 +244,29 @@ export async function POST(
         role: user.role,
       },
     });
+
+    // Set JWT cookie on the response object (unified approach)
+    const expiresIn = parseInt(process.env.JWT_EXPIRES_IN || "7", 10) || 7;
+    response.cookies.set("token", jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: expiresIn * 86400,
+      path: "/",
+    });
+
+    // Set onboarding cookie if legacy or already completed
+    if (clientRecord?.onboardingCompleted || clientRecord?.isLegacy) {
+      response.cookies.set("onboarding_completed", "1", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+
+    return response;
   } catch (err) {
     console.error("[invite POST] erreur:", err);
     return NextResponse.json(
