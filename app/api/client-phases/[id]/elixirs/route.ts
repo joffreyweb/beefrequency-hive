@@ -6,7 +6,7 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-// POST — assigner un élixir à une phase
+// POST — assigner un élixir à une phase (skip if duplicate)
 export async function POST(req: Request, ctx: RouteContext) {
   const result = await requireAdmin();
   if (isErrorResponse(result)) return result;
@@ -17,6 +17,29 @@ export async function POST(req: Request, ctx: RouteContext) {
 
   if (!elixirLibraryId) {
     return NextResponse.json({ error: "elixirLibraryId requis" }, { status: 400 });
+  }
+
+  // Check for existing assignment with same elixir + timing on this phase
+  const existing = await prisma.phaseElixir.findFirst({
+    where: {
+      clientPhaseId,
+      elixirLibraryId,
+      timing: timing || "FLEXIBLE",
+    },
+  });
+
+  if (existing) {
+    // Update existing instead of creating duplicate
+    const updated = await prisma.phaseElixir.update({
+      where: { id: existing.id },
+      data: {
+        dose,
+        frequency: frequency || "DAILY",
+        notes,
+      },
+      include: { elixirLibrary: true },
+    });
+    return NextResponse.json({ phaseElixir: updated });
   }
 
   const phaseElixir = await prisma.phaseElixir.create({
