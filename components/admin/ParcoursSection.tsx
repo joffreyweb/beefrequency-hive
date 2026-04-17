@@ -288,7 +288,7 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
 
       {/* Phase detail */}
       {selectedPhase && (
-        <PhaseDetail phase={selectedPhase} onUpdate={loadPhases} />
+        <PhaseDetail phase={selectedPhase} allPhases={phases} onUpdate={loadPhases} />
       )}
     </div>
   );
@@ -303,7 +303,7 @@ const TAB_LABELS: Record<PhaseTab, string> = {
   checkins: "Check-ins",
 };
 
-function PhaseDetail({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
+function PhaseDetail({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
   const [activeTab, setActiveTab] = useState<PhaseTab>("general");
 
   return (
@@ -352,7 +352,7 @@ function PhaseDetail({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
       {activeTab === "general" && <GeneralTab phase={phase} onUpdate={onUpdate} />}
       {activeTab === "elixirs" && (
         <>
-          <ElixirsBlock phase={phase} onUpdate={onUpdate} />
+          <ElixirsBlock phase={phase} allPhases={allPhases} onUpdate={onUpdate} />
           <WeekView phase={phase} />
         </>
       )}
@@ -529,13 +529,14 @@ function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
 
 // ─── Elixirs Block ───
 
-function ElixirsBlock({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
+function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
   const [showAssign, setShowAssign] = useState(false);
   const [library, setLibrary] = useState<ElixirLib[]>([]);
   const [selectedElixirId, setSelectedElixirId] = useState("");
   const [dose, setDose] = useState("");
   const [frequency, setFrequency] = useState("DAILY");
   const [timing, setTiming] = useState("FLEXIBLE");
+  const [applyTo, setApplyTo] = useState("this"); // this | all_cycles | all_breaks | all
   const [saving, setSaving] = useState(false);
 
   async function loadLibrary() {
@@ -552,24 +553,39 @@ function ElixirsBlock({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () =>
     if (!selectedElixirId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/client-phases/${phase.id}/elixirs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          elixirLibraryId: selectedElixirId,
-          dose: dose || null,
-          frequency,
-          timing,
-        }),
-      });
-      if (res.ok) {
-        setShowAssign(false);
-        setSelectedElixirId("");
-        setDose("");
-        setFrequency("DAILY");
-        setTiming("FLEXIBLE");
-        onUpdate();
+      // Determine which phases to assign to
+      let targetPhaseIds: string[] = [phase.id];
+      if (applyTo === "all_cycles") {
+        targetPhaseIds = allPhases.filter((p) => p.phaseType === "CYCLE").map((p) => p.id);
+      } else if (applyTo === "all_breaks") {
+        targetPhaseIds = allPhases.filter((p) => p.phaseType === "BREAK").map((p) => p.id);
+      } else if (applyTo === "all") {
+        targetPhaseIds = allPhases.map((p) => p.id);
       }
+
+      // Assign to all target phases
+      await Promise.all(
+        targetPhaseIds.map((phaseId) =>
+          fetch(`/api/client-phases/${phaseId}/elixirs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              elixirLibraryId: selectedElixirId,
+              dose: dose || null,
+              frequency,
+              timing,
+            }),
+          })
+        )
+      );
+
+      setShowAssign(false);
+      setSelectedElixirId("");
+      setDose("");
+      setFrequency("DAILY");
+      setTiming("FLEXIBLE");
+      setApplyTo("this");
+      onUpdate();
     } catch {
       // silent
     } finally {
@@ -638,10 +654,25 @@ function ElixirsBlock({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () =>
               </select>
             </div>
           </div>
+          {/* Apply to */}
+          <div className="mb-3">
+            <label className="block text-xs font-ui text-brun-mid mb-1">Appliquer à</label>
+            <select value={applyTo} onChange={(e) => setApplyTo(e.target.value)}
+              className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
+              <option value="this">Cette phase uniquement</option>
+              <option value="all_cycles">Tous les Cycles (1, 2, 3)</option>
+              <option value="all_breaks">Toutes les Intégrations (1, 2, 3)</option>
+              <option value="all">Toutes les phases</option>
+            </select>
+          </div>
           <div className="flex justify-end">
             <button onClick={handleAssign} disabled={saving || !selectedElixirId}
               className="px-4 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50">
-              {saving ? "..." : "Assigner"}
+              {saving ? "..." : applyTo === "this" ? "Assigner" : `Assigner (${
+                applyTo === "all_cycles" ? "3 cycles" :
+                applyTo === "all_breaks" ? "3 intégrations" :
+                "toutes les phases"
+              })`}
             </button>
           </div>
         </div>
