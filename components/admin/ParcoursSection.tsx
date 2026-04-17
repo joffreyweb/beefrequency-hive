@@ -359,7 +359,7 @@ function PhaseDetail({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPh
         </>
       )}
       {activeTab === "pratiques" && <PracticesBlock phase={phase} onUpdate={onUpdate} />}
-      {activeTab === "checkins" && <CheckinsTab phase={phase} onUpdate={onUpdate} />}
+      {activeTab === "checkins" && <CheckinsTab phase={phase} allPhases={allPhases} onUpdate={onUpdate} />}
       {activeTab === "jours" && <JoursTab phase={phase} />}
     </div>
   );
@@ -459,7 +459,7 @@ const DEF_EVENING: CkQ[] = [
 ];
 const QT: Record<string, string> = { scale: "Échelle 1-5", yesno: "Oui/Non", text: "Texte libre" };
 
-function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
+function CheckinsTab({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
   const [morningEnabled, setMorningEnabled] = useState(phase.morningCheckinEnabled);
   const [eveningEnabled, setEveningEnabled] = useState(phase.eveningCheckinEnabled);
   const [checkinMode, setCheckinMode] = useState(phase.checkinMode);
@@ -509,6 +509,20 @@ function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
     await fetch(`/api/client-phases/${phase.id}/checkin-config?type=${modal}`, { method: "DELETE" });
     if (modal === "morning") { setMQs(DEF_MORNING); setMCustom(false); } else { setEQs(DEF_EVENING); setECustom(false); }
     setModal(null);
+  }
+  async function applyToAll() {
+    if (!modal || !confirm("Appliquer cette configuration à toutes les phases ?")) return;
+    setMSaving(true);
+    try {
+      await Promise.all(allPhases.map((p) =>
+        fetch(`/api/client-phases/${p.id}/checkin-config`, {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: modal, questions: modalQs }),
+        })
+      ));
+      if (modal === "morning") { setMQs(modalQs); setMCustom(true); } else { setEQs(modalQs); setECustom(true); }
+      setModal(null); onUpdate();
+    } catch {} finally { setMSaving(false); }
   }
 
   function renderSection(type: "morning" | "evening", enabled: boolean, setEnabled: (v: boolean) => void, qs: CkQ[], custom: boolean) {
@@ -594,7 +608,10 @@ function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
                 </div>
               </div>
               <div className="flex items-center justify-between border-t border-or-pale/50 pt-3">
-                <button onClick={resetDef} className="text-xs font-ui text-brun-mid/60 hover:text-brun-mid">↩️ Par défaut</button>
+                <div className="flex gap-3">
+                  <button onClick={resetDef} className="text-xs font-ui text-brun-mid/60 hover:text-brun-mid">↩️ Par défaut</button>
+                  <button onClick={applyToAll} disabled={mSaving} className="text-xs font-ui text-or-sacre hover:text-ambre-vif disabled:opacity-50">📋 Toutes les phases</button>
+                </div>
                 <div className="flex gap-2">
                   <button onClick={() => setModal(null)} className="px-3 py-1.5 text-xs font-ui border border-brun-mid text-brun-mid rounded-sharp hover:bg-brun-mid hover:text-creme-sacree transition-colors">Annuler</button>
                   <button onClick={saveModal} disabled={mSaving} className="px-3 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif disabled:opacity-50">{mSaving ? "..." : "Sauvegarder"}</button>
