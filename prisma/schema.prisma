@@ -635,10 +635,24 @@ model ClientPhase {
 
   createdAt DateTime @default(now())
 
-  phaseElixirs   PhaseElixir[]
-  phasePractices PhasePractice[]
+  phaseElixirs       PhaseElixir[]
+  phasePractices     PhasePractice[]
+  checkinConfigs     PhaseCheckinConfig[]
 
   @@unique([clientId, phaseType, phaseNumber])
+}
+
+// Config personnalisée des questions check-in par phase
+model PhaseCheckinConfig {
+  id            String      @id @default(uuid())
+  clientPhaseId String
+  clientPhase   ClientPhase @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
+  type          String      // "morning" | "evening"
+  questions     Json        // [{text, type, enabled, order}]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([clientPhaseId, type])
 }
 
 enum PhaseFrequency {

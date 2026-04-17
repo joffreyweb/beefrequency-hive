@@ -442,130 +442,169 @@ function GeneralTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => v
 
 // ─── Check-ins Tab ───
 
+interface CkQ { text: string; type: "scale" | "yesno" | "text"; enabled: boolean; order: number }
+const DEF_MORNING: CkQ[] = [
+  { text: "Comment te sens-tu ce matin ?", type: "scale", enabled: true, order: 1 },
+  { text: "Qualité de ton sommeil ?", type: "scale", enabled: true, order: 2 },
+  { text: "Niveau d'énergie ?", type: "scale", enabled: true, order: 3 },
+  { text: "As-tu pris tes élixirs ?", type: "yesno", enabled: true, order: 4 },
+  { text: "Intention pour la journée ?", type: "text", enabled: true, order: 5 },
+];
+const DEF_EVENING: CkQ[] = [
+  { text: "Comment s'est passée ta journée ?", type: "scale", enabled: true, order: 1 },
+  { text: "As-tu suivi ton protocole ?", type: "yesno", enabled: true, order: 2 },
+  { text: "As-tu fait ta pratique ?", type: "yesno", enabled: true, order: 3 },
+  { text: "Qu'est-ce qui reste avec toi ce soir ?", type: "text", enabled: true, order: 4 },
+  { text: "Gratitude du jour ?", type: "text", enabled: true, order: 5 },
+];
+const QT: Record<string, string> = { scale: "Échelle 1-5", yesno: "Oui/Non", text: "Texte libre" };
+
 function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => void }) {
   const [morningEnabled, setMorningEnabled] = useState(phase.morningCheckinEnabled);
   const [eveningEnabled, setEveningEnabled] = useState(phase.eveningCheckinEnabled);
   const [checkinMode, setCheckinMode] = useState(phase.checkinMode);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [mQs, setMQs] = useState<CkQ[]>(DEF_MORNING);
+  const [eQs, setEQs] = useState<CkQ[]>(DEF_EVENING);
+  const [mCustom, setMCustom] = useState(false);
+  const [eCustom, setECustom] = useState(false);
+  const [modal, setModal] = useState<"morning" | "evening" | null>(null);
+  const [modalQs, setModalQs] = useState<CkQ[]>([]);
+  const [newT, setNewT] = useState("");
+  const [newTy, setNewTy] = useState<"scale" | "yesno" | "text">("text");
+  const [mSaving, setMSaving] = useState(false);
 
   useEffect(() => {
     setMorningEnabled(phase.morningCheckinEnabled);
     setEveningEnabled(phase.eveningCheckinEnabled);
     setCheckinMode(phase.checkinMode);
     setSaved(false);
+    fetch(`/api/client-phases/${phase.id}/checkin-config`).then((r) => r.ok ? r.json() : { morning: null, evening: null }).then((d: { morning?: { questions?: CkQ[] } | null; evening?: { questions?: CkQ[] } | null }) => {
+      if (d.morning?.questions) { setMQs(d.morning.questions); setMCustom(true); } else { setMQs(DEF_MORNING); setMCustom(false); }
+      if (d.evening?.questions) { setEQs(d.evening.questions); setECustom(true); } else { setEQs(DEF_EVENING); setECustom(false); }
+    }).catch(() => {});
   }, [phase.id, phase.morningCheckinEnabled, phase.eveningCheckinEnabled, phase.checkinMode]);
 
   async function handleSave() {
     setSaving(true);
     try {
-      const res = await fetch(`/api/client-phases/${phase.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          morningCheckinEnabled: morningEnabled,
-          eveningCheckinEnabled: eveningEnabled,
-          checkinMode,
-        }),
-      });
-      if (res.ok) {
-        setSaved(true);
-        onUpdate();
-        setTimeout(() => setSaved(false), 2000);
-      }
-    } catch {
-      // silent
-    } finally {
-      setSaving(false);
-    }
+      const r = await fetch(`/api/client-phases/${phase.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ morningCheckinEnabled: morningEnabled, eveningCheckinEnabled: eveningEnabled, checkinMode }) });
+      if (r.ok) { setSaved(true); onUpdate(); setTimeout(() => setSaved(false), 2000); }
+    } catch {} finally { setSaving(false); }
+  }
+  function openModal(t: "morning" | "evening") { setModal(t); setModalQs(JSON.parse(JSON.stringify(t === "morning" ? mQs : eQs))); setNewT(""); }
+  async function saveModal() {
+    if (!modal) return; setMSaving(true);
+    try {
+      await fetch(`/api/client-phases/${phase.id}/checkin-config`, { method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: modal, questions: modalQs }) });
+      if (modal === "morning") { setMQs(modalQs); setMCustom(true); } else { setEQs(modalQs); setECustom(true); }
+      setModal(null);
+    } catch {} finally { setMSaving(false); }
+  }
+  async function resetDef() {
+    if (!modal || !confirm("Réinitialiser aux questions par défaut ?")) return;
+    await fetch(`/api/client-phases/${phase.id}/checkin-config?type=${modal}`, { method: "DELETE" });
+    if (modal === "morning") { setMQs(DEF_MORNING); setMCustom(false); } else { setEQs(DEF_EVENING); setECustom(false); }
+    setModal(null);
   }
 
-  const MORNING_QUESTIONS = [
-    "Comment te sens-tu ce matin ?",
-    "Qualité de ton sommeil ?",
-    "Niveau d'énergie ?",
-    "As-tu pris tes élixirs ?",
-    "Intention pour la journée ?",
-  ];
-  const EVENING_QUESTIONS = [
-    "Comment s'est passée ta journée ?",
-    "As-tu suivi ton protocole ?",
-    "As-tu fait ta pratique ?",
-    "Qu'est-ce qui reste avec toi ce soir ?",
-    "Gratitude du jour ?",
-  ];
+  function renderSection(type: "morning" | "evening", enabled: boolean, setEnabled: (v: boolean) => void, qs: CkQ[], custom: boolean) {
+    return (
+      <div className="border border-or-pale/50 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="w-4 h-4 accent-or-sacre" />
+            <span className="text-sm font-ui text-brun-chaud font-medium">Check-in {type === "morning" ? "matin" : "soir"}</span>
+          </label>
+          <button onClick={() => openModal(type)}
+            className="flex items-center gap-1.5 bg-or-sacre/10 text-or-sacre hover:bg-or-sacre/20 px-3 py-1.5 rounded font-ui text-xs transition-colors">
+            ✏️ Personnaliser
+          </button>
+        </div>
+        {custom && <p className="text-[10px] font-ui text-foret mb-1">✓ Questions personnalisées</p>}
+        <div className="pl-7 space-y-1">
+          {qs.filter((q) => q.enabled).map((q, i) => (
+            <p key={i} className="text-xs font-ui text-brun-mid/60">· {q.text} <span className="text-brun-mid/30">({QT[q.type]})</span></p>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 space-y-5">
-      {/* Check-in Matin */}
-      <div className="border border-or-pale/50 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={morningEnabled}
-              onChange={(e) => setMorningEnabled(e.target.checked)}
-              className="w-4 h-4 accent-or-sacre"
-            />
-            <span className="text-sm font-ui text-brun-chaud font-medium">Check-in matin activé</span>
-          </label>
+    <>
+      <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 space-y-5">
+        {renderSection("morning", morningEnabled, setMorningEnabled, mQs, mCustom)}
+        {renderSection("evening", eveningEnabled, setEveningEnabled, eQs, eCustom)}
+        <div>
+          <label className="block text-xs font-ui text-brun-mid mb-1">Mode</label>
+          <select value={checkinMode} onChange={(e) => setCheckinMode(e.target.value)}
+            className="w-full max-w-xs px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
+            <option value="full">Complet</option><option value="light">Allégé</option><option value="minimal">Minimal</option>
+          </select>
         </div>
-        {morningEnabled && (
-          <div className="mt-3 pl-7 space-y-1">
-            {MORNING_QUESTIONS.map((q, i) => (
-              <p key={i} className="text-xs font-ui text-brun-mid/60">· {q}</p>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Check-in Soir */}
-      <div className="border border-or-pale/50 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={eveningEnabled}
-              onChange={(e) => setEveningEnabled(e.target.checked)}
-              className="w-4 h-4 accent-or-sacre"
-            />
-            <span className="text-sm font-ui text-brun-chaud font-medium">Check-in soir activé</span>
-          </label>
+        <div className="flex items-center gap-3">
+          <button onClick={handleSave} disabled={saving}
+            className="px-4 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50">
+            {saving ? "..." : "Sauvegarder"}</button>
+          {saved && <span className="text-xs font-ui text-foret">Sauvegardé</span>}
         </div>
-        {eveningEnabled && (
-          <div className="mt-3 pl-7 space-y-1">
-            {EVENING_QUESTIONS.map((q, i) => (
-              <p key={i} className="text-xs font-ui text-brun-mid/60">· {q}</p>
-            ))}
+      </div>
+
+      {/* Modal */}
+      {modal && (
+        <>
+          <div className="fixed inset-0 z-[80] bg-black/40" onClick={() => setModal(null)} />
+          <div className="fixed inset-0 z-[90] flex items-start justify-center pt-10 px-4 overflow-y-auto">
+            <div className="bg-creme-sacree border border-or-pale rounded-[10px] w-full max-w-lg shadow-xl mb-10 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-lg text-brun-chaud">Check-in {modal === "morning" ? "matin" : "soir"}</h3>
+                <button onClick={() => setModal(null)} className="text-brun-mid hover:text-brun-chaud text-xl">×</button>
+              </div>
+              <div className="space-y-2 mb-4">
+                {modalQs.map((q, i) => (
+                  <div key={i} className="flex items-start gap-2 bg-cire-chaude border border-or-pale/50 rounded p-3">
+                    <input type="checkbox" checked={q.enabled} onChange={() => { const n = [...modalQs]; n[i] = { ...n[i], enabled: !n[i].enabled }; setModalQs(n); }} className="mt-1 w-4 h-4 accent-or-sacre" />
+                    <div className="flex-1 space-y-1">
+                      <input type="text" value={q.text} onChange={(e) => { const n = [...modalQs]; n[i] = { ...n[i], text: e.target.value }; setModalQs(n); }}
+                        className="w-full px-2 py-1 text-sm font-ui bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre" />
+                      <div className="flex items-center gap-3">
+                        <select value={q.type} onChange={(e) => { const n = [...modalQs]; n[i] = { ...n[i], type: e.target.value as CkQ["type"] }; setModalQs(n); }}
+                          className="text-xs border border-or-pale rounded px-1.5 py-1 font-ui">
+                          <option value="scale">Échelle 1-5</option><option value="yesno">Oui/Non</option><option value="text">Texte libre</option>
+                        </select>
+                        <button onClick={() => setModalQs(modalQs.filter((_, j) => j !== i))} className="text-xs font-ui text-red-500 hover:text-red-700">🗑️</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-or-pale/50 pt-3 mb-4">
+                <div className="flex gap-2">
+                  <input type="text" value={newT} onChange={(e) => setNewT(e.target.value)} placeholder="Nouvelle question..."
+                    className="flex-1 px-2 py-1.5 text-sm font-ui bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre" />
+                  <select value={newTy} onChange={(e) => setNewTy(e.target.value as CkQ["type"])} className="text-xs border border-or-pale rounded px-1.5 py-1 font-ui">
+                    <option value="scale">Échelle</option><option value="yesno">Oui/Non</option><option value="text">Texte</option>
+                  </select>
+                  <button onClick={() => { if (!newT.trim()) return; setModalQs([...modalQs, { text: newT.trim(), type: newTy, enabled: true, order: modalQs.length + 1 }]); setNewT(""); }}
+                    className="px-3 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif">+</button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-or-pale/50 pt-3">
+                <button onClick={resetDef} className="text-xs font-ui text-brun-mid/60 hover:text-brun-mid">↩️ Par défaut</button>
+                <div className="flex gap-2">
+                  <button onClick={() => setModal(null)} className="px-3 py-1.5 text-xs font-ui border border-brun-mid text-brun-mid rounded-sharp hover:bg-brun-mid hover:text-creme-sacree transition-colors">Annuler</button>
+                  <button onClick={saveModal} disabled={mSaving} className="px-3 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif disabled:opacity-50">{mSaving ? "..." : "Sauvegarder"}</button>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Mode check-in */}
-      <div>
-        <label className="block text-xs font-ui text-brun-mid mb-1">Mode check-in</label>
-        <select
-          value={checkinMode}
-          onChange={(e) => setCheckinMode(e.target.value)}
-          className="w-full max-w-xs px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
-        >
-          <option value="full">Complet (toutes les questions)</option>
-          <option value="light">Allégé (questions essentielles)</option>
-          <option value="minimal">Minimal (juste humeur)</option>
-        </select>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-4 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
-        >
-          {saving ? "..." : "Sauvegarder"}
-        </button>
-        {saved && <span className="text-xs font-ui text-foret">Sauvegardé</span>}
-      </div>
-    </div>
+        </>
+      )}
+    </>
   );
 }
 
