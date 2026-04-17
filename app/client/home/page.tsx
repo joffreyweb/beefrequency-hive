@@ -7,6 +7,7 @@ import DocumentUploadButton from "@/components/client/DocumentUploadButton";
 import CheckinButtons from "@/components/client/CheckinButtons";
 import ElixirReceivedBanner from "@/components/client/ElixirReceivedBanner";
 import TimelineWidget from "@/components/client/TimelineWidget";
+import AppointmentActions from "@/components/client/AppointmentActions";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
 import { isElixirDayMatch } from "@/lib/parcours";
@@ -49,6 +50,7 @@ export default async function ClientHomePage() {
       appointments: {
         where: { status: { not: "CANCELLED" }, scheduledAt: { gte: new Date() } },
         orderBy: { scheduledAt: "asc" },
+        select: { id: true, scheduledAt: true, durationMin: true, meetingType: true, zoomJoinUrl: true, sessionPackId: true },
       },
       clientPractices: {
         where: { isActive: true },
@@ -131,6 +133,8 @@ export default async function ClientHomePage() {
       duration: a.durationMin,
       type: a.meetingType === "zoom" ? "ONLINE" : "PRESENTIAL",
       zoomLink: a.zoomJoinUrl,
+      sessionPackId: a.sessionPackId || null,
+      isAppointment: true as const,
     })),
   ].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   const todayPractice = client.clientPractices[0] ?? null;
@@ -522,32 +526,42 @@ export default async function ClientHomePage() {
         {upcomingSessions.length > 0 ? (
           <div className="space-y-4">
             {upcomingSessions.map((s) => (
-              <div key={s.id} className="flex items-start justify-between gap-3 border-b border-or-pale/30 pb-3 last:border-0 last:pb-0">
-                <div>
-                  <p className="font-display text-lg text-brun-chaud">
-                    {new Date(s.scheduledAt).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                    })}
-                  </p>
-                  <p className="text-sm text-brun-mid mt-1">
-                    {new Date(s.scheduledAt).toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                    {" "}&mdash; {sessionTypeLabels[s.type]?.[lang] ?? s.type}
-                  </p>
+              <div key={s.id} className="border-b border-or-pale/30 pb-3 last:border-0 last:pb-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-lg text-brun-chaud">
+                      {new Date(s.scheduledAt).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                      })}
+                    </p>
+                    <p className="text-sm text-brun-mid mt-1">
+                      {new Date(s.scheduledAt).toLocaleTimeString(lang === "FR" ? "fr-FR" : "en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {" · "}{sessionTypeLabels[s.type]?.[lang] ?? s.type}
+                    </p>
+                  </div>
+                  {s.zoomLink && (
+                    <a
+                      href={s.zoomLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 mt-1 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
+                    >
+                      {T(t.home.joinZoom)}
+                    </a>
+                  )}
                 </div>
-                {s.zoomLink && (
-                  <a
-                    href={s.zoomLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 mt-1 bg-or-sacre text-white rounded-sharp px-4 py-2 text-xs font-ui hover:bg-ambre-vif transition-colors"
-                  >
-                    {T(t.home.joinZoom)}
-                  </a>
+                {"isAppointment" in s && (
+                  <AppointmentActions
+                    appointmentId={s.id}
+                    scheduledAt={new Date(s.scheduledAt).toISOString()}
+                    sessionPackId={(s as { sessionPackId?: string | null }).sessionPackId || null}
+                    rescheduleUsed={client.rescheduleUsed}
+                  />
                 )}
               </div>
             ))}

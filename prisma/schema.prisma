@@ -110,6 +110,7 @@ model Client {
   totalSessions         Int?     @default(0)
   usedSessionsManual    Int?     @map("usedSessions") // null = auto (count past appointments)
   subscriptionNotes     String?
+  rescheduleUsed        Boolean  @default(false) // A utilisé son unique changement programme
 
   // kDrive archivage
   kdriveRootFolderId     String?  // ID du dossier racine client sur kDrive
@@ -927,6 +928,15 @@ model Appointment {
   kdriveFileId  String?
   sessionPackId String?
   sessionPack   SessionPack? @relation(fields: [sessionPackId], references: [id])
+
+  // Reschedule / Cancel tracking
+  rescheduleRequested   Boolean   @default(false)
+  rescheduleMessage     String?
+  rescheduleReason      String?
+  rescheduleRequestedAt DateTime?
+  cancelledAt           DateTime?
+  cancelReason          String?
+  sessionDeducted       Boolean   @default(false)
 
   sessionNotes  SessionNote[]
   tasks         Task[]
