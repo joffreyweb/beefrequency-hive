@@ -536,7 +536,7 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
   const [dose, setDose] = useState("");
   const [frequency, setFrequency] = useState("DAILY");
   const [timing, setTiming] = useState("FLEXIBLE");
-  const [applyTo, setApplyTo] = useState("this"); // this | all_cycles | all_breaks | all
+  const [applyTo, setApplyTo] = useState("this"); // this | detox | all_cycles | all_breaks | all
   const [saving, setSaving] = useState(false);
 
   async function loadLibrary() {
@@ -555,7 +555,9 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
     try {
       // Determine which phases to assign to
       let targetPhaseIds: string[] = [phase.id];
-      if (applyTo === "all_cycles") {
+      if (applyTo === "detox") {
+        targetPhaseIds = allPhases.filter((p) => p.phaseType === "DETOX").map((p) => p.id);
+      } else if (applyTo === "all_cycles") {
         targetPhaseIds = allPhases.filter((p) => p.phaseType === "CYCLE").map((p) => p.id);
       } else if (applyTo === "all_breaks") {
         targetPhaseIds = allPhases.filter((p) => p.phaseType === "BREAK").map((p) => p.id);
@@ -660,6 +662,7 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
             <select value={applyTo} onChange={(e) => setApplyTo(e.target.value)}
               className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
               <option value="this">Cette phase uniquement</option>
+              <option value="detox">Détox</option>
               <option value="all_cycles">Tous les Cycles (1, 2, 3)</option>
               <option value="all_breaks">Toutes les Intégrations (1, 2, 3)</option>
               <option value="all">Toutes les phases</option>
@@ -669,6 +672,7 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
             <button onClick={handleAssign} disabled={saving || !selectedElixirId}
               className="px-4 py-1.5 text-xs font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50">
               {saving ? "..." : applyTo === "this" ? "Assigner" : `Assigner (${
+                applyTo === "detox" ? "détox" :
                 applyTo === "all_cycles" ? "3 cycles" :
                 applyTo === "all_breaks" ? "3 intégrations" :
                 "toutes les phases"
