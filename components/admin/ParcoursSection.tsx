@@ -595,6 +595,40 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
     }
   }
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDose, setEditDose] = useState("");
+  const [editFrequency, setEditFrequency] = useState("DAILY");
+  const [editTiming, setEditTiming] = useState("FLEXIBLE");
+
+  function startEdit(pe: ClientPhase["phaseElixirs"][0]) {
+    setEditingId(pe.id);
+    setEditDose(pe.dose || "");
+    setEditFrequency(pe.frequency);
+    setEditTiming(pe.timing);
+  }
+
+  async function handleSaveEdit() {
+    if (!editingId) return;
+    setSaving(true);
+    try {
+      await fetch(`/api/client-phases/${phase.id}/elixirs?phaseElixirId=${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dose: editDose || null,
+          frequency: editFrequency,
+          timing: editTiming,
+        }),
+      });
+      setEditingId(null);
+      onUpdate();
+    } catch {
+      // silent
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleRemove(phaseElixirId: string) {
     if (!confirm("Retirer cet élixir ?")) return;
     try {
@@ -688,17 +722,47 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
       ) : (
         <div className="space-y-2">
           {phase.phaseElixirs.map((pe) => (
-            <div key={pe.id} className="flex items-center justify-between py-2 border-b border-or-pale/30 last:border-0">
-              <div>
-                <span className="text-sm font-ui text-brun-chaud">{pe.elixirLibrary.name}</span>
-                <span className="text-xs font-ui text-brun-mid/60 ml-2">
-                  {pe.dose || pe.elixirLibrary.dosage} · {TIMING_LABELS[pe.timing]} · {FREQ_LABELS[pe.frequency]}
-                </span>
-              </div>
-              <button onClick={() => handleRemove(pe.id)}
-                className="text-xs font-ui text-red-500 hover:text-red-700 transition-colors">
-                ✕
-              </button>
+            <div key={pe.id} className="border-b border-or-pale/30 last:border-0 py-2">
+              {editingId === pe.id ? (
+                <div className="bg-creme-sacree border border-or-pale/50 rounded p-3 space-y-2">
+                  <p className="text-sm font-ui text-brun-chaud font-medium">{pe.elixirLibrary.name}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input type="text" value={editDose} onChange={(e) => setEditDose(e.target.value)}
+                      placeholder={pe.elixirLibrary.dosage}
+                      className="px-2 py-1.5 text-xs font-ui bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre" />
+                    <select value={editFrequency} onChange={(e) => setEditFrequency(e.target.value)}
+                      className="px-2 py-1.5 text-xs font-ui bg-white border border-or-pale rounded-sharp">
+                      {Object.entries(FREQ_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                    <select value={editTiming} onChange={(e) => setEditTiming(e.target.value)}
+                      className="px-2 py-1.5 text-xs font-ui bg-white border border-or-pale rounded-sharp">
+                      {Object.entries(TIMING_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditingId(null)} className="text-xs font-ui text-brun-mid hover:text-brun-chaud">Annuler</button>
+                    <button onClick={handleSaveEdit} disabled={saving}
+                      className="text-xs font-ui text-or-sacre hover:text-ambre-vif disabled:opacity-50">
+                      {saving ? "..." : "Enregistrer"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-ui text-brun-chaud">{pe.elixirLibrary.name}</span>
+                    <span className="text-xs font-ui text-brun-mid/60 ml-2">
+                      {pe.dose || pe.elixirLibrary.dosage} · {TIMING_LABELS[pe.timing]} · {FREQ_LABELS[pe.frequency]}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => startEdit(pe)}
+                      className="text-xs font-ui text-or-sacre hover:text-ambre-vif">✏️</button>
+                    <button onClick={() => handleRemove(pe.id)}
+                      className="text-xs font-ui text-red-500 hover:text-red-700">🗑️</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

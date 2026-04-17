@@ -34,6 +34,33 @@ export async function POST(req: Request, ctx: RouteContext) {
   return NextResponse.json({ phaseElixir }, { status: 201 });
 }
 
+// PATCH — modifier un élixir assigné (query: phaseElixirId)
+export async function PATCH(req: Request) {
+  const result = await requireAdmin();
+  if (isErrorResponse(result)) return result;
+
+  const { searchParams } = new URL(req.url);
+  const phaseElixirId = searchParams.get("phaseElixirId");
+  if (!phaseElixirId) {
+    return NextResponse.json({ error: "phaseElixirId requis" }, { status: 400 });
+  }
+
+  const body = await req.json();
+  const data: Record<string, unknown> = {};
+  if (body.dose !== undefined) data.dose = body.dose;
+  if (body.frequency !== undefined) data.frequency = body.frequency;
+  if (body.timing !== undefined) data.timing = body.timing;
+  if (body.notes !== undefined) data.notes = body.notes;
+
+  const updated = await prisma.phaseElixir.update({
+    where: { id: phaseElixirId },
+    data,
+    include: { elixirLibrary: true },
+  });
+
+  return NextResponse.json({ phaseElixir: updated });
+}
+
 // DELETE — retirer un élixir assigné (query: phaseElixirId)
 export async function DELETE(req: Request) {
   const result = await requireAdmin();

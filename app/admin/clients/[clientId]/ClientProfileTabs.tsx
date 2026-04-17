@@ -81,7 +81,6 @@ export default function ClientProfileTabs({
   const tabs: { key: TabKey; label: string; badge: number }[] = [
     { key: "overview", label: "Vue generale", badge: 0 },
     { key: "journal", label: "Journal", badge: 0 },
-    { key: "program", label: "Programme", badge: 0 },
     { key: "parcours", label: "Parcours", badge: 0 },
     { key: "sessions", label: "Sessions", badge: 0 },
     { key: "seances", label: "Seances", badge: 0 },
