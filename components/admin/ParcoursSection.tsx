@@ -480,30 +480,68 @@ function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
     }
   }
 
+  const MORNING_QUESTIONS = [
+    "Comment te sens-tu ce matin ?",
+    "Qualité de ton sommeil ?",
+    "Niveau d'énergie ?",
+    "As-tu pris tes élixirs ?",
+    "Intention pour la journée ?",
+  ];
+  const EVENING_QUESTIONS = [
+    "Comment s'est passée ta journée ?",
+    "As-tu suivi ton protocole ?",
+    "As-tu fait ta pratique ?",
+    "Qu'est-ce qui reste avec toi ce soir ?",
+    "Gratitude du jour ?",
+  ];
+
   return (
     <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 space-y-5">
-      <div className="space-y-3">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={morningEnabled}
-            onChange={(e) => setMorningEnabled(e.target.checked)}
-            className="w-4 h-4 accent-or-sacre"
-          />
-          <span className="text-sm font-ui text-brun-chaud">Check-in matin activé</span>
-        </label>
-
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={eveningEnabled}
-            onChange={(e) => setEveningEnabled(e.target.checked)}
-            className="w-4 h-4 accent-or-sacre"
-          />
-          <span className="text-sm font-ui text-brun-chaud">Check-in soir activé</span>
-        </label>
+      {/* Check-in Matin */}
+      <div className="border border-or-pale/50 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={morningEnabled}
+              onChange={(e) => setMorningEnabled(e.target.checked)}
+              className="w-4 h-4 accent-or-sacre"
+            />
+            <span className="text-sm font-ui text-brun-chaud font-medium">Check-in matin activé</span>
+          </label>
+        </div>
+        {morningEnabled && (
+          <div className="mt-3 pl-7 space-y-1">
+            {MORNING_QUESTIONS.map((q, i) => (
+              <p key={i} className="text-xs font-ui text-brun-mid/60">· {q}</p>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Check-in Soir */}
+      <div className="border border-or-pale/50 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={eveningEnabled}
+              onChange={(e) => setEveningEnabled(e.target.checked)}
+              className="w-4 h-4 accent-or-sacre"
+            />
+            <span className="text-sm font-ui text-brun-chaud font-medium">Check-in soir activé</span>
+          </label>
+        </div>
+        {eveningEnabled && (
+          <div className="mt-3 pl-7 space-y-1">
+            {EVENING_QUESTIONS.map((q, i) => (
+              <p key={i} className="text-xs font-ui text-brun-mid/60">· {q}</p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Mode check-in */}
       <div>
         <label className="block text-xs font-ui text-brun-mid mb-1">Mode check-in</label>
         <select
@@ -513,6 +551,7 @@ function CheckinsTab({ phase, onUpdate }: { phase: ClientPhase; onUpdate: () => 
         >
           <option value="full">Complet (toutes les questions)</option>
           <option value="light">Allégé (questions essentielles)</option>
+          <option value="minimal">Minimal (juste humeur)</option>
         </select>
       </div>
 
