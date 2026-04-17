@@ -35,6 +35,7 @@ interface PhasePractice {
 
 interface ClientPhase {
   id: string;
+  clientId: string;
   phaseType: "DETOX" | "CYCLE" | "BREAK";
   phaseNumber: number;
   startDate: string;
@@ -49,7 +50,7 @@ interface ClientPhase {
   phasePractices: PhasePractice[];
 }
 
-type PhaseTab = "general" | "elixirs" | "pratiques" | "checkins";
+type PhaseTab = "general" | "elixirs" | "pratiques" | "checkins" | "jours";
 
 // ─── Labels ───
 
@@ -301,6 +302,7 @@ const TAB_LABELS: Record<PhaseTab, string> = {
   elixirs: "Élixirs",
   pratiques: "Pratiques",
   checkins: "Check-ins",
+  jours: "Jours",
 };
 
 function PhaseDetail({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
@@ -358,6 +360,7 @@ function PhaseDetail({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPh
       )}
       {activeTab === "pratiques" && <PracticesBlock phase={phase} onUpdate={onUpdate} />}
       {activeTab === "checkins" && <CheckinsTab phase={phase} onUpdate={onUpdate} />}
+      {activeTab === "jours" && <JoursTab phase={phase} />}
     </div>
   );
 }
@@ -958,6 +961,122 @@ function WeekView({ phase }: { phase: ClientPhase }) {
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Helpers ───
+
+// ─── Jours Tab ───
+
+interface DayInfo {
+  dayNumber: number;
+  date: Date;
+  isPast: boolean;
+  isToday: boolean;
+  hasMorning: boolean;
+  hasEvening: boolean;
+}
+
+function JoursTab({ phase }: { phase: ClientPhase }) {
+  const [checkins, setCheckins] = useState<Record<string, { morning: boolean; evening: boolean }>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/admin/daily-checkins?clientId=${phase.clientId}&from=${phase.startDate}&to=${phase.endDate}`)
+      .then((r) => (r.ok ? r.json() : { checkins: [] }))
+      .then((data) => {
+        const map: Record<string, { morning: boolean; evening: boolean }> = {};
+        for (const c of data.checkins || []) {
+          const dateKey = new Date(c.date).toISOString().split("T")[0];
+          map[dateKey] = {
+            morning: c.energyLevel != null,
+            evening: c.gratitudeMoment != null || c.freeFeeling != null,
+          };
+        }
+        setCheckins(map);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [phase.clientId, phase.startDate, phase.endDate]);
+
+  // Build days list for this phase
+  const start = new Date(phase.startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(phase.endDate);
+  end.setHours(23, 59, 59, 999);
+  const now = new Date();
+  now.setHours(12, 0, 0, 0);
+
+  const duration = phase.phaseType === "DETOX" ? 10 : phase.phaseType === "CYCLE" ? 21 : 10;
+  const days: DayInfo[] = [];
+  for (let i = 0; i < duration; i++) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    const dateKey = date.toISOString().split("T")[0];
+    const checkin = checkins[dateKey];
+    days.push({
+      dayNumber: i + 1,
+      date,
+      isPast: date < now,
+      isToday: date.toDateString() === now.toDateString(),
+      hasMorning: !!checkin?.morning,
+      hasEvening: !!checkin?.evening,
+    });
+  }
+
+  const completedDays = days.filter((d) => d.isPast && (d.hasMorning || d.hasEvening)).length;
+
+  if (loading) return <p className="text-sm font-ui text-brun-mid/60">Chargement...</p>;
+
+  return (
+    <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-caps text-sm text-brun-mid uppercase tracking-wider">
+          Suivi quotidien
+        </h4>
+        <span className="text-xs font-ui text-brun-mid/60">
+          {completedDays}/{days.filter((d) => d.isPast).length} jours avec check-in
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {days.map((day) => {
+          const dateStr = day.date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+          return (
+            <div
+              key={day.dayNumber}
+              className={`flex items-center gap-3 py-2 px-3 rounded transition-colors ${
+                day.isToday
+                  ? "bg-or-sacre/10 border border-or-sacre/30"
+                  : day.isPast
+                  ? ""
+                  : "opacity-40"
+              }`}
+            >
+              <span className="font-ui text-xs text-brun-mid/60 w-8 shrink-0">J{day.dayNumber}</span>
+              <span className="font-ui text-xs text-brun-chaud w-28 shrink-0">{dateStr}</span>
+              {day.isPast || day.isToday ? (
+                <div className="flex gap-4 text-xs font-ui">
+                  <span className={day.hasMorning ? "text-foret" : "text-brun-mid/30"}>
+                    ☀️ {day.hasMorning ? "✓" : "—"}
+                  </span>
+                  <span className={day.hasEvening ? "text-foret" : "text-brun-mid/30"}>
+                    🌙 {day.hasEvening ? "✓" : "—"}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs font-ui text-brun-mid/30">À venir</span>
+              )}
+              {day.isToday && (
+                <span className="text-[9px] font-ui text-or-sacre bg-or-sacre/10 px-2 py-0.5 rounded-full ml-auto">
+                  Aujourd&apos;hui
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
