@@ -19,7 +19,8 @@ export default function CheckinButtons({ lang = "FR" }: { lang?: Lang }) {
   const eveningOpen = hour >= 16 && hour <= 23;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div>
+      <div className="grid grid-cols-2 gap-3">
       {/* Morning card */}
       {morningOpen ? (
         <Link
@@ -55,6 +56,13 @@ export default function CheckinButtons({ lang = "FR" }: { lang?: Lang }) {
           <p className="font-ui text-xs text-brun-mid/40 mt-2">{T(t.home.eveningOpens)}</p>
         </div>
       )}
+      </div>
+      <Link
+        href="/client/mon-parcours"
+        className="block mt-3 text-center font-ui text-xs text-brun-mid/70 hover:text-or-sacre underline underline-offset-4"
+      >
+        {T(t.home.reviewPreviousDays)}
+      </Link>
     </div>
   );
 }

@@ -233,6 +233,7 @@ CADRE D'ENGAGEMENT MONITORING
     noSession: { EN: "No session scheduled", FR: "Aucune s\u00e9ance pr\u00e9vue" },
     joinZoom: { EN: "Join on Zoom", FR: "Rejoindre sur Zoom" },
     shareDocument: { EN: "Share a document", FR: "Partager un document" },
+    reviewPreviousDays: { EN: "Review my previous days", FR: "Revoir mes jours précédents" },
   },
 
   // === MORNING CHECK-IN ===
