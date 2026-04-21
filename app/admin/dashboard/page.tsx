@@ -5,6 +5,7 @@ import AgendaZoomButton from "./AgendaZoomButton";
 import ClientTimeline from "./ClientTimeline";
 import TasksWidget from "@/components/admin/TasksWidget";
 import InactiveClientsWidget from "@/components/admin/InactiveClientsWidget";
+import MarkColisShippedButton from "@/components/admin/MarkColisShippedButton";
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   ONLINE: "En ligne",
@@ -336,12 +337,7 @@ export default async function AdminDashboard() {
                       <p className="text-brun-mid flex items-center gap-2">
                         <span>☐</span> Envoyer le colis
                       </p>
-                      <a
-                        href={wc.href}
-                        className="text-xs font-ui text-or-sacre hover:text-ambre-vif px-2 py-1 bg-or-sacre/10 rounded transition-colors"
-                      >
-                        📦 Marquer envoyé
-                      </a>
+                      <MarkColisShippedButton clientId={wc.id} />
                     </div>
                   )}
                   {wc.colisEnvoye && (
