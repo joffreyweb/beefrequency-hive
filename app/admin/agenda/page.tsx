@@ -69,7 +69,7 @@ export default function AgendaPage() {
       .catch(() => {});
 
     const start = toBrusselsDate(weekStart);
-    fetch(`/api/availability?start=${start}&days=7`)
+    fetch(`/api/availability?start=${start}&days=7&duration=30`)
       .then((r) => r.json())
       .then((d) => setSlots(d.slots || {}))
       .catch(() => {});
@@ -191,63 +191,78 @@ export default function AgendaPage() {
                 {DAYS_FR[day.getDay()]} {day.getDate()}
               </p>
 
-              {/* Existing appointments */}
-              {dayAppts.map((a) => (
-                <div key={a.id} className={`flex items-center gap-1 mb-1 rounded text-xs font-ui ${
-                  a.status === "CANCELLED"
-                    ? "bg-red-50 text-red-600 line-through"
-                    : a.status === "COMPLETED"
-                      ? "bg-foret/10 text-foret"
-                      : "bg-or-sacre/15 text-brun-chaud"
-                }`}>
-                  <Link
-                    href={`/admin/clients/${a.clientId}`}
-                    className="flex-1 px-2 py-1.5 hover:bg-or-sacre/25 rounded transition-colors"
-                  >
-                    <span className="font-medium">
-                      {new Date(a.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    {" "}{a.client.user.name.split(" ")[0]}
-                  </Link>
-                  {a.status !== "CANCELLED" && a.status !== "COMPLETED" && new Date(a.scheduledAt) <= new Date() && (
-                    <button
-                      onClick={() => setPostSession(a)}
-                      className="px-1.5 py-1 text-foret/50 hover:text-foret hover:bg-foret/10 rounded transition-colors text-[10px]"
-                      title="Terminer la séance"
-                    >
-                      ✓
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(a.id)}
-                    disabled={deleting === a.id}
-                    className="px-1.5 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-30"
-                    title="Supprimer"
-                  >
-                    {deleting === a.id ? "…" : "✕"}
-                  </button>
-                </div>
-              ))}
+              {/* Timeline 30-min · RDV affichés dans leur cellule de départ */}
+              {daySlots.map((s) => {
+                const slotStartMs = new Date(s.start).getTime();
+                const slotEndMs = slotStartMs + 30 * 60000;
+                const appt = dayAppts.find((a) => {
+                  const t = new Date(a.scheduledAt).getTime();
+                  return t >= slotStartMs && t < slotEndMs;
+                });
 
-              {/* All slots — 3 states: free, CalDAV busy (clickable), DB busy (disabled) */}
-              {daySlots.map((s) => (
-                <button
-                  key={s.start}
-                  onClick={() => s.available ? openModal(s.start) : undefined}
-                  disabled={!s.available}
-                  className={`w-full text-[10px] font-ui text-center py-1 rounded mb-0.5 transition-colors ${
-                    !s.available
-                      ? "text-brun-mid/25 bg-brun-mid/5 cursor-default"
-                      : s.busyCaldav
-                        ? "text-ambre-vif/70 bg-ambre-vif/10 hover:bg-ambre-vif/20 cursor-pointer"
-                        : "text-foret/50 bg-foret/5 hover:bg-foret/15 hover:text-foret cursor-pointer"
-                  }`}
-                  title={s.busyCaldav && s.available ? `${s.caldavSummary || "Occupé iPhone"} — cliquer pour créer quand même` : undefined}
-                >
-                  {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                  {s.busyCaldav && s.available ? ` ${s.caldavSummary || "●"}` : ""}
-                </button>
-              ))}
+                if (appt) {
+                  const startLabel = new Date(appt.scheduledAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+                  const endLabel = new Date(new Date(appt.scheduledAt).getTime() + appt.durationMin * 60000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+                  const bg = appt.status === "CANCELLED"
+                    ? "bg-red-50 text-red-600 line-through"
+                    : appt.status === "COMPLETED"
+                      ? "bg-foret/10 text-foret"
+                      : "bg-or-sacre/15 text-brun-chaud";
+                  return (
+                    <div
+                      key={s.start}
+                      className={`flex items-center gap-1 mb-0.5 rounded text-xs font-ui ${bg}`}
+                      title={`${startLabel} → ${endLabel} · ${appt.durationMin} min`}
+                    >
+                      <Link
+                        href={`/admin/clients/${appt.clientId}`}
+                        className="flex-1 px-2 py-1 hover:bg-or-sacre/25 rounded transition-colors min-w-0"
+                      >
+                        <span className="font-medium">{startLabel}</span>
+                        <span className="text-[10px] text-brun-mid/50 ml-1">({appt.durationMin}m)</span>
+                        <br />
+                        <span className="truncate block">{appt.client.user.name.split(" ")[0]}</span>
+                      </Link>
+                      {appt.status !== "CANCELLED" && appt.status !== "COMPLETED" && new Date(appt.scheduledAt) <= new Date() && (
+                        <button
+                          onClick={() => setPostSession(appt)}
+                          className="px-1.5 py-1 text-foret/50 hover:text-foret hover:bg-foret/10 rounded transition-colors text-[10px]"
+                          title="Terminer la séance"
+                        >
+                          ✓
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(appt.id)}
+                        disabled={deleting === appt.id}
+                        className="px-1.5 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-30"
+                        title="Supprimer"
+                      >
+                        {deleting === appt.id ? "…" : "✕"}
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={s.start}
+                    onClick={() => s.available ? openModal(s.start) : undefined}
+                    disabled={!s.available}
+                    className={`w-full text-[10px] font-ui text-center py-1 rounded mb-0.5 transition-colors ${
+                      !s.available
+                        ? "text-brun-mid/25 bg-brun-mid/5 cursor-default"
+                        : s.busyCaldav
+                          ? "text-ambre-vif/70 bg-ambre-vif/10 hover:bg-ambre-vif/20 cursor-pointer"
+                          : "text-foret/50 bg-foret/5 hover:bg-foret/15 hover:text-foret cursor-pointer"
+                    }`}
+                    title={s.busyCaldav && s.available ? `${s.caldavSummary || "Occupé iPhone"} — cliquer pour créer quand même` : undefined}
+                  >
+                    {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    {s.busyCaldav && s.available ? ` ${s.caldavSummary || "●"}` : ""}
+                  </button>
+                );
+              })}
             </div>
           );
         })}
@@ -276,6 +291,50 @@ export default function AgendaPage() {
           clientId={postSession.clientId}
           clientName={postSession.client.user.name}
           date={postSession.scheduledAt}
+        />
+      )}
+    </div>
+  );
+}
+
+const DURATION_PRESETS = ["30", "60", "90", "120"] as const;
+
+function DurationPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const isPreset = (DURATION_PRESETS as readonly string[]).includes(value);
+  const [mode, setMode] = useState<"preset" | "custom">(isPreset ? "preset" : "custom");
+
+  return (
+    <div className="flex gap-2">
+      <select
+        value={mode === "preset" ? value : "__other"}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "__other") {
+            setMode("custom");
+            onChange(value && !isPreset ? value : "45");
+          } else {
+            setMode("preset");
+            onChange(v);
+          }
+        }}
+        className="flex-1 px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
+      >
+        <option value="30">30 min</option>
+        <option value="60">60 min</option>
+        <option value="90">90 min (1h30)</option>
+        <option value="120">120 min (2h)</option>
+        <option value="__other">Autre…</option>
+      </select>
+      {mode === "custom" && (
+        <input
+          type="number"
+          min={15}
+          max={480}
+          step={5}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="min"
+          className="w-24 px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
         />
       )}
     </div>
@@ -378,18 +437,11 @@ function CreateAppointmentModal({
           </div>
 
           <div>
-            <label className="block text-xs font-ui text-brun-mid/60 mb-1">Duree (min)</label>
-            <select
+            <label className="block text-xs font-ui text-brun-mid/60 mb-1">Durée (min)</label>
+            <DurationPicker
               value={form.durationMin}
-              onChange={(e) => setForm({ ...form, durationMin: e.target.value })}
-              className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
-            >
-              <option value="30">30 min</option>
-              <option value="45">45 min</option>
-              <option value="60">60 min</option>
-              <option value="90">90 min</option>
-              <option value="120">120 min</option>
-            </select>
+              onChange={(v) => setForm({ ...form, durationMin: v })}
+            />
           </div>
 
           <div>

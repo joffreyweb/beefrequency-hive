@@ -42,6 +42,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "clientId et scheduledAt requis" }, { status: 400 });
   }
 
+  // Validation durée (15 ≤ x ≤ 480) + fin ≤ 23h00 Europe/Brussels
+  const effectiveDuration = Number(durationMin) || 60;
+  if (!Number.isFinite(effectiveDuration) || effectiveDuration < 15 || effectiveDuration > 480) {
+    return NextResponse.json(
+      { error: "Durée invalide (doit être entre 15 et 480 minutes)" },
+      { status: 400 },
+    );
+  }
+  const startAt = new Date(scheduledAt);
+  const endAt = new Date(startAt.getTime() + effectiveDuration * 60000);
+  const brusselsHour = (d: Date) =>
+    parseInt(
+      new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", hour: "2-digit", hour12: false }).format(d),
+      10,
+    );
+  const brusselsMinute = (d: Date) =>
+    parseInt(
+      new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", minute: "2-digit" }).format(d),
+      10,
+    );
+  const endHour = brusselsHour(endAt);
+  const endMinute = brusselsMinute(endAt);
+  // Fin autorisée jusqu'à 23h00 pile (23:00:00). Rejet si après.
+  if (endHour > 23 || (endHour === 23 && endMinute > 0)) {
+    return NextResponse.json(
+      { error: "Le RDV dépasse l'amplitude (fin au-delà de 23h00)" },
+      { status: 400 },
+    );
+  }
+
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: { user: { select: { name: true, email: true } } },
@@ -51,8 +81,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
   }
 
-  const dateTime = new Date(scheduledAt);
-  const dur = durationMin || 60;
+  const dateTime = startAt;
+  const dur = effectiveDuration;
   const meetingTitle = title || "Session BeeFrequency";
 
   const type = meetingType === "presentiel" ? "presentiel" : "zoom";
