@@ -1,25 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Cormorant_SC, Jost } from "next/font/google";
 import "./globals.css";
 
-const cormorantGaramond = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant-garamond",
-});
-
-const cormorantSC = Cormorant_SC({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-cormorant-sc",
-});
-
-const jost = Jost({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  variable: "--font-jost",
-});
+// Google Fonts via <link> (au lieu de next/font/google) pour éviter le
+// fetch au build qui échoue quand l'IP VPS est rate-limitée par Google Fonts.
+// Les variables CSS --font-cormorant-garamond / --font-cormorant-sc / --font-jost
+// sont redéfinies en dur ci-dessous · globals.css les consomme via --font-display /
+// --font-caps / --font-ui.
+const FONT_VARS_STYLE = `
+:root {
+  --font-cormorant-garamond: "Cormorant Garamond", Georgia, serif;
+  --font-cormorant-sc: "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+  --font-jost: "Jost", "Helvetica Neue", Arial, sans-serif;
+}
+`;
 
 export const metadata: Metadata = {
   title: "BeeFrequency",
@@ -48,10 +41,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="fr"
-      className={`${cormorantGaramond.variable} ${cormorantSC.variable} ${jost.variable} h-full antialiased`}
-    >
+    <html lang="fr" className="h-full antialiased">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Cormorant+SC:wght@400&family=Jost:wght@300;400&display=swap"
+          rel="stylesheet"
+        />
+        <style dangerouslySetInnerHTML={{ __html: FONT_VARS_STYLE }} />
+      </head>
       <body className="min-h-full flex flex-col bg-creme-sacree text-brun-chaud font-ui">
         {children}
       </body>
