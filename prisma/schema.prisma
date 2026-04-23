@@ -177,6 +177,7 @@ model Client {
   tasks                  Task[]
   sessionFollowups       SessionFollowup[]
   clientPrograms         ClientProgram[]
+  clientModules          ClientModule[]
 }
 
 model JournalEntry {
@@ -743,6 +744,10 @@ model DailyCheckin {
 
   elixirTaken       Boolean   @default(false)
 
+  // Photos check-in (optionnelles · séparées matin/soir car 1 row/jour contient les 2 phases)
+  morningPhotoPath  String?
+  eveningPhotoPath  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1077,19 +1082,53 @@ model SessionFollowup {
 // ═══════════════════════════════════════
 
 model Module {
-  id           String          @id @default(cuid())
-  name         String          @unique
-  nameFr       String
-  nameEn       String
-  duration     Int             // en jours
-  description  String?
-  isStandalone Boolean         @default(false)
+  id             String           @id @default(cuid())
+  name           String           @unique
+  nameFr         String
+  nameEn         String
+  duration       Int              // en jours
+  description    String?
+  isStandalone   Boolean          @default(false)
+
+  accessMode     ModuleAccessMode @default(LIBRE)
+  navigationMode ModuleNavMode    @default(LIBRE)
+  priceStub      Int?             // centimes · prévu pour shop V2 · jamais affiché côté client
 
   days           ModuleDay[]
   programModules ProgramModule[]
+  clientModules  ClientModule[]
 
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+enum ModuleAccessMode {
+  LIBRE
+  DEBLOQUE
+  ACHETE
+}
+
+enum ModuleNavMode {
+  LIBRE
+  SEQUENTIEL
+}
+
+model ClientModule {
+  id          String    @id @default(cuid())
+  clientId    String
+  moduleId    String
+  unlockedAt  DateTime  @default(now())
+  unlockedBy  String    // userId admin · ou "PURCHASE" pour shop V2
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, moduleId])
+  @@index([clientId])
 }
 
 model ModuleDay {
@@ -1144,10 +1183,24 @@ model ClientProgram {
   skippedModules Json?    // ["moduleId1", "moduleId2"]
   customNotes    String?
 
+  // Empilage de parcours (V1/3)
+  isMain              Boolean           @default(true)
+  mode                ClientProgramMode @default(SIMULTANE)
+  startAfterProgramId String?
+  isCustom            Boolean           @default(false)
+
+  startAfterProgram   ClientProgram?    @relation("ProgramSequence", fields: [startAfterProgramId], references: [id])
+  followedBy          ClientProgram[]   @relation("ProgramSequence")
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@unique([clientId, programId])
+}
+
+enum ClientProgramMode {
+  SIMULTANE
+  SEQUENTIEL
 }
 
 // ═══════════════════════════════════════
