@@ -177,7 +177,19 @@ export default function CheckinsTab({ clientId, onGoToParcours }: Props) {
                         <p><span className="text-brun-mid">Gratitude :</span> {c.morningGratitude}</p>
                       )}
                       {c.morningPhotoPath && (
-                        <p className="text-brun-mid/70 italic">📷 Photo disponible (route lecture post-C1)</p>
+                        <a
+                          href={`/api/client/uploads/${c.morningPhotoPath}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-2"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/api/client/uploads/${c.morningPhotoPath}`}
+                            alt="Photo matin"
+                            className="max-w-[160px] max-h-[160px] rounded border border-or-pale/50 object-cover"
+                          />
+                        </a>
                       )}
                     </div>
                   ) : (
@@ -223,7 +235,19 @@ export default function CheckinsTab({ clientId, onGoToParcours }: Props) {
                         {c.elixirTaken ? "✓ Élixirs pris" : "Élixirs non pris"}
                       </p>
                       {c.eveningPhotoPath && (
-                        <p className="text-brun-mid/70 italic">📷 Photo disponible (route lecture post-C1)</p>
+                        <a
+                          href={`/api/client/uploads/${c.eveningPhotoPath}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-2"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/api/client/uploads/${c.eveningPhotoPath}`}
+                            alt="Photo soir"
+                            className="max-w-[160px] max-h-[160px] rounded border border-or-pale/50 object-cover"
+                          />
+                        </a>
                       )}
                     </div>
                   ) : (

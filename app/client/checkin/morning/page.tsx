@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
+import CheckinPhotoPicker from "@/components/client/CheckinPhotoPicker";
 
 function getHour() {
   return new Date().getHours();
@@ -26,6 +27,7 @@ export default function MorningCheckinPage() {
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [elixirs, setElixirs] = useState<{ id: string; name: string; dosage: string | null }[]>([]);
   const [elixirsTaken, setElixirsTaken] = useState<Record<string, boolean>>({});
+  const [morningPhotoPath, setMorningPhotoPath] = useState<string | null>(null);
 
   const hour = getHour();
   const isOpen = hour >= 5 && hour < 13;
@@ -95,6 +97,7 @@ export default function MorningCheckinPage() {
           dreamed: dreamed === "Yes" ? "OUI" : dreamed === "No" ? "NON" : "SAIS_PAS",
           dreamNotes: dreamNotes.trim() || null,
           morningGratitude: morningFeeling.trim() || null,
+          morningPhotoPath: morningPhotoPath,
           elixirTaken: Object.values(elixirsTaken).some(Boolean),
         }),
       });
@@ -280,6 +283,11 @@ export default function MorningCheckinPage() {
               onChange={setMorningFeeling}
               placeholder={T(t.morning.step5Placeholder)}
               lang={lang}
+            />
+            <CheckinPhotoPicker
+              type="morning"
+              value={morningPhotoPath}
+              onChange={setMorningPhotoPath}
             />
             <div className="flex gap-4 pt-4">
               <button onClick={goBack} className="flex-1 py-3 text-brun-mid font-caps text-sm uppercase tracking-wider">{T(t.morning.back)}</button>

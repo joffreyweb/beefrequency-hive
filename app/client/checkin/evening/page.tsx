@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
+import CheckinPhotoPicker from "@/components/client/CheckinPhotoPicker";
 
 function getHour() {
   return new Date().getHours();
@@ -18,6 +19,7 @@ export default function EveningCheckinPage() {
   const [moment2, setMoment2] = useState("");
   const [moment3, setMoment3] = useState("");
   const [moment4, setMoment4] = useState("");
+  const [eveningPhotoPath, setEveningPhotoPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -36,6 +38,7 @@ export default function EveningCheckinPage() {
           gratitudeRecu: moment2.trim() || null,
           freeFeeling: moment3.trim() || null,
           selfQuality: moment4.trim() || null,
+          eveningPhotoPath: eveningPhotoPath,
         }),
       });
     } catch {
@@ -91,6 +94,12 @@ export default function EveningCheckinPage() {
         <SpeechTextarea value={moment3} onChange={setMoment3} placeholder={T(t.evening.placeholder3)} lang={lang} />
         <SpeechTextarea value={moment4} onChange={setMoment4} placeholder={T(t.evening.placeholder4)} lang={lang} />
       </div>
+
+      <CheckinPhotoPicker
+        type="evening"
+        value={eveningPhotoPath}
+        onChange={setEveningPhotoPath}
+      />
 
       <button
         onClick={handleSave}
