@@ -18,6 +18,7 @@ import ParcoursSection from "@/components/admin/ParcoursSection";
 import DetoxSection from "@/components/admin/DetoxSection";
 import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
 import CheckinsTab from "@/components/admin/CheckinsTab";
+import StackedProgramsSection from "@/components/admin/StackedProgramsSection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -802,11 +803,14 @@ function ProtocolsSubTab({ client }: { client: any }) {
    ───────────────────────────────────────────── */
 function ParcoursTab({ client }: { client: any }) {
   return (
-    <div>
-      <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-        Parcours 3 mois
-      </h2>
-      <ParcoursSection clientId={client.id} />
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+          Parcours 3 mois
+        </h2>
+        <ParcoursSection clientId={client.id} />
+      </div>
+      <StackedProgramsSection clientId={client.id} clientName={client.user.name || "Client"} />
     </div>
   );
 }
