@@ -455,9 +455,29 @@ function JournalTab({ client }: { client: any }) {
                 </span>
               )}
             </div>
-            <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap">
-              {entry.content}
-            </p>
+            {entry.content && (
+              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap">
+                {entry.content}
+              </p>
+            )}
+            {entry.mediaUrl && entry.entryType === "photo" && (
+              <a
+                href={entry.mediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-2"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.mediaUrl}
+                  alt="Photo journal"
+                  className="max-w-xs max-h-60 rounded border border-or-pale/50 object-cover"
+                />
+              </a>
+            )}
+            {entry.mediaUrl && entry.entryType === "audio" && (
+              <audio controls src={entry.mediaUrl} className="mt-2 w-full" />
+            )}
           </div>
         ))}
       </div>
