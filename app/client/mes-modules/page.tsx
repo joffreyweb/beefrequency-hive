@@ -89,7 +89,7 @@ function isToday(dateStr: string | null): boolean {
   );
 }
 
-export default function TransmissionPage() {
+export default function MesModulesPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("practices");
   const [practices, setPractices] = useState<ClientPractice[]>([]);
   const [supports, setSupports] = useState<Support[]>([]);
@@ -174,8 +174,16 @@ export default function TransmissionPage() {
 
       <div className="space-y-6">
         <div>
-          <h1 className="font-display text-2xl text-brun-chaud">Transmission</h1>
+          <h1 className="font-display text-2xl text-brun-chaud">Mes Modules</h1>
           <p className="font-ui text-sm text-brun-mid mt-1">What has been given to you.</p>
+        </div>
+
+        {/* Placeholder bibliothèque modules — remplacé par la UI cartes en V3b */}
+        <div className="bg-cire-chaude/60 border border-dashed border-or-pale rounded-sm p-5 text-center">
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-1">Modules</p>
+          <p className="font-ui text-sm text-brun-mid/70">
+            La bibliothèque arrivera bientôt.
+          </p>
         </div>
 
         {/* Tab bar — line style */}

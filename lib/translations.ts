@@ -382,6 +382,7 @@ CADRE D'ENGAGEMENT MONITORING
     home: { EN: "Home", FR: "Accueil" },
     journal: { EN: "Journal", FR: "Journal" },
     practices: { EN: "Practices", FR: "Pratiques" },
+    myModules: { EN: "My Modules", FR: "Mes Modules" },
     messages: { EN: "Messages", FR: "Messages" },
     fromJoffrey: { EN: "From Joffrey", FR: "De Joffrey" },
     reminders: { EN: "Reminders", FR: "Rappels" },

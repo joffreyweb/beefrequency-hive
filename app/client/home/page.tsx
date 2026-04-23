@@ -483,7 +483,7 @@ export default async function ClientHomePage() {
       {/* Today's practice (phase ou individuel) */}
       {(activePhase?.phasePractices?.length ?? 0) > 0 ? (
         <Link
-          href="/client/pratiques"
+          href="/client/mes-modules"
           className="block bg-cire-chaude border border-or-pale rounded-sm p-5 hover:border-or-sacre transition-colors"
         >
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
@@ -503,7 +503,7 @@ export default async function ClientHomePage() {
         </Link>
       ) : todayPractice ? (
         <Link
-          href="/client/pratiques"
+          href="/client/mes-modules"
           className="block bg-cire-chaude border border-or-pale rounded-sm p-5 hover:border-or-sacre transition-colors"
         >
           <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">

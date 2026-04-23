@@ -11,6 +11,18 @@ const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Redirects 301 renommage Transmission/Pratiques → Mes Modules (V3a)
+  if (pathname === "/client/transmission" || pathname.startsWith("/client/transmission/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace("/client/transmission", "/client/mes-modules");
+    return NextResponse.redirect(url, 301);
+  }
+  if (pathname === "/client/pratiques" || pathname.startsWith("/client/pratiques/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace("/client/pratiques", "/client/mes-modules");
+    return NextResponse.redirect(url, 301);
+  }
+
   // Laisser passer les routes publiques et les assets
   if (
     publicPaths.some((p) => pathname.startsWith(p)) ||

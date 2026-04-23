@@ -36,7 +36,8 @@ export default function ClientNav() {
     isActive("/client/agenda") ||
     isActive("/client/programme");
   const isJournal = isActive("/client/journal");
-  const isPractices =
+  const isMyModules =
+    isActive("/client/mes-modules") ||
     isActive("/client/pratiques") ||
     isActive("/client/transmission");
   const isMessages = isActive("/client/messages");
@@ -48,7 +49,7 @@ export default function ClientNav() {
   const items = [
     { href: "/client/home", label: T(t.nav.home), active: isHome, icon: HomeIcon, badge: 0 },
     { href: "/client/journal", label: T(t.nav.journal), active: isJournal, icon: JournalIcon, badge: 0 },
-    { href: "/client/pratiques", label: T(t.nav.practices), active: isPractices, icon: PracticesIcon, badge: 0 },
+    { href: "/client/mes-modules", label: T(t.nav.myModules), active: isMyModules, icon: MyModulesIcon, badge: 0 },
     { href: "/client/messages", label: T(t.nav.messages), active: isMessages, icon: MessagesIcon, badge: unreadCount },
     { href: "/client/from-joffrey", label: T(t.nav.fromJoffrey), active: isFromJoffrey, icon: FromJoffreyIcon, badge: 0 },
   ];
@@ -120,11 +121,13 @@ function JournalIcon({ color }: { color: string }) {
   );
 }
 
-function PracticesIcon({ color }: { color: string }) {
+function MyModulesIcon({ color }: { color: string }) {
+  // Pile de cartes empilées (option β) · évoque l'empilage modules
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 3" />
+      <rect x="4" y="9" width="16" height="10" rx="1.5" />
+      <path d="M6 6h12" strokeOpacity="0.6" />
+      <path d="M8 3h8" strokeOpacity="0.3" />
     </svg>
   );
 }
