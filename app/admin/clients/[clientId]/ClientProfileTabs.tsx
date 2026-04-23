@@ -17,6 +17,7 @@ import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
 import ParcoursSection from "@/components/admin/ParcoursSection";
 import DetoxSection from "@/components/admin/DetoxSection";
 import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
+import CheckinsTab from "@/components/admin/CheckinsTab";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -38,6 +39,7 @@ const HD_TYPE_LABELS: Record<string, string> = {
 type TabKey =
   | "overview"
   | "journal"
+  | "checkins"
   | "program"
   | "parcours"
   | "sessions"
@@ -81,6 +83,7 @@ export default function ClientProfileTabs({
   const tabs: { key: TabKey; label: string; badge: number }[] = [
     { key: "overview", label: "Vue generale", badge: 0 },
     { key: "journal", label: "Journal", badge: 0 },
+    { key: "checkins", label: "Check-ins", badge: 0 },
     { key: "parcours", label: "Parcours", badge: 0 },
     { key: "sessions", label: "Sessions", badge: 0 },
     { key: "seances", label: "Seances", badge: 0 },
@@ -123,6 +126,9 @@ export default function ClientProfileTabs({
         <OverviewTab client={client} dayNumber={dayNumber} recentCheckins={recentCheckins} nextSession={nextSession} />
       )}
       {activeTab === "journal" && <JournalTab client={client} />}
+      {activeTab === "checkins" && (
+        <CheckinsTab clientId={client.id} onGoToParcours={() => setActiveTab("parcours")} />
+      )}
       {activeTab === "program" && (
         <ProgramTab
           client={client}

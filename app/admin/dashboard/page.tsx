@@ -6,6 +6,7 @@ import ClientTimeline from "./ClientTimeline";
 import TasksWidget from "@/components/admin/TasksWidget";
 import InactiveClientsWidget from "@/components/admin/InactiveClientsWidget";
 import MarkColisShippedButton from "@/components/admin/MarkColisShippedButton";
+import LastCheckinsWidget from "@/components/admin/LastCheckinsWidget";
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   ONLINE: "En ligne",
@@ -297,6 +298,25 @@ export default async function AdminDashboard() {
           </p>
         </div>
       </div>
+
+      {/* Derniers check-ins — signal d'engagement */}
+      <LastCheckinsWidget
+        clients={activeClients.map((c) => ({
+          id: c.id,
+          name: c.intake?.firstName || c.user.name || "Client",
+          dailyCheckins: c.dailyCheckins.map((ci) => ({
+            id: ci.id,
+            date: ci.date,
+            updatedAt: ci.updatedAt,
+            energyLevel: ci.energyLevel,
+            morningGratitude: ci.morningGratitude,
+            morningPhotoPath: ci.morningPhotoPath,
+            freeFeeling: ci.freeFeeling,
+            gratitudeMoment: ci.gratitudeMoment,
+            eveningPhotoPath: ci.eveningPhotoPath,
+          })),
+        }))}
+      />
 
       {/* À traiter — workflow par client */}
       {aTraiterClients.length > 0 && (

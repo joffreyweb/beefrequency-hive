@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
   const clientId = url.searchParams.get("clientId");
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
+  const limitRaw = url.searchParams.get("limit");
+  const offsetRaw = url.searchParams.get("offset");
+  const order = url.searchParams.get("order") === "asc" ? "asc" : "desc";
 
   if (!clientId) {
     return NextResponse.json({ error: "clientId requis" }, { status: 400 });
@@ -22,18 +25,45 @@ export async function GET(request: NextRequest) {
     if (to) (where.date as Record<string, unknown>).lte = new Date(to);
   }
 
-  const checkins = await prisma.dailyCheckin.findMany({
-    where,
-    orderBy: { date: "asc" },
-    select: {
-      id: true,
-      date: true,
-      energyLevel: true,
-      gratitudeMoment: true,
-      freeFeeling: true,
-      elixirTaken: true,
-    },
-  });
+  const limit = Math.min(Math.max(parseInt(limitRaw || "30", 10) || 30, 1), 100);
+  const offset = Math.max(parseInt(offsetRaw || "0", 10) || 0, 0);
 
-  return NextResponse.json({ checkins });
+  const [checkins, total] = await Promise.all([
+    prisma.dailyCheckin.findMany({
+      where,
+      orderBy: { date: order },
+      skip: offset,
+      take: limit,
+      select: {
+        id: true,
+        date: true,
+        // Matin
+        energyLevel: true,
+        sleepQuality: true,
+        sleepType: true,
+        dreamed: true,
+        dreamNotes: true,
+        morningGratitude: true,
+        morningPhotoPath: true,
+        // Soir
+        freeFeeling: true,
+        pride1: true,
+        pride2: true,
+        pride3: true,
+        gratitudeMoment: true,
+        gratitudeSensation: true,
+        gratitudeRecu: true,
+        gratitudeSoi: true,
+        selfQuality: true,
+        closingSentence: true,
+        elixirTaken: true,
+        eveningPhotoPath: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.dailyCheckin.count({ where }),
+  ]);
+
+  return NextResponse.json({ checkins, total, limit, offset });
 }
