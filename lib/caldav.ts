@@ -236,6 +236,100 @@ export async function createCalDAVEvent({
   }
 }
 
+// ═══════════════════════════════════════
+// Mise à jour d'événement CalDAV (PUT avec même UID + SEQUENCE incrémenté)
+// ═══════════════════════════════════════
+
+export async function updateCalDAVEvent({
+  uid,
+  summary,
+  start,
+  end,
+  description,
+}: {
+  uid: string;
+  summary: string;
+  start: Date;
+  end: Date;
+  description?: string;
+}): Promise<boolean> {
+  if (!isCalDAVConfigured()) return false;
+
+  const homeUrl = process.env.CALDAV_HOME_URL;
+  if (!homeUrl) return false;
+
+  try {
+    const credentials = {
+      username: process.env.CALDAV_USERNAME!,
+      password: process.env.CALDAV_APP_PASSWORD!,
+    };
+    const headers = getBasicAuthHeaders(credentials);
+
+    const account: DAVAccount = {
+      accountType: "caldav",
+      serverUrl: process.env.CALDAV_URL!,
+      credentials,
+      homeUrl,
+      rootUrl: process.env.CALDAV_URL!,
+    };
+
+    const calendars = await fetchCalendars({ account, headers });
+    if (calendars.length === 0) {
+      console.error("[CalDAV] Aucun calendrier pour update");
+      return false;
+    }
+
+    const calendar = calendars[0];
+    const calendarUrl = calendar.url.endsWith("/") ? calendar.url : `${calendar.url}/`;
+    const eventUrl = `${calendarUrl}${uid}.ics`;
+    const TZ = "Europe/Brussels";
+
+    // Récupère le SEQUENCE courant pour l'incrémenter (requis pour que les clients
+    // iCal détectent la mise à jour plutôt que de la traiter comme un doublon).
+    let nextSequence = 1;
+    try {
+      const existing = await fetch(eventUrl, { method: "GET", headers });
+      if (existing.ok) {
+        const body = await existing.text();
+        const seqMatch = body.match(/^SEQUENCE:(\d+)/m);
+        const current = seqMatch ? parseInt(seqMatch[1], 10) : 0;
+        if (Number.isFinite(current)) nextSequence = current + 1;
+      }
+    } catch {
+      // Si le GET échoue, on part sur 1 — le PUT va quand même remplacer.
+    }
+
+    const iCalString = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//BeeFrequency//Hive//FR",
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `SEQUENCE:${nextSequence}`,
+      `DTSTAMP:${formatICalDateUTC(new Date())}`,
+      `DTSTART;TZID=${TZ}:${formatICalDateLocal(start, TZ)}`,
+      `DTEND;TZID=${TZ}:${formatICalDateLocal(end, TZ)}`,
+      `SUMMARY:${summary}`,
+      ...(description ? [`DESCRIPTION:${description}`] : []),
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const res = await fetch(eventUrl, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "text/calendar; charset=utf-8" },
+      body: iCalString,
+    });
+
+    const ok = res.status >= 200 && res.status < 300;
+    console.log(`[CalDAV] Event mis à jour: ${uid} (status ${res.status}, SEQUENCE=${nextSequence})`);
+    return ok;
+  } catch (error) {
+    console.error("[CalDAV] Erreur update event:", error);
+    return false;
+  }
+}
+
 /** UTC format for DTSTAMP: 20260407T120000Z */
 export async function deleteCalDAVEvent(uid: string): Promise<boolean> {
   if (!isCalDAVConfigured()) return false;

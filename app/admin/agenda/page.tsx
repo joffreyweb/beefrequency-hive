@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PostSessionModal from "@/components/admin/PostSessionModal";
+import DurationPicker from "@/components/admin/DurationPicker";
+import EditAppointmentModal from "@/components/admin/EditAppointmentModal";
 
 interface Appointment {
   id: string;
@@ -56,6 +58,7 @@ export default function AgendaPage() {
   const [createResult, setCreateResult] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [postSession, setPostSession] = useState<Appointment | null>(null);
+  const [editing, setEditing] = useState<Appointment | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -223,6 +226,15 @@ export default function AgendaPage() {
                         <br />
                         <span className="truncate block">{appt.client.user.name.split(" ")[0]}</span>
                       </Link>
+                      {appt.status !== "CANCELLED" && appt.status !== "COMPLETED" && (
+                        <button
+                          onClick={() => setEditing(appt)}
+                          className="px-1.5 py-1 text-or-sacre/60 hover:text-or-sacre hover:bg-or-sacre/10 rounded transition-colors text-[10px]"
+                          title="Modifier"
+                        >
+                          ✏️
+                        </button>
+                      )}
                       {appt.status !== "CANCELLED" && appt.status !== "COMPLETED" && new Date(appt.scheduledAt) <= new Date() && (
                         <button
                           onClick={() => setPostSession(appt)}
@@ -282,6 +294,15 @@ export default function AgendaPage() {
         />
       )}
 
+      {/* Modal edition RDV */}
+      {editing && (
+        <EditAppointmentModal
+          appointment={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => fetchData()}
+        />
+      )}
+
       {/* Modal post-séance */}
       {postSession && (
         <PostSessionModal
@@ -291,50 +312,6 @@ export default function AgendaPage() {
           clientId={postSession.clientId}
           clientName={postSession.client.user.name}
           date={postSession.scheduledAt}
-        />
-      )}
-    </div>
-  );
-}
-
-const DURATION_PRESETS = ["30", "60", "90", "120"] as const;
-
-function DurationPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const isPreset = (DURATION_PRESETS as readonly string[]).includes(value);
-  const [mode, setMode] = useState<"preset" | "custom">(isPreset ? "preset" : "custom");
-
-  return (
-    <div className="flex gap-2">
-      <select
-        value={mode === "preset" ? value : "__other"}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (v === "__other") {
-            setMode("custom");
-            onChange(value && !isPreset ? value : "45");
-          } else {
-            setMode("preset");
-            onChange(v);
-          }
-        }}
-        className="flex-1 px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
-      >
-        <option value="30">30 min</option>
-        <option value="60">60 min</option>
-        <option value="90">90 min (1h30)</option>
-        <option value="120">120 min (2h)</option>
-        <option value="__other">Autre…</option>
-      </select>
-      {mode === "custom" && (
-        <input
-          type="number"
-          min={15}
-          max={480}
-          step={5}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="min"
-          className="w-24 px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
         />
       )}
     </div>
