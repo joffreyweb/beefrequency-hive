@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -43,7 +43,9 @@ export default function ModuleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { lang } = useLanguage();
-  const T = (k: { EN: string; FR: string }) => k[lang];
+  // T memoized : sans ça, la ref change à chaque render → invalide useCallback([T])
+  // → useEffect([load]) re-fire → setState → re-render → boucle infinie (hotfix V3b).
+  const T = useMemo(() => (k: { EN: string; FR: string }) => k[lang], [lang]);
   const moduleId = params?.moduleId as string;
 
   const [mod, setMod] = useState<ModuleDetail | null>(null);
