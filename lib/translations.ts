@@ -251,6 +251,16 @@ CADRE D'ENGAGEMENT MONITORING
     days: { EN: "days", FR: "jours" },
   },
 
+  // === GALLERY (client journal V3b) ===
+  gallery: {
+    title: { EN: "Gallery", FR: "Galerie" },
+    empty: {
+      EN: "No photos yet — add a photo to your journal or check-in.",
+      FR: "Aucune photo pour l'instant — ajoute une photo à ton journal ou un check-in.",
+    },
+    loadMore: { EN: "Load more", FR: "Voir plus" },
+  },
+
   morning: {
     step0: { EN: "How are you feeling?", FR: "Comment te sens-tu ?" },
     step1Title: { EN: "Energy", FR: "\u00c9nergie" },

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
+import PhotoGallery from "@/components/client/PhotoGallery";
 
 interface JournalEntry {
   id: string;
@@ -452,6 +453,9 @@ export default function JournalPage() {
           ))}
         </div>
       )}
+
+      {/* Galerie photos (V3b/3F) · agrège journal + check-ins matin/soir */}
+      <PhotoGallery />
     </div>
   );
 }
