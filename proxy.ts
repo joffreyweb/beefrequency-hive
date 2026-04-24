@@ -6,10 +6,19 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // Routes publiques qui ne nécessitent pas d'auth
-const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth/login", "/blocked", "/client/booking", "/api/booking", "/api/availability", "/forgot-password", "/reset-password", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/newsletter/unsubscribe"];
+const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth/login", "/blocked", "/client/booking", "/api/booking", "/api/availability", "/forgot-password", "/reset-password", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/newsletter/unsubscribe", "/api/uploads/journal"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Rewrite public /uploads/journal/* → /api/uploads/journal/* (Next route qui
+  // sert les fichiers depuis process.cwd()/uploads/journal). URL browser inchangée,
+  // zéro migration des mediaUrl existants en DB.
+  if (pathname.startsWith("/uploads/journal/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace("/uploads/journal/", "/api/uploads/journal/");
+    return NextResponse.rewrite(url);
+  }
 
   // Redirects 301 renommage Transmission/Pratiques → Mes Modules (V3a)
   if (pathname === "/client/transmission" || pathname.startsWith("/client/transmission/")) {
