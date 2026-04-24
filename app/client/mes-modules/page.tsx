@@ -5,6 +5,7 @@ import BreathingPlayer from "@/components/client/BreathingPlayer";
 import VideoPlayer from "@/components/client/VideoPlayer";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
+import ModuleCard, { type ModuleCardData } from "@/components/client/ModuleCard";
 
 type TabKey = "practices" | "supports" | "recommendations";
 
@@ -101,14 +102,16 @@ export default function MesModulesPage() {
   const [globalRecos, setGlobalRecos] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePractice, setActivePractice] = useState<ClientPractice | null>(null);
+  const [modules, setModules] = useState<ModuleCardData[]>([]);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [practicesRes, supportsRes, recosRes] = await Promise.all([
+      const [practicesRes, supportsRes, recosRes, modulesRes] = await Promise.all([
         fetch("/api/client-practices"),
         fetch("/api/supports"),
         fetch("/api/recommendations/client"),
+        fetch("/api/client/modules"),
       ]);
 
       if (practicesRes.ok) {
@@ -123,6 +126,10 @@ export default function MesModulesPage() {
         const data = await recosRes.json();
         setPersonalRecos(data.personal ?? []);
         setGlobalRecos(data.global ?? []);
+      }
+      if (modulesRes.ok) {
+        const data = await modulesRes.json();
+        setModules(data.modules ?? []);
       }
     } catch {
       // Silent
@@ -182,13 +189,21 @@ export default function MesModulesPage() {
           <p className="font-ui text-sm text-brun-mid mt-1">{T(t.modules.subtitle)}</p>
         </div>
 
-        {/* Placeholder bibliothèque modules — remplacé par la UI cartes en V3b */}
-        <div className="bg-cire-chaude/60 border border-dashed border-or-pale rounded-sm p-5 text-center">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-1">Modules</p>
-          <p className="font-ui text-sm text-brun-mid/70">
-            La bibliothèque arrivera bientôt.
-          </p>
-        </div>
+        {/* Bibliothèque modules — grid de cartes (V3b) */}
+        <section>
+          <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.sectionTitle)}</h2>
+          {modules.length === 0 ? (
+            <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
+              <p className="text-sm font-ui text-brun-mid/60">{T(t.modules.moduleNoneAvailable)}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {modules.map((m) => (
+                <ModuleCard key={m.id} module={m} lang={lang} />
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Tab bar — line style */}
         <div className="flex border-b border-or-pale">

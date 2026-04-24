@@ -243,6 +243,12 @@ CADRE D'ENGAGEMENT MONITORING
     today: { EN: "Today", FR: "Aujourd'hui" },
     noPracticesAssigned: { EN: "No practices assigned yet.", FR: "Aucune pratique assignée pour l'instant." },
     library: { EN: "Library", FR: "Bibliothèque" },
+    sectionTitle: { EN: "My modules", FR: "Mes modules" },
+    moduleNew: { EN: "New", FR: "Nouveau" },
+    moduleInProgress: { EN: "In progress", FR: "En cours" },
+    moduleCompleted: { EN: "Completed", FR: "Terminé" },
+    moduleNoneAvailable: { EN: "No modules available yet.", FR: "Aucun module disponible pour l'instant." },
+    days: { EN: "days", FR: "jours" },
   },
 
   morning: {
