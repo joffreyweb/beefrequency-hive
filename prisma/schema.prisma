@@ -62,7 +62,8 @@ model User {
   role           Role
   name           String
   blocked        Boolean   @default(false)
-  lastLoginAt    DateTime? // Dernière connexion — pour "Today's Activity"
+  lastLoginAt    DateTime? // Dernier login formulaire (POST /api/auth/login)
+  lastSeenAt     DateTime? // Dernière activité authentifiée (update throttled 1h dans /api/auth/me)
   dailyRecapTime String    @default("18:00") // Heure du récapitulatif de journée (HH:mm)
   morningReminderEnabled Boolean @default(false)
   morningReminderTime    String  @default("07:00")

@@ -72,7 +72,7 @@ export default async function AdminDashboard() {
       prisma.client.findMany({
         where: { status: { in: ["ACTIVE", "PAUSED"] } },
         include: {
-          user: { select: { name: true } },
+          user: { select: { name: true, lastLoginAt: true, lastSeenAt: true } },
           intake: { select: { firstName: true } },
           elixirPrescriptions: {
             where: { endDate: null },
@@ -304,6 +304,8 @@ export default async function AdminDashboard() {
         clients={activeClients.map((c) => ({
           id: c.id,
           name: c.intake?.firstName || c.user.name || "Client",
+          lastSeenAt: c.user.lastSeenAt,
+          lastLoginAt: c.user.lastLoginAt,
           dailyCheckins: c.dailyCheckins.map((ci) => ({
             id: ci.id,
             date: ci.date,

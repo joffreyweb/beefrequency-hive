@@ -15,6 +15,8 @@ interface DailyCheckinLite {
 interface ClientLite {
   id: string;
   name: string;
+  lastSeenAt?: Date | null;
+  lastLoginAt?: Date | null;
   dailyCheckins: DailyCheckinLite[];
 }
 
@@ -33,16 +35,19 @@ function relativeLabel(from: Date, now: Date): string {
   return `il y a ${diffD}j`;
 }
 
+function activityTs(c: ClientLite): number {
+  // Priorité : lastSeenAt > lastLoginAt > 0 (jamais vu)
+  if (c.lastSeenAt) return new Date(c.lastSeenAt).getTime();
+  if (c.lastLoginAt) return new Date(c.lastLoginAt).getTime();
+  return 0;
+}
+
 export default function LastCheckinsWidget({ clients, staleHours = 48 }: Props) {
   const now = new Date();
   const staleCutoff = now.getTime() - staleHours * 3600 * 1000;
 
-  // On trie : clients avec dernier check-in ancien/absent en premier (plus utile côté admin)
-  const sorted = [...clients].sort((a, b) => {
-    const aTs = a.dailyCheckins[0]?.updatedAt.getTime() ?? 0;
-    const bTs = b.dailyCheckins[0]?.updatedAt.getTime() ?? 0;
-    return aTs - bTs;
-  });
+  // On trie : clients avec dernière activité la plus ancienne en premier (plus utile côté admin)
+  const sorted = [...clients].sort((a, b) => activityTs(a) - activityTs(b));
 
   if (sorted.length === 0) {
     return (
@@ -62,7 +67,11 @@ export default function LastCheckinsWidget({ clients, staleHours = 48 }: Props) 
       <ul className="space-y-1.5">
         {sorted.map((c) => {
           const last = c.dailyCheckins[0];
-          const stale = !last || last.updatedAt.getTime() < staleCutoff;
+          // Logique stale : si lastSeenAt dispo, priorité dessus (fallback lastLoginAt, puis checkin)
+          const activityTime = activityTs(c);
+          const stale = activityTime === 0
+            ? !last || last.updatedAt.getTime() < staleCutoff
+            : activityTime < staleCutoff;
           const hasMorning = last
             ? last.energyLevel !== null || last.morningGratitude !== null || last.morningPhotoPath !== null
             : false;

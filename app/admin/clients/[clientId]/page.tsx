@@ -54,7 +54,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
-      user: { select: { name: true, email: true, blocked: true, lastLoginAt: true } },
+      user: { select: { name: true, email: true, blocked: true, lastLoginAt: true, lastSeenAt: true } },
       // Entrees de journal non privees uniquement
       journalEntries: {
         where: { isPrivate: false },

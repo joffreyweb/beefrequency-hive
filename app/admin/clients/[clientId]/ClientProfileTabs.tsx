@@ -230,10 +230,28 @@ function OverviewTab({ client, dayNumber, recentCheckins = [], nextSession }: { 
             Informations
           </h2>
           <div className="space-y-3">
-            {/* Dernière connexion */}
+            {/* Dernière activité (lastSeenAt, update throttled 1h dans /api/auth/me) */}
             <div>
               <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
-                Derniere connexion
+                Derniere activite
+              </p>
+              <p className="text-sm font-ui text-brun-chaud">
+                {client.user.lastSeenAt
+                  ? new Date(client.user.lastSeenAt).toLocaleDateString("fr-FR", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    }) + " · " + new Date(client.user.lastSeenAt).toLocaleTimeString("fr-FR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Aucune activite"}
+              </p>
+            </div>
+            {/* Dernier login formulaire (lastLoginAt) */}
+            <div>
+              <p className="font-caps text-xs text-brun-mid/60 uppercase tracking-wider mb-0.5">
+                Dernier login
               </p>
               <p className="text-sm font-ui text-brun-chaud">
                 {client.user.lastLoginAt
