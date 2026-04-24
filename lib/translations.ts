@@ -237,6 +237,14 @@ CADRE D'ENGAGEMENT MONITORING
   },
 
   // === MORNING CHECK-IN ===
+  // === MES MODULES (client) ===
+  modules: {
+    subtitle: { EN: "What has been given to you.", FR: "Ce qui t'a été transmis." },
+    today: { EN: "Today", FR: "Aujourd'hui" },
+    noPracticesAssigned: { EN: "No practices assigned yet.", FR: "Aucune pratique assignée pour l'instant." },
+    library: { EN: "Library", FR: "Bibliothèque" },
+  },
+
   morning: {
     step0: { EN: "How are you feeling?", FR: "Comment te sens-tu ?" },
     step1Title: { EN: "Energy", FR: "\u00c9nergie" },

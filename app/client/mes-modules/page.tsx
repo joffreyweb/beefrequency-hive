@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import BreathingPlayer from "@/components/client/BreathingPlayer";
 import VideoPlayer from "@/components/client/VideoPlayer";
+import { useLanguage } from "@/lib/LanguageContext";
+import { t } from "@/lib/translations";
 
 type TabKey = "practices" | "supports" | "recommendations";
 
@@ -90,6 +92,8 @@ function isToday(dateStr: string | null): boolean {
 }
 
 export default function MesModulesPage() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [activeTab, setActiveTab] = useState<TabKey>("practices");
   const [practices, setPractices] = useState<ClientPractice[]>([]);
   const [supports, setSupports] = useState<Support[]>([]);
@@ -175,7 +179,7 @@ export default function MesModulesPage() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-2xl text-brun-chaud">Mes Modules</h1>
-          <p className="font-ui text-sm text-brun-mid mt-1">What has been given to you.</p>
+          <p className="font-ui text-sm text-brun-mid mt-1">{T(t.modules.subtitle)}</p>
         </div>
 
         {/* Placeholder bibliothèque modules — remplacé par la UI cartes en V3b */}
@@ -214,10 +218,10 @@ export default function MesModulesPage() {
               <div className="space-y-10">
                 {/* Assigned practices */}
                 <section>
-                  <h2 className="font-display text-lg text-brun-chaud mb-4">Today</h2>
+                  <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.today)}</h2>
                   {activePractices.length === 0 ? (
                     <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-                      <p className="text-sm font-ui text-brun-mid/60">No practices assigned yet.</p>
+                      <p className="text-sm font-ui text-brun-mid/60">{T(t.modules.noPracticesAssigned)}</p>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -406,6 +410,8 @@ interface LibPractice {
 }
 
 function LibrarySection() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [libPractices, setLibPractices] = useState<LibPractice[]>([]);
   const [libLoading, setLibLoading] = useState(false);
@@ -432,7 +438,7 @@ function LibrarySection() {
 
   return (
     <section>
-      <h2 className="font-display text-lg text-brun-chaud mb-4">Library</h2>
+      <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.library)}</h2>
       <div className="grid grid-cols-2 gap-3 mb-4">
         {LIBRARY_CATEGORIES.map((cat) => (
           <button
