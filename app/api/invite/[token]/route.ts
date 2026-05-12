@@ -157,6 +157,19 @@ export async function POST(
       include: { client: true },
     });
 
+    // Propagation parcoursType + 8 flags depuis l'InviteToken vers le Client
+    const parcoursPayload = {
+      parcoursType: invite.parcoursType,
+      requiresWelcomeVideo: invite.requiresWelcomeVideo,
+      requiresConvention: invite.requiresConvention,
+      requiresQuestionnaire: invite.requiresQuestionnaire,
+      requiresPhaseVideos: invite.requiresPhaseVideos,
+      requiresMorningCheckin: invite.requiresMorningCheckin,
+      requiresEveningCheckin: invite.requiresEveningCheckin,
+      requiresJournal: invite.requiresJournal,
+      requiresProgramTimeline: invite.requiresProgramTimeline,
+    };
+
     let user;
 
     if (existingUser) {
@@ -171,7 +184,7 @@ export async function POST(
           },
         });
 
-        // S'assurer que le Client record existe
+        // S'assurer que le Client record existe (avec flags d'invite)
         if (!existingUser.client) {
           await tx.client.create({
             data: {
@@ -179,7 +192,14 @@ export async function POST(
               offerType: invite.offerType,
               status: "ACTIVE",
               language: invite.language || "FR",
+              ...parcoursPayload,
             },
+          });
+        } else {
+          // Client pré-existait (create-client legacy) — appliquer les flags d'invite
+          await tx.client.update({
+            where: { id: existingUser.client.id },
+            data: parcoursPayload,
           });
         }
 
@@ -210,6 +230,7 @@ export async function POST(
             offerType: invite.offerType,
             status: "ACTIVE",
             language: invite.language || "FR",
+            ...parcoursPayload,
           },
         });
 

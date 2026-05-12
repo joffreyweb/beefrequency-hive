@@ -1,6 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import {
+  FLAG_KEYS,
+  getDefaultsForParcoursType,
+  type ParcoursFlags,
+} from "@/lib/parcours-defaults";
+import type { ParcoursType } from "@prisma/client";
+
+const VALID_PARCOURS_TYPES: readonly ParcoursType[] = [
+  "LE_PASSAGE",
+  "NECTAR_CYCLE",
+  "SEANCE_UNIQUE",
+  "RESET_6",
+  "CUSTOM",
+];
+
+function resolveParcoursPayload(body: Record<string, unknown>): {
+  parcoursType: ParcoursType;
+  flags: ParcoursFlags;
+} {
+  const rawType = body.parcoursType;
+  const parcoursType: ParcoursType = VALID_PARCOURS_TYPES.includes(
+    rawType as ParcoursType
+  )
+    ? (rawType as ParcoursType)
+    : "LE_PASSAGE";
+
+  const defaults = getDefaultsForParcoursType(parcoursType);
+  const flags: ParcoursFlags = { ...defaults };
+  for (const key of FLAG_KEYS) {
+    const provided = body[key];
+    if (typeof provided === "boolean") {
+      flags[key] = provided;
+    }
+  }
+  return { parcoursType, flags };
+}
 
 // POST /api/invite — Crée un token d'invitation pour un nouveau client (admin uniquement)
 export async function POST(request: NextRequest) {
@@ -61,6 +97,9 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
+    // Résolution parcoursType + 8 flags (defaults selon type si non fournis)
+    const { parcoursType, flags } = resolveParcoursPayload(body);
+
     // Création du token d'invitation
     const inviteToken = await prisma.inviteToken.create({
       data: {
@@ -69,6 +108,8 @@ export async function POST(request: NextRequest) {
         language,
         role: "CLIENT",
         expiresAt,
+        parcoursType,
+        ...flags,
       },
     });
 
