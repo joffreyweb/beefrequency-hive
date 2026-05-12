@@ -8,7 +8,13 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
 
-  const { firstName, lastName, email, offerType, language, isLegacy, startDate, dayDirect } = await request.json();
+  const {
+    firstName, lastName, email, offerType, language, isLegacy, startDate, dayDirect,
+    parcoursType,
+    requiresWelcomeVideo, requiresConvention, requiresQuestionnaire,
+    requiresPhaseVideos, requiresMorningCheckin, requiresEveningCheckin,
+    requiresJournal, requiresProgramTimeline,
+  } = await request.json();
 
   if (!firstName || !lastName || !email) {
     return NextResponse.json({ error: "Prenom, nom et email requis" }, { status: 400 });
@@ -55,6 +61,15 @@ export async function POST(request: NextRequest) {
       isLegacy: isLegacy || false,
       startDate: clientStartDate,
       onboardingCompleted: isLegacy ? true : false,
+      ...(parcoursType !== undefined ? { parcoursType } : {}),
+      ...(requiresWelcomeVideo !== undefined ? { requiresWelcomeVideo } : {}),
+      ...(requiresConvention !== undefined ? { requiresConvention } : {}),
+      ...(requiresQuestionnaire !== undefined ? { requiresQuestionnaire } : {}),
+      ...(requiresPhaseVideos !== undefined ? { requiresPhaseVideos } : {}),
+      ...(requiresMorningCheckin !== undefined ? { requiresMorningCheckin } : {}),
+      ...(requiresEveningCheckin !== undefined ? { requiresEveningCheckin } : {}),
+      ...(requiresJournal !== undefined ? { requiresJournal } : {}),
+      ...(requiresProgramTimeline !== undefined ? { requiresProgramTimeline } : {}),
       ...(isLegacy ? {
         charteSignee: true,
         charteSignedAt: new Date(),

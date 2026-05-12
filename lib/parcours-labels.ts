@@ -6,7 +6,7 @@ export const PARCOURS_TYPE_LABELS: Record<ParcoursType, string> = {
   NECTAR_CYCLE: "Nectar Cycle 3 séances",
   SEANCE_UNIQUE: "Séance unique",
   RESET_6: "Reset 6 séances",
-  CUSTOM: "Personnalisé",
+  CUSTOM: "Parcours personnalisé",
 };
 
 export const PARCOURS_TYPE_OPTIONS: ReadonlyArray<{ value: ParcoursType; label: string }> = [

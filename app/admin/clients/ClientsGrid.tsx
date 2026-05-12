@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ParcoursTypeSelector from "@/components/admin/ParcoursTypeSelector";
+import { getDefaultsForParcoursType, type ParcoursFlags } from "@/lib/parcours-defaults";
+import type { ParcoursType } from "@prisma/client";
 
 interface SerializedClient {
   id: string;
@@ -54,6 +57,8 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
   });
   const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
+  const [parcoursType, setParcoursType] = useState<ParcoursType>("LE_PASSAGE");
+  const [flags, setFlags] = useState<ParcoursFlags>(() => getDefaultsForParcoursType("LE_PASSAGE"));
 
   const filteredClients = useMemo(() => {
     if (!search.trim()) return clients;
@@ -78,6 +83,8 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
           isLegacy: form.isLegacy,
           startDate: form.isLegacy && form.startDate ? form.startDate : null,
           dayDirect: form.isLegacy && form.dayDirect ? Number(form.dayDirect) : null,
+          parcoursType,
+          ...flags,
         }),
       });
       const data = await res.json();
@@ -100,7 +107,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-display text-2xl font-light text-brun-chaud">La Ruche</h1>
         <button
-          onClick={() => { setShowInvite(true); setResult(null); setForm({ firstName: "", lastName: "", email: "", offerType: "HIVE_EXPERIENCE", language: "FR", isLegacy: false, startDate: "", dayDirect: "" }); }}
+          onClick={() => { setShowInvite(true); setResult(null); setForm({ firstName: "", lastName: "", email: "", offerType: "HIVE_EXPERIENCE", language: "FR", isLegacy: false, startDate: "", dayDirect: "" }); setParcoursType("LE_PASSAGE"); setFlags(getDefaultsForParcoursType("LE_PASSAGE")); }}
           className="px-4 py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-[10px] hover:bg-ambre-vif transition-colors"
         >
           Inviter un client
@@ -219,6 +226,17 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                     </select>
                   </div>
                 </div>
+
+                {/* Type de parcours + 8 toggles modules */}
+                <ParcoursTypeSelector
+                  parcoursType={parcoursType}
+                  flags={flags}
+                  onChange={(next) => {
+                    setParcoursType(next.parcoursType);
+                    setFlags(next.flags);
+                  }}
+                  disabled={creating}
+                />
 
                 {/* Legacy toggle */}
                 <div className="border-t border-or-pale/50 pt-3">
