@@ -48,6 +48,14 @@ export async function POST(req: Request) {
   const client = await prisma.client.findUnique({ where: { userId: session.userId } });
   if (!client) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
 
+  // Garde flag parcours : si check-in matin ET soir désactivés → 403
+  if (!client.requiresMorningCheckin && !client.requiresEveningCheckin) {
+    return NextResponse.json(
+      { error: "Module désactivé pour ce parcours", flag: "checkin" },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const { date, ...data } = body;
 
