@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ParcoursTypeSelector from "@/components/admin/ParcoursTypeSelector";
-import { getDefaultsForParcoursType, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { type ParcoursFlags } from "@/lib/parcours-defaults";
+import { getParcoursForOffer } from "@/lib/offer-to-parcours-mapping";
 import type { ParcoursType } from "@prisma/client";
 
 interface SerializedClient {
@@ -58,8 +59,9 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
   });
   const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
-  const [parcoursType, setParcoursType] = useState<ParcoursType>("LE_PASSAGE");
-  const [flags, setFlags] = useState<ParcoursFlags>(() => getDefaultsForParcoursType("LE_PASSAGE"));
+  const initialParcours = getParcoursForOffer("CONVERSATION_EXPLORATOIRE");
+  const [parcoursType, setParcoursType] = useState<ParcoursType>(initialParcours.parcoursType);
+  const [flags, setFlags] = useState<ParcoursFlags>(initialParcours.flags);
 
   const filteredClients = useMemo(() => {
     if (!search.trim()) return clients;
@@ -108,7 +110,14 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-display text-2xl font-light text-brun-chaud">La Ruche</h1>
         <button
-          onClick={() => { setShowInvite(true); setResult(null); setForm({ firstName: "", lastName: "", email: "", offerType: "HIVE_EXPERIENCE", language: "FR", isLegacy: false, startDate: "", dayDirect: "" }); setParcoursType("LE_PASSAGE"); setFlags(getDefaultsForParcoursType("LE_PASSAGE")); }}
+          onClick={() => {
+            setShowInvite(true);
+            setResult(null);
+            setForm({ firstName: "", lastName: "", email: "", offerType: "CONVERSATION_EXPLORATOIRE", language: "FR", isLegacy: false, startDate: "", dayDirect: "" });
+            const init = getParcoursForOffer("CONVERSATION_EXPLORATOIRE");
+            setParcoursType(init.parcoursType);
+            setFlags(init.flags);
+          }}
           className="px-4 py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-[10px] hover:bg-ambre-vif transition-colors"
         >
           Inviter un client
@@ -215,7 +224,13 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-ui text-brun-mid/60 mb-1">Offre</label>
-                    <select value={form.offerType} onChange={(e) => setForm({ ...form, offerType: e.target.value })} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud">
+                    <select value={form.offerType} onChange={(e) => {
+                      const next = e.target.value;
+                      setForm({ ...form, offerType: next });
+                      const mapped = getParcoursForOffer(next);
+                      setParcoursType(mapped.parcoursType);
+                      setFlags(mapped.flags);
+                    }} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud">
                       {OFFER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
@@ -233,11 +248,8 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                   parcoursType={parcoursType}
                   flags={flags}
                   onChange={(next) => {
-                    if (next.parcoursType !== parcoursType) {
-                      setParcoursType(next.parcoursType);
-                    } else {
-                      setFlags(next.flags);
-                    }
+                    setParcoursType(next.parcoursType);
+                    setFlags(next.flags);
                   }}
                   disabled={creating}
                 />
