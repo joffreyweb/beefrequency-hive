@@ -20,6 +20,14 @@ enum ClientStatus {
   ARCHIVED
 }
 
+enum ParcoursType {
+  LE_PASSAGE
+  NECTAR_CYCLE
+  SEANCE_UNIQUE
+  RESET_6
+  CUSTOM
+}
+
 enum OfferType {
   CONVERSATION_EXPLORATOIRE
   SESSION_SEUIL
@@ -100,6 +108,17 @@ model Client {
   videoSeuil1BUrl       String?      // URL vidéo Seuil 1B — Et si tout était possible
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
   isLegacy              Boolean      @default(false) // Client Legacy — admin only, skip onboarding
+
+  // Parcours modulable — type + 8 flags de gating UX
+  parcoursType            ParcoursType @default(LE_PASSAGE)
+  requiresWelcomeVideo    Boolean      @default(true)
+  requiresConvention      Boolean      @default(true)
+  requiresQuestionnaire   Boolean      @default(true)
+  requiresPhaseVideos     Boolean      @default(true)
+  requiresMorningCheckin  Boolean      @default(true)
+  requiresEveningCheckin  Boolean      @default(true)
+  requiresJournal         Boolean      @default(true)
+  requiresProgramTimeline Boolean      @default(true)
 
   // Cadre d'engagement Monitoring Passage
   fixedDay              String?
@@ -291,6 +310,17 @@ model InviteToken {
   language  String    @default("FR")
   usedAt    DateTime?
   expiresAt DateTime
+
+  // Parcours modulable — pré-configuration pour propagation au Client à la création
+  parcoursType            ParcoursType @default(LE_PASSAGE)
+  requiresWelcomeVideo    Boolean      @default(true)
+  requiresConvention      Boolean      @default(true)
+  requiresQuestionnaire   Boolean      @default(true)
+  requiresPhaseVideos     Boolean      @default(true)
+  requiresMorningCheckin  Boolean      @default(true)
+  requiresEveningCheckin  Boolean      @default(true)
+  requiresJournal         Boolean      @default(true)
+  requiresProgramTimeline Boolean      @default(true)
 
   createdAt DateTime @default(now())
 }
