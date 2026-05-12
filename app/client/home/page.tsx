@@ -398,8 +398,10 @@ export default async function ClientHomePage() {
         </div>
       )}
 
-      {/* Check-in buttons */}
-      <CheckinButtons lang={lang} />
+      {/* Check-in buttons — masqués si parcours sans check-in */}
+      {(client.requiresMorningCheckin || client.requiresEveningCheckin) && (
+        <CheckinButtons lang={lang} />
+      )}
 
       {/* Name + Day number */}
       <div className="text-center">
@@ -408,8 +410,8 @@ export default async function ClientHomePage() {
         </h1>
       </div>
 
-      {/* Timeline widget */}
-      <TimelineWidget />
+      {/* Timeline widget — masqué si parcours sans timeline */}
+      {client.requiresProgramTimeline && <TimelineWidget />}
 
       {/* Élixirs du jour (phase actuelle) */}
       {activePhase && activePhase.phaseElixirs.length > 0 && (

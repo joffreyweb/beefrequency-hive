@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireClient, requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import { assertFlagForApi } from "@/lib/parcours-guard";
 
 // GET — Retourne les entrees de journal du client connecte
 // Pour l'admin : ne retourne JAMAIS les entrees privees (isPrivate=true)
@@ -39,6 +40,10 @@ export async function GET(request: NextRequest) {
     const clientResult = await requireClient();
     if (isErrorResponse(clientResult)) return clientResult;
 
+    // Garde flag parcours : journal désactivé → 403
+    const flagCheck = await assertFlagForApi("requiresJournal");
+    if (!flagCheck.ok) return flagCheck.response;
+
     const client = await prisma.client.findUnique({
       where: { userId: clientResult.session.userId },
       select: { id: true },
@@ -76,6 +81,10 @@ export async function POST(request: NextRequest) {
   try {
     const clientResult = await requireClient();
     if (isErrorResponse(clientResult)) return clientResult;
+
+    // Garde flag parcours
+    const flagCheck = await assertFlagForApi("requiresJournal");
+    if (!flagCheck.ok) return flagCheck.response;
 
     const client = await prisma.client.findUnique({
       where: { userId: clientResult.session.userId },

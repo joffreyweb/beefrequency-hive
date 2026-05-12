@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ParcoursTypeSelector from "@/components/admin/ParcoursTypeSelector";
+import { getDefaultsForParcoursType, type ParcoursFlags } from "@/lib/parcours-defaults";
+import type { ParcoursType } from "@prisma/client";
 
 // Options d'offres disponibles
 const OFFER_OPTIONS = [
@@ -25,6 +28,10 @@ export default function InviteClientPage() {
   const [error, setError] = useState("");
   const [inviteLink, setInviteLink] = useState("");
   const [language, setLanguage] = useState("FR");
+  const [parcoursType, setParcoursType] = useState<ParcoursType>("LE_PASSAGE");
+  const [flags, setFlags] = useState<ParcoursFlags>(() =>
+    getDefaultsForParcoursType("LE_PASSAGE")
+  );
 
   // Envoie l'invitation via POST /api/invite
   async function handleSubmit(e: React.FormEvent) {
@@ -37,7 +44,7 @@ export default function InviteClientPage() {
       const res = await fetch("/api/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, offerType, language }),
+        body: JSON.stringify({ email, offerType, language, parcoursType, ...flags }),
       });
 
       const data = await res.json();
@@ -70,7 +77,7 @@ export default function InviteClientPage() {
         Inviter un client
       </h1>
 
-      <div className="max-w-md">
+      <div className="max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Erreur */}
           {error && (
@@ -128,6 +135,17 @@ export default function InviteClientPage() {
               <option value="EN">EN — English</option>
             </select>
           </div>
+
+          {/* Type de parcours + 8 toggles modules */}
+          <ParcoursTypeSelector
+            parcoursType={parcoursType}
+            flags={flags}
+            onChange={(next) => {
+              setParcoursType(next.parcoursType);
+              setFlags(next.flags);
+            }}
+            disabled={loading}
+          />
 
           {/* Bouton envoi */}
           <button

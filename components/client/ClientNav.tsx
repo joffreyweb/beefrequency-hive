@@ -12,6 +12,7 @@ export default function ClientNav() {
   const { lang } = useLanguage();
   const T = (key: { EN: string; FR: string }) => key[lang];
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showJournal, setShowJournal] = useState(true);
 
   useEffect(() => {
     function fetchUnread() {
@@ -23,6 +24,16 @@ export default function ClientNav() {
     fetchUnread();
     const interval = setInterval(fetchUnread, 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Charge les flags parcours pour masquer les items désactivés
+  useEffect(() => {
+    fetch("/api/client/me/flags")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.flags) setShowJournal(!!data.flags.requiresJournal);
+      })
+      .catch(() => {});
   }, []);
 
   function isActive(href: string): boolean {
@@ -48,7 +59,9 @@ export default function ClientNav() {
 
   const items = [
     { href: "/client/home", label: T(t.nav.home), active: isHome, icon: HomeIcon, badge: 0 },
-    { href: "/client/journal", label: T(t.nav.journal), active: isJournal, icon: JournalIcon, badge: 0 },
+    ...(showJournal
+      ? [{ href: "/client/journal", label: T(t.nav.journal), active: isJournal, icon: JournalIcon, badge: 0 }]
+      : []),
     { href: "/client/mes-modules", label: T(t.nav.myModules), active: isMyModules, icon: MyModulesIcon, badge: 0 },
     { href: "/client/messages", label: T(t.nav.messages), active: isMessages, icon: MessagesIcon, badge: unreadCount },
     { href: "/client/from-joffrey", label: T(t.nav.fromJoffrey), active: isFromJoffrey, icon: FromJoffreyIcon, badge: 0 },

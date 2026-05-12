@@ -15,6 +15,7 @@ import TimezoneSelector from "@/components/admin/TimezoneSelector";
 import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
 import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
 import ParcoursSection from "@/components/admin/ParcoursSection";
+import ClientParcoursCard from "@/components/admin/ClientParcoursCard";
 import DetoxSection from "@/components/admin/DetoxSection";
 import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
 import CheckinsTab from "@/components/admin/CheckinsTab";
@@ -842,6 +843,25 @@ function ProtocolsSubTab({ client }: { client: any }) {
 function ParcoursTab({ client }: { client: any }) {
   return (
     <div className="space-y-6">
+      <div>
+        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
+          Type de parcours & modules actifs
+        </h2>
+        <ClientParcoursCard
+          clientId={client.id}
+          initialParcoursType={client.parcoursType ?? "LE_PASSAGE"}
+          initialFlags={{
+            requiresWelcomeVideo: client.requiresWelcomeVideo ?? true,
+            requiresConvention: client.requiresConvention ?? true,
+            requiresQuestionnaire: client.requiresQuestionnaire ?? true,
+            requiresPhaseVideos: client.requiresPhaseVideos ?? true,
+            requiresMorningCheckin: client.requiresMorningCheckin ?? true,
+            requiresEveningCheckin: client.requiresEveningCheckin ?? true,
+            requiresJournal: client.requiresJournal ?? true,
+            requiresProgramTimeline: client.requiresProgramTimeline ?? true,
+          }}
+        />
+      </div>
       <div>
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
           Parcours 3 mois

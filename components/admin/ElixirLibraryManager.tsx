@@ -97,7 +97,7 @@ export default function ElixirLibraryManager() {
   }
 
   async function handleSave() {
-    if (!name.trim() || !dosage.trim()) return;
+    if (!name.trim() || !dosage.trim() || !description.trim()) return;
     setSaving(true);
 
     const payload = { name: name.trim(), description: description.trim(), dosage: dosage.trim(), unit, category, timing, notes: notes.trim() || null };
@@ -172,13 +172,17 @@ export default function ElixirLibraryManager() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Nom</label>
+              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
+                Nom <span className="text-red-600">*</span>
+              </label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
                 placeholder="Nom de l'élixir" />
             </div>
             <div>
-              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Dosage</label>
+              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
+                Dosage <span className="text-red-600">*</span>
+              </label>
               <input type="text" value={dosage} onChange={(e) => setDosage(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
                 placeholder="Ex: 20 gouttes" />
@@ -186,7 +190,9 @@ export default function ElixirLibraryManager() {
           </div>
 
           <div className="mb-4">
-            <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Description</label>
+            <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
+              Description <span className="text-red-600">*</span>
+            </label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
               className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre resize-none"
               placeholder="Description de l'élixir" />
@@ -194,14 +200,18 @@ export default function ElixirLibraryManager() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Unité</label>
+              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
+                Unité <span className="text-red-600">*</span>
+              </label>
               <select value={unit} onChange={(e) => setUnit(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
                 {Object.entries(UNIT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Catégorie</label>
+              <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
+                Catégorie <span className="text-red-600">*</span>
+              </label>
               <select value={category} onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -223,9 +233,15 @@ export default function ElixirLibraryManager() {
               placeholder="Notes optionnelles" />
           </div>
 
-          <div className="flex justify-end">
-            <button onClick={handleSave} disabled={saving || !name.trim() || !dosage.trim()}
-              className="px-5 py-2 text-sm font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-ui text-brun-mid/60">
+              <span className="text-red-600">*</span> champs requis
+            </p>
+            <button
+              onClick={handleSave}
+              disabled={saving || !name.trim() || !dosage.trim() || !description.trim()}
+              className="px-5 py-2 text-sm font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {saving ? "Enregistrement..." : editId ? "Mettre à jour" : "Créer"}
             </button>
           </div>

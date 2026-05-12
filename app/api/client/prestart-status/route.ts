@@ -15,11 +15,25 @@ export async function GET() {
       colisEnvoye: true,
       produitsRecus: true,
       programmeStartDate: true,
+      requiresQuestionnaire: true,
     },
   });
 
   if (!client) {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
+  }
+
+  // Si le parcours ne requiert pas de questionnaire, court-circuit : tout est "complete"
+  if (!client.requiresQuestionnaire) {
+    return NextResponse.json({
+      prestartCompleted: true,
+      pendingResponseId: null,
+      colisEnvoye: client.colisEnvoye,
+      produitsRecus: client.produitsRecus,
+      programmeStarted: !!client.programmeStartDate,
+      questionnaireStatus: "SUBMITTED",
+      questionnaireSectionsDone: 0,
+    });
   }
 
   // Cherche un questionnaire Pre-Start PENDING (ancien système)
