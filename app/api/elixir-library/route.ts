@@ -29,8 +29,23 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { name, description, dosage, unit, category, timing, notes } = body;
 
-  if (!name || !description || !dosage || !unit || !category) {
-    return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
+  // Validation structurée : liste explicite des champs manquants
+  const missing: string[] = [];
+  if (!name || (typeof name === "string" && !name.trim())) missing.push("name");
+  if (!description || (typeof description === "string" && !description.trim())) missing.push("description");
+  if (!dosage || (typeof dosage === "string" && !dosage.trim())) missing.push("dosage");
+  if (!unit) missing.push("unit");
+  if (!category) missing.push("category");
+
+  if (missing.length > 0) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        missing_fields: missing,
+        message: `Les champs suivants sont requis : ${missing.join(", ")}`,
+      },
+      { status: 400 }
+    );
   }
 
   const elixir = await prisma.elixirLibrary.create({
