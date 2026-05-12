@@ -42,6 +42,7 @@ const OFFER_OPTIONS = [
   { value: "LA_CHAMBRE_DE_LA_REINE", label: "La Chambre de la Reine" },
   { value: "SOS_URGENCE_VIP", label: "SOS \u00b7 Urgence VIP" },
   { value: "LE_FIL_DE_LA_RUCHE", label: "Le Fil de la Ruche" },
+  { value: "PARCOURS_PERSONNALISE", label: "Parcours personnalisé" },
 ];
 
 export default function ClientsGrid({ clients }: { clients: SerializedClient[] }) {
@@ -232,8 +233,11 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                   parcoursType={parcoursType}
                   flags={flags}
                   onChange={(next) => {
-                    setParcoursType(next.parcoursType);
-                    setFlags(next.flags);
+                    if (next.parcoursType !== parcoursType) {
+                      setParcoursType(next.parcoursType);
+                    } else {
+                      setFlags(next.flags);
+                    }
                   }}
                   disabled={creating}
                 />

@@ -11,6 +11,7 @@ export const OFFER_LABELS: Record<string, string> = {
   LA_CHAMBRE_DE_LA_REINE: "La Chambre de la Reine",
   SOS_URGENCE_VIP: "SOS · Urgence VIP",
   LE_FIL_DE_LA_RUCHE: "Le Fil de la Ruche",
+  PARCOURS_PERSONNALISE: "Parcours personnalisé",
   MONITORING: "Monitoring",
   // Legacy
   HIVE_EXPERIENCE: "Hive Experience",
