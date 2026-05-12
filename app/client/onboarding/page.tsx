@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/LanguageContext";
 import { t } from "@/lib/translations";
 import CharteEngagement from "@/components/onboarding/CharteEngagement";
 import SeuilOneFlow from "@/components/onboarding/SeuilOneFlow";
 import { COUNTRIES, getCountryName, getSortedCountries } from "@/lib/countries";
+import type { ParcoursFlags } from "@/lib/parcours-defaults";
 
 interface FormData {
   firstName: string;
@@ -57,6 +58,31 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
+  const [flags, setFlags] = useState<ParcoursFlags | null>(null);
+
+  // Steps actifs : step 2 (info perso) toujours requis. Step 3 / 4 selon flags.
+  const activeSteps = useMemo<number[]>(() => {
+    const steps = [2];
+    if (!flags || flags.requiresConvention) steps.push(3);
+    if (!flags || flags.requiresWelcomeVideo) steps.push(4);
+    return steps;
+  }, [flags]);
+
+  function goToNextStep(fromStep: number) {
+    const idx = activeSteps.indexOf(fromStep);
+    const next = activeSteps[idx + 1];
+    if (next) {
+      goToStep(next);
+    } else {
+      handleSubmit();
+    }
+  }
+
+  function goToPrevStep(fromStep: number) {
+    const idx = activeSteps.indexOf(fromStep);
+    const prev = activeSteps[idx - 1];
+    goToStep(prev ?? 1);
+  }
 
   const T = (key: { EN: string; FR: string }) => key[lang];
 
@@ -129,6 +155,16 @@ export default function OnboardingPage() {
       .catch(() => {});
   }, []);
 
+  // Chargement des flags parcours pour déterminer le flow d'onboarding
+  useEffect(() => {
+    fetch("/api/client/me/flags")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.flags) setFlags(data.flags);
+      })
+      .catch(() => {});
+  }, []);
+
   // Helper to navigate to a step (forward = pushState)
   function goToStep(newStep: number) {
     setStep(newStep);
@@ -190,7 +226,8 @@ export default function OnboardingPage() {
 
       // Onboarding complete — clear saved state
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      router.push("/client/questionnaire-entry");
+      // Redirect selon flag questionnaire : si désactivé, le client va directement sur sa home
+      router.push(flags && !flags.requiresQuestionnaire ? "/client/home" : "/client/questionnaire-entry");
     } catch {
       setError("Something went wrong");
     } finally {
@@ -296,27 +333,29 @@ export default function OnboardingPage() {
             </span>
           </header>
 
-          {/* Progress: steps 2, 3, 4 shown as 1, 2, 3 */}
-          <div className="flex items-center justify-center gap-0 mb-8">
-            {[2, 3, 4].map((s, i) => (
-              <div key={s} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-ui transition-colors ${
-                    s === step
-                      ? "bg-or-sacre text-white"
-                      : s < step
-                        ? "bg-foret text-white"
-                        : "bg-or-pale text-brun-mid"
-                  }`}
-                >
-                  {i + 1}
+          {/* Progress: steps actifs uniquement (selon flags parcours) */}
+          {activeSteps.length > 1 && (
+            <div className="flex items-center justify-center gap-0 mb-8">
+              {activeSteps.map((s, i) => (
+                <div key={s} className="flex items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-ui transition-colors ${
+                      s === step
+                        ? "bg-or-sacre text-white"
+                        : s < step
+                          ? "bg-foret text-white"
+                          : "bg-or-pale text-brun-mid"
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                  {i < activeSteps.length - 1 && (
+                    <div className={`w-8 h-0.5 ${s < step ? "bg-foret" : "bg-or-pale"}`} />
+                  )}
                 </div>
-                {i < 2 && (
-                  <div className={`w-8 h-0.5 ${s < step ? "bg-foret" : "bg-or-pale"}`} />
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex-1 flex items-start justify-center px-4">
             <div className="w-full max-w-lg">
@@ -468,7 +507,7 @@ export default function OnboardingPage() {
                       {T(t.onboarding.backButton)}
                     </button>
                     <button
-                      onClick={() => goToStep(3)}
+                      onClick={() => goToNextStep(2)}
                       disabled={!isStep2Valid()}
                       className="flex-[2] py-3 bg-or-sacre text-white rounded-sharp uppercase font-caps text-sm tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
@@ -485,10 +524,10 @@ export default function OnboardingPage() {
                     lang={lang}
                     clientFirstName={form.firstName}
                     clientName={[form.firstName, form.lastName].filter(Boolean).join(" ")}
-                    onComplete={() => goToStep(4)}
+                    onComplete={() => goToNextStep(3)}
                   />
                   <button
-                    onClick={() => goToStep(2)}
+                    onClick={() => goToPrevStep(3)}
                     className="w-full py-2 border border-brun-mid text-brun-mid rounded-sharp uppercase font-caps text-xs tracking-wider hover:bg-brun-mid hover:text-creme-sacree transition-colors"
                   >
                     {T(t.onboarding.backButton)}
@@ -506,7 +545,7 @@ export default function OnboardingPage() {
                   </div>
                   <SeuilOneFlow lang={lang} onComplete={handleSubmit} />
                   <button
-                    onClick={() => goToStep(3)}
+                    onClick={() => goToPrevStep(4)}
                     className="w-full py-2 border border-brun-mid text-brun-mid rounded-sharp uppercase font-caps text-xs tracking-wider hover:bg-brun-mid hover:text-creme-sacree transition-colors"
                   >
                     {T(t.onboarding.backButton)}
