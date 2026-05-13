@@ -3,9 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import ParcoursTypeSelector from "@/components/admin/ParcoursTypeSelector";
-import { type ParcoursFlags } from "@/lib/parcours-defaults";
-import { getParcoursForOffer } from "@/lib/offer-to-parcours-mapping";
+import { FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { FLAG_LABELS } from "@/lib/parcours-labels";
 import type { ParcoursType } from "@prisma/client";
 
 interface SerializedClient {
@@ -30,6 +29,17 @@ function getInitials(name: string): string {
 function computeDayNumber(startDate: string): number {
   return Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000) + 1;
 }
+
+const ALL_FLAGS_TRUE: ParcoursFlags = {
+  requiresWelcomeVideo: true,
+  requiresConvention: true,
+  requiresQuestionnaire: true,
+  requiresPhaseVideos: true,
+  requiresMorningCheckin: true,
+  requiresEveningCheckin: true,
+  requiresJournal: true,
+  requiresProgramTimeline: true,
+};
 
 const OFFER_OPTIONS = [
   { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire priv\u00e9e" },
@@ -59,9 +69,8 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
   });
   const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
-  const initialParcours = getParcoursForOffer("CONVERSATION_EXPLORATOIRE");
-  const [parcoursType, setParcoursType] = useState<ParcoursType>(initialParcours.parcoursType);
-  const [flags, setFlags] = useState<ParcoursFlags>(initialParcours.flags);
+  const [parcoursType] = useState<ParcoursType>("LE_PASSAGE");
+  const [flags, setFlags] = useState<ParcoursFlags>(ALL_FLAGS_TRUE);
 
   const filteredClients = useMemo(() => {
     if (!search.trim()) return clients;
@@ -114,9 +123,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
             setShowInvite(true);
             setResult(null);
             setForm({ firstName: "", lastName: "", email: "", offerType: "CONVERSATION_EXPLORATOIRE", language: "FR", isLegacy: false, startDate: "", dayDirect: "" });
-            const init = getParcoursForOffer("CONVERSATION_EXPLORATOIRE");
-            setParcoursType(init.parcoursType);
-            setFlags(init.flags);
+            setFlags(ALL_FLAGS_TRUE);
           }}
           className="px-4 py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-[10px] hover:bg-ambre-vif transition-colors"
         >
@@ -224,13 +231,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-ui text-brun-mid/60 mb-1">Offre</label>
-                    <select value={form.offerType} onChange={(e) => {
-                      const next = e.target.value;
-                      setForm({ ...form, offerType: next });
-                      const mapped = getParcoursForOffer(next);
-                      setParcoursType(mapped.parcoursType);
-                      setFlags(mapped.flags);
-                    }} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud">
+                    <select value={form.offerType} onChange={(e) => setForm({ ...form, offerType: e.target.value })} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud">
                       {OFFER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
@@ -243,19 +244,29 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                   </div>
                 </div>
 
-                {/* Type de parcours + 8 toggles modules */}
-                <ParcoursTypeSelector
-                  parcoursType={parcoursType}
-                  flags={flags}
-                  onChange={(next) => {
-                    if (next.parcoursType !== parcoursType) {
-                      setParcoursType(next.parcoursType);
-                    } else {
-                      setFlags(next.flags);
-                    }
-                  }}
-                  disabled={creating}
-                />
+                {/* Modules actifs — 8 checkboxes libres */}
+                <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+                  <p className="text-xs font-ui font-light text-brun-mid uppercase tracking-wider mb-3">
+                    Modules actifs
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {FLAG_KEYS.map((flag) => (
+                      <label
+                        key={flag}
+                        className={`flex items-center gap-2 px-3 py-2 bg-creme-sacree border border-or-pale rounded-sharp text-sm font-ui cursor-pointer hover:border-or-sacre transition-colors ${creating ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={flags[flag]}
+                          onChange={() => setFlags({ ...flags, [flag]: !flags[flag] })}
+                          disabled={creating}
+                          className="accent-or-sacre"
+                        />
+                        <span className="text-brun-chaud">{FLAG_LABELS[flag]}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Legacy toggle */}
                 <div className="border-t border-or-pale/50 pt-3">
