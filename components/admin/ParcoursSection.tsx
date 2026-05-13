@@ -663,6 +663,10 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
         targetPhaseIds = allPhases.map((p) => p.id);
       }
 
+      if (applyTo !== "this" && !confirm(`Assigner cet élixir à ${targetPhaseIds.length} phases ?`)) {
+        return;
+      }
+
       // Assign to all target phases
       await Promise.all(
         targetPhaseIds.map((phaseId) =>
