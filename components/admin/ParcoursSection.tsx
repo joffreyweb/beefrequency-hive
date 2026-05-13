@@ -12,6 +12,7 @@ interface ElixirLib {
   unit: string;
   category: string;
   timing: string;
+  notes: string | null;
 }
 
 interface PhaseElixir {
@@ -96,6 +97,12 @@ const TIMING_LABELS: Record<string, string> = {
   SOIR: "Soir",
   JOURNEE: "Journée",
   FLEXIBLE: "Flexible",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  ACTIVATION: "Activation",
+  INTEGRATION: "Intégration",
+  SUPPORT: "Support",
 };
 
 const PRACTICE_TYPE_LABELS: Record<string, string> = {
@@ -776,6 +783,27 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
                 placeholder="Laisser vide = dose par défaut" />
             </div>
           </div>
+          {selectedElixirId && (() => {
+            const sel = library.find((e) => e.id === selectedElixirId);
+            if (!sel) return null;
+            return (
+              <div className="bg-cire-chaude border border-or-pale rounded-sharp p-3 mb-3 space-y-1.5">
+                <p className="text-xs font-ui font-light text-brun-mid uppercase tracking-wider mb-1">Détail élixir</p>
+                {sel.category && (
+                  <p className="text-xs font-ui"><span className="text-brun-mid/60">Catégorie : </span><span className="text-brun-chaud">{CATEGORY_LABELS[sel.category] || sel.category}</span></p>
+                )}
+                {sel.timing && (
+                  <p className="text-xs font-ui"><span className="text-brun-mid/60">Timing : </span><span className="text-brun-chaud">{TIMING_LABELS[sel.timing] || sel.timing}</span></p>
+                )}
+                {sel.description && (
+                  <p className="text-xs font-ui"><span className="text-brun-mid/60">Description : </span><span className="text-brun-chaud">{sel.description}</span></p>
+                )}
+                {sel.notes && (
+                  <p className="text-xs font-ui"><span className="text-brun-mid/60">Notes : </span><span className="text-brun-chaud italic">{sel.notes}</span></p>
+                )}
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-xs font-ui text-brun-mid mb-1">Fréquence</label>
