@@ -195,12 +195,12 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
 
       {/* Invite Modal */}
       {showInvite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-creme-sacree border border-or-pale rounded-[10px] p-6 w-full max-w-md shadow-xl">
-            <h3 className="font-display text-lg text-brun-chaud mb-4">Inviter un client</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-creme-sacree border border-or-pale rounded-[10px] w-full max-w-md shadow-xl max-h-[90vh] flex flex-col">
+            <h3 className="font-display text-lg text-brun-chaud px-6 pt-6 pb-4 flex-shrink-0">Inviter un client</h3>
 
             {result?.success ? (
-              <div className="space-y-3">
+              <div className="space-y-3 px-6 pb-6">
                 <p className="text-sm font-ui text-foret">{result.message}</p>
                 {result.link && (
                   <div className="bg-cire-chaude border border-or-pale rounded-sm p-3">
@@ -211,7 +211,8 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                 <button onClick={() => setShowInvite(false)} className="w-full py-2 bg-or-sacre text-white text-xs font-ui uppercase rounded-sharp hover:bg-ambre-vif">Fermer</button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <>
+                <div className="space-y-3 px-6 overflow-y-auto flex-1 pb-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-ui text-brun-mid/60 mb-1">Prenom *</label>
@@ -302,8 +303,9 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                 {result && !result.success && (
                   <p className="text-xs font-ui text-red-600">{result.message}</p>
                 )}
+                </div>
 
-                <div className="flex gap-3 justify-end pt-2">
+                <div className="flex gap-3 justify-end px-6 py-4 border-t border-or-pale/50 flex-shrink-0">
                   <button onClick={() => setShowInvite(false)} className="px-4 py-2 border border-or-pale text-brun-mid text-xs font-ui uppercase rounded-sharp hover:bg-cire-chaude">Annuler</button>
                   <button
                     onClick={handleCreate}
@@ -313,7 +315,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                     {creating ? "Creation..." : "Creer le client"}
                   </button>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
