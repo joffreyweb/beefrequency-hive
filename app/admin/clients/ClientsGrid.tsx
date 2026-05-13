@@ -248,8 +248,11 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                   parcoursType={parcoursType}
                   flags={flags}
                   onChange={(next) => {
-                    setParcoursType(next.parcoursType);
-                    setFlags(next.flags);
+                    if (next.parcoursType !== parcoursType) {
+                      setParcoursType(next.parcoursType);
+                    } else {
+                      setFlags(next.flags);
+                    }
                   }}
                   disabled={creating}
                 />
