@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Recherche utilisateur
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    // Recherche utilisateur (case-insensitive pour defense in depth)
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email.trim(), mode: "insensitive" } },
     });
 
     if (!user) {

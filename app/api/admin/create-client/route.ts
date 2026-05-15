@@ -20,8 +20,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Prenom, nom et email requis" }, { status: 400 });
   }
 
-  // Check existing user
-  const existing = await prisma.user.findUnique({ where: { email } });
+  // Normaliser email (lowercase + trim) + validation RFC 5321
+  const normalizedEmail = email.toLowerCase().trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    return NextResponse.json({ error: "Format email invalide" }, { status: 400 });
+  }
+
+  // Check existing user (case-insensitive)
+  const existing = await prisma.user.findFirst({
+    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+  });
   if (existing) {
     return NextResponse.json({ error: "Un compte existe deja avec cet email" }, { status: 409 });
   }
@@ -46,7 +55,7 @@ export async function POST(request: NextRequest) {
   // Create user + client in transaction
   const user = await prisma.user.create({
     data: {
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       name: fullName,
       role: "CLIENT",
@@ -88,7 +97,7 @@ export async function POST(request: NextRequest) {
 
   const inviteToken = await prisma.inviteToken.create({
     data: {
-      email,
+      email: normalizedEmail,
       offerType: offerType || "CONVERSATION_EXPLORATOIRE",
       language: language || "FR",
       role: "CLIENT",
@@ -104,7 +113,7 @@ export async function POST(request: NextRequest) {
     try {
       const { sendInvitationEmail } = await import("@/lib/mailer");
       await sendInvitationEmail({
-        to: email,
+        to: normalizedEmail,
         firstName,
         inviteUrl: inviteLink,
         language: (language === "EN" ? "EN" : "FR") as "FR" | "EN",
@@ -147,7 +156,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
-    client: { id: client.id, name: fullName, email },
+    client: { id: client.id, name: fullName, email: normalizedEmail },
     inviteLink,
     isLegacy,
   }, { status: 201 });
