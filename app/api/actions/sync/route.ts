@@ -2,14 +2,34 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 
-// POST — Synchroniser / générer les actions automatiques au chargement du dashboard
-export async function POST() {
-  const auth = await requireAdmin();
-  if (isErrorResponse(auth)) return auth;
+// POST — Synchroniser / générer les actions automatiques.
+//  - Via le DASHBOARD admin (session)  : génère TOUTES les actions (RECAP, SESSION, SYMPTOM, DOCUMENT, BIRTHDAY, CUSTOM).
+//  - Via le CRON quotidien (x-cron-secret) : génère UNIQUEMENT les anniversaires (BIRTHDAY).
+export async function POST(req: Request) {
+  // Auth : header cron-secret (cron quotidien) OU session admin (dashboard)
+  let adminId: string;
+  let isCron = false;
+  const cronSecret = req.headers.get("x-cron-secret");
+
+  if (process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET) {
+    // Chemin cron : pas de session → on rattache les actions au premier admin
+    isCron = true;
+    const admin = await prisma.user.findFirst({
+      where: { role: "ADMIN" },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (!admin) {
+      return NextResponse.json({ error: "Aucun admin trouvé" }, { status: 500 });
+    }
+    adminId = admin.id;
+  } else {
+    const auth = await requireAdmin();
+    if (isErrorResponse(auth)) return auth;
+    adminId = auth.session.userId;
+  }
 
   try {
-    const { session } = auth;
-    const adminId = session.userId;
     let created = 0;
 
     // Récupérer toutes les actions non complétées pour éviter les doublons
@@ -24,10 +44,81 @@ export async function POST() {
         (a) => a.type === type && a.clientId === clientId
       );
 
-    // --- a) RECAP — Sessions terminées aujourd'hui sans récap ---
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
+    // ─────────────────────────────────────────────────────────────
+    // BIRTHDAY — Anniversaires à venir (demain + dans 7 jours)
+    // Toujours déclenché (dashboard ET cron quotidien).
+    // ─────────────────────────────────────────────────────────────
+    const clientsWithIntake = await prisma.client.findMany({
+      where: { status: "ACTIVE" },
+      include: { user: true, intake: true },
+    });
+
+    const tomorrow = new Date(todayStart.getTime() + 86400000);
+    const inSevenDays = new Date(todayStart.getTime() + 7 * 86400000);
+
+    for (const client of clientsWithIntake) {
+      if (!client.intake?.birthDate) continue;
+      const bd = new Date(client.intake.birthDate);
+      const bdDay = bd.getDate();
+      const bdMonth = bd.getMonth();
+      const fullName = `${client.intake.firstName} ${client.intake.lastName}`;
+      const age = tomorrow.getFullYear() - bd.getFullYear();
+      const bdFormatted = bd.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+
+      // Anniversaire demain
+      if (bdDay === tomorrow.getDate() && bdMonth === tomorrow.getMonth()) {
+        const title = `Anniversaire demain — ${fullName}`;
+        if (!existingActions.some((a) => a.type === "BIRTHDAY" && a.title === title)) {
+          await prisma.pendingAction.create({
+            data: {
+              adminId,
+              clientId: client.id,
+              type: "BIRTHDAY",
+              title,
+              description: `Né(e) le ${bdFormatted} · ${age} ans demain`,
+              urgency: "amber",
+            },
+          });
+          created++;
+          existingActions.push({ type: "BIRTHDAY", clientId: client.id, title });
+        }
+      }
+
+      // Anniversaire dans 7 jours
+      if (bdDay === inSevenDays.getDate() && bdMonth === inSevenDays.getMonth()) {
+        const title = `Anniversaire dans 7 jours — ${fullName}`;
+        const ageIn7 = inSevenDays.getFullYear() - bd.getFullYear();
+        if (!existingActions.some((a) => a.type === "BIRTHDAY" && a.title === title)) {
+          await prisma.pendingAction.create({
+            data: {
+              adminId,
+              clientId: client.id,
+              type: "BIRTHDAY",
+              title,
+              description: `Né(e) le ${bdFormatted} · ${ageIn7} ans dans 7 jours`,
+              urgency: "green",
+            },
+          });
+          created++;
+          existingActions.push({ type: "BIRTHDAY", clientId: client.id, title });
+        }
+      }
+    }
+
+    // Le cron quotidien s'arrête ici : il ne génère QUE les anniversaires.
+    if (isCron) {
+      const total = await prisma.pendingAction.count({ where: { completedAt: null } });
+      return NextResponse.json({ created, total, scope: "birthday" });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Sections suivantes : dashboard admin uniquement (jamais via le cron)
+    // ─────────────────────────────────────────────────────────────
+
+    // --- a) RECAP — Sessions terminées aujourd'hui sans récap ---
     const completedSessions = await prisma.session.findMany({
       where: {
         status: "COMPLETED",
@@ -135,64 +226,6 @@ export async function POST() {
         });
         created++;
         existingActions.push({ type: "DOCUMENT", clientId: doc.clientId, title: "" });
-      }
-    }
-
-    // --- f) BIRTHDAY — Anniversaires à venir (demain + dans 7 jours) ---
-    const clientsWithIntake = await prisma.client.findMany({
-      where: { status: "ACTIVE" },
-      include: { user: true, intake: true },
-    });
-
-    const tomorrow = new Date(todayStart.getTime() + 86400000);
-    const inSevenDays = new Date(todayStart.getTime() + 7 * 86400000);
-
-    for (const client of clientsWithIntake) {
-      if (!client.intake?.birthDate) continue;
-      const bd = new Date(client.intake.birthDate);
-      const bdDay = bd.getDate();
-      const bdMonth = bd.getMonth();
-      const fullName = `${client.intake.firstName} ${client.intake.lastName}`;
-      const age = tomorrow.getFullYear() - bd.getFullYear();
-      const bdFormatted = bd.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-
-      // Anniversaire demain
-      if (bdDay === tomorrow.getDate() && bdMonth === tomorrow.getMonth()) {
-        const title = `Anniversaire demain — ${fullName}`;
-        if (!existingActions.some((a) => a.type === "BIRTHDAY" && a.title === title)) {
-          await prisma.pendingAction.create({
-            data: {
-              adminId,
-              clientId: client.id,
-              type: "BIRTHDAY",
-              title,
-              description: `Né(e) le ${bdFormatted} · ${age} ans demain`,
-              urgency: "amber",
-            },
-          });
-          created++;
-          existingActions.push({ type: "BIRTHDAY", clientId: client.id, title });
-        }
-      }
-
-      // Anniversaire dans 7 jours
-      if (bdDay === inSevenDays.getDate() && bdMonth === inSevenDays.getMonth()) {
-        const title = `Anniversaire dans 7 jours — ${fullName}`;
-        const ageIn7 = inSevenDays.getFullYear() - bd.getFullYear();
-        if (!existingActions.some((a) => a.type === "BIRTHDAY" && a.title === title)) {
-          await prisma.pendingAction.create({
-            data: {
-              adminId,
-              clientId: client.id,
-              type: "BIRTHDAY",
-              title,
-              description: `Né(e) le ${bdFormatted} · ${ageIn7} ans dans 7 jours`,
-              urgency: "green",
-            },
-          });
-          created++;
-          existingActions.push({ type: "BIRTHDAY", clientId: client.id, title });
-        }
       }
     }
 
