@@ -14,7 +14,7 @@ export async function PATCH(req: Request, ctx: RouteContext) {
   const { id } = await ctx.params;
   const body = await req.json();
 
-  const elixir = await prisma.elixirLibrary.update({
+  const elixir = await prisma.elixir.update({
     where: { id },
     data: body,
   });
@@ -29,7 +29,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
   const { id } = await ctx.params;
 
-  await prisma.elixirLibrary.delete({ where: { id } });
+  await prisma.elixir.delete({ where: { id } });
 
   return NextResponse.json({ ok: true });
 }

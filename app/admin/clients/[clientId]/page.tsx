@@ -60,11 +60,6 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         where: { isPrivate: false },
         orderBy: { createdAt: "desc" },
       },
-      // Prescriptions avec details de l'elixir
-      elixirPrescriptions: {
-        orderBy: { createdAt: "desc" },
-        include: { elixir: true },
-      },
       // Protocoles
       protocols: {
         orderBy: { createdAt: "desc" },
@@ -150,8 +145,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
     },
   });
 
-  // Calcul du jour du parcours — uniquement si produits reçus ET date de départ atteinte
-  const programStart = client.detoxStartDate || client.programmeStartDate;
+  // Calcul du jour du parcours — source canonique detoxStartDate, si produits reçus ET date atteinte
+  const programStart = client.detoxStartDate;
   const programHasStarted =
     client.produitsRecus &&
     !!programStart &&
@@ -265,7 +260,6 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         produitsRecus={client.produitsRecus}
         produitsRecusAt={client.produitsRecusAt ? client.produitsRecusAt.toISOString() : null}
         detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
-        programmeStartDate={client.programmeStartDate ? client.programmeStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
       />
 

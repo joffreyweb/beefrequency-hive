@@ -151,8 +151,7 @@ model Client {
   colisEnvoyeAt         DateTime?
   produitsRecus         Boolean      @default(false)
   produitsRecusAt       DateTime?
-  detoxStartDate        DateTime?    // Début détox (10 jours)
-  programmeStartDate    DateTime?    // Début programme 90 jours (remplace startDate pour le calcul)
+  detoxStartDate        DateTime?    // Début détox (10 jours) — SOURCE DE DATE CANONIQUE du parcours
 
   // Données de naissance étendues
   birthTime             String?      // Format HH:MM
@@ -172,7 +171,6 @@ model Client {
   updatedAt DateTime @updatedAt
 
   journalEntries        JournalEntry[]
-  elixirPrescriptions   ElixirPrescription[]
   protocols             Protocol[]
   sessions              Session[]
   supports              Support[]
@@ -213,40 +211,6 @@ model JournalEntry {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model Elixir {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  dosage      String
-  duration    String
-  stock       Int      @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  prescriptions ElixirPrescription[]
-}
-
-model ElixirPrescription {
-  id             String   @id @default(uuid())
-  clientId       String
-  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  elixirId       String
-  elixir         Elixir   @relation(fields: [elixirId], references: [id], onDelete: Cascade)
-  dosage         String?  // Override possible (texte descriptif)
-  quantity       Int?     // Quantité totale prescrite (ex: 60 capsules)
-  dailyDose      Float?   // Dose journalière (ex: 2 unités/jour)
-  startDate      DateTime @default(now())
-  endDate        DateTime? // Calculé ou manuel
-  reorderUrl     String?  // Lien direct pour recommander
-  stockAlertDays Int      @default(7) // Jours avant épuisement pour alerter
-  notes          String?
-
-  createdAt DateTime @default(now())
-
-  checkinElixirs CheckinElixir[]
 }
 
 model Protocol {
@@ -623,7 +587,7 @@ enum ElixirUnit {
   CAPUCHONS
 }
 
-model ElixirLibrary {
+model Elixir {
   id          String         @id @default(uuid())
   name        String
   description String
@@ -632,8 +596,10 @@ model ElixirLibrary {
   category    ElixirCategory
   timing      ElixirTiming   @default(FLEXIBLE)
   notes       String?
+  isActive    Boolean        @default(true)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   phaseElixirs PhaseElixir[]
 }
@@ -707,13 +673,15 @@ model PhaseElixir {
   clientPhaseId   String
   clientPhase     ClientPhase    @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
   elixirLibraryId String
-  elixirLibrary   ElixirLibrary  @relation(fields: [elixirLibraryId], references: [id], onDelete: Cascade)
+  elixirLibrary   Elixir         @relation(fields: [elixirLibraryId], references: [id], onDelete: Cascade)
   dose            String?        // Override du dosage par defaut
   frequency       PhaseFrequency @default(DAILY)
   timing          ElixirTiming   @default(FLEXIBLE)
   notes           String?
 
   createdAt DateTime @default(now())
+
+  checkinElixirs CheckinElixir[]
 }
 
 enum PhasePracticeType {
@@ -829,13 +797,13 @@ model CheckinElixir {
   id                   String             @id @default(uuid())
   dailyCheckinId       String
   dailyCheckin         DailyCheckin       @relation(fields: [dailyCheckinId], references: [id], onDelete: Cascade)
-  elixirPrescriptionId String
-  elixirPrescription   ElixirPrescription @relation(fields: [elixirPrescriptionId], references: [id], onDelete: Cascade)
+  phaseElixirId        String
+  phaseElixir          PhaseElixir        @relation(fields: [phaseElixirId], references: [id], onDelete: Cascade)
   taken                Boolean            @default(false)
 
   createdAt DateTime @default(now())
 
-  @@unique([dailyCheckinId, elixirPrescriptionId])
+  @@unique([dailyCheckinId, phaseElixirId])
 }
 
 // ═══════════════════════════════════════

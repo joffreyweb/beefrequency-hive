@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 
-// GET — liste tous les ElixirLibrary (filtrable par catégorie)
+// GET — liste tous les élixirs du catalogue (filtrable par catégorie)
 export async function GET(req: Request) {
   const result = await requireAdmin();
   if (isErrorResponse(result)) return result;
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
   const where = category ? { category: category as any } : {};
 
-  const elixirs = await prisma.elixirLibrary.findMany({
+  const elixirs = await prisma.elixir.findMany({
     where,
     orderBy: { name: "asc" },
     include: { _count: { select: { phaseElixirs: true } } },
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const elixir = await prisma.elixirLibrary.create({
+  const elixir = await prisma.elixir.create({
     data: { name, description, dosage, unit, category, timing: timing || "FLEXIBLE", notes },
   });
 

@@ -14,7 +14,6 @@ export async function GET() {
     select: {
       id: true,
       detoxStartDate: true,
-      programmeStartDate: true,
       startDate: true,
       produitsRecus: true,
       colisEnvoye: true,
@@ -45,8 +44,8 @@ export async function GET() {
   // Phases du programme (7 phases : detox + 3 cycles + 3 intégrations)
   let phases = null;
   let activeInfo = null;
-  // Use programmeStartDate if set, otherwise fall back to detoxStartDate (legacy clients)
-  const programmeStart = client.programmeStartDate || client.detoxStartDate || null;
+  // Source de date canonique : detoxStartDate (jour 0 du parcours, détox incluse)
+  const programmeStart = client.detoxStartDate || null;
 
   if (programmeStart) {
     const computed = computePhases(programmeStart);

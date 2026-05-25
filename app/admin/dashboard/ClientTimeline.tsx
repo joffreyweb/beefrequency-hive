@@ -1,6 +1,7 @@
 "use client";
 
-// 93-day timeline visualization
+// 103-day timeline visualization (détox incluse — aligné sur lib/parcours.ts)
+// Détox  (10j): brun-mid clair #8A6A3E
 // Cycle 1 (21j): or-sacre #B8821E
 // Break 1 (10j): or-pale #E8D5A8
 // Cycle 2 (21j): ambre-vif #D4A042
@@ -9,6 +10,7 @@
 // Break 3 (10j): or-pale #E8D5A8
 
 const PHASES = [
+  { name: "Dx", days: 10, color: "#8A6A3E" },
   { name: "C1", days: 21, color: "#B8821E" },
   { name: "B1", days: 10, color: "#E8D5A8" },
   { name: "C2", days: 21, color: "#D4A042" },
@@ -17,7 +19,7 @@ const PHASES = [
   { name: "B3", days: 10, color: "#E8D5A8" },
 ];
 
-const TOTAL = 93;
+const TOTAL = 103;
 
 export default function ClientTimeline({ dayNumber }: { dayNumber: number }) {
   return (

@@ -34,12 +34,9 @@ export async function PATCH(
     if (body.produitsRecus) updateData.produitsRecusAt = new Date();
   }
 
+  // detoxStartDate = source de date canonique du parcours (pilote les 7 phases)
   if (body.detoxStartDate !== undefined) {
     updateData.detoxStartDate = body.detoxStartDate ? new Date(body.detoxStartDate) : null;
-  }
-
-  if (body.programmeStartDate !== undefined) {
-    updateData.programmeStartDate = body.programmeStartDate ? new Date(body.programmeStartDate) : null;
   }
 
   // Subscription fields

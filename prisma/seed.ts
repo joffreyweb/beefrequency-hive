@@ -79,7 +79,7 @@ async function main() {
   ];
 
   for (const elixir of elixirs) {
-    await prisma.elixirLibrary.upsert({
+    await prisma.elixir.upsert({
       where: { id: elixir.name.toLowerCase().replace(/\s+/g, "-") },
       update: {},
       create: {
@@ -89,7 +89,7 @@ async function main() {
     });
   }
 
-  console.log("ElixirLibrary seed:", elixirs.length, "elixirs created");
+  console.log("Elixir catalog seed:", elixirs.length, "elixirs created");
 
   // 66 Wisdom Messages — DayMessage seed
   const wisdomMessages = [

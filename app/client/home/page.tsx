@@ -57,11 +57,6 @@ export default async function ClientHomePage() {
         include: { practice: true },
         take: 1,
       },
-      elixirPrescriptions: {
-        where: { endDate: null },
-        include: { elixir: true },
-        orderBy: { createdAt: "desc" },
-      },
       questionnaireEntry: { select: { status: true } },
     },
   });
@@ -92,8 +87,8 @@ export default async function ClientHomePage() {
   const lang = (client.language === "EN" ? "EN" : "FR") as Lang;
   const T = (key: { EN: string; FR: string }) => key[lang];
 
-  // Date de référence pour le programme — uniquement si produits reçus ET date passée
-  const programStart = client.detoxStartDate || client.programmeStartDate;
+  // Date de référence pour le programme — source canonique detoxStartDate, si produits reçus ET date passée
+  const programStart = client.detoxStartDate;
   const programHasStarted =
     client.produitsRecus &&
     !!programStart &&
@@ -457,28 +452,6 @@ export default async function ClientHomePage() {
             {T({ EN: "Instructions", FR: "Instructions" })}
           </h2>
           <p className="font-ui text-sm text-brun-mid whitespace-pre-line">{activePhase.instructions}</p>
-        </div>
-      )}
-
-      {/* Elixirs prescribed (ancien système — fallback) */}
-      {(!activePhase || activePhase.phaseElixirs.length === 0) && client.elixirPrescriptions.length > 0 && (
-        <div>
-          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-            {T(t.home.yourElixirs)}
-          </h2>
-          <div className="space-y-3">
-            {client.elixirPrescriptions.map((rx: any) => (
-              <div key={rx.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
-                <p className="font-display text-base text-brun-chaud">{rx.elixir.name}</p>
-                <p className="font-ui text-sm text-brun-mid mt-1">
-                  {rx.dosage || rx.elixir.dosage}
-                </p>
-                {rx.notes && (
-                  <p className="font-ui text-xs text-brun-mid/60 italic mt-1">{rx.notes}</p>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

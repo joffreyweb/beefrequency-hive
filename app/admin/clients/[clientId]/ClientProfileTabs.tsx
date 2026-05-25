@@ -7,7 +7,6 @@ import SupportSection from "@/components/admin/SupportSection";
 import RecommendationSection from "@/components/admin/RecommendationSection";
 import DailyFocusSection from "@/components/admin/DailyFocusSection";
 import ClientRecommendationsSection from "@/components/admin/ClientRecommendationsSection";
-import { computeStockInfo, stockColor, stockTextColor } from "@/lib/stock-utils";
 import DocumentsSection from "@/components/admin/DocumentsSection";
 import AnalysisSection from "@/components/admin/AnalysisSection";
 import HdTypeSelector from "@/components/admin/HdTypeSelector";
@@ -54,7 +53,7 @@ type TabKey =
   | "seances";
 
 // Sous-onglets du programme
-type ProgramSubTab = "detox" | "elixirs" | "protocols" | "practices";
+type ProgramSubTab = "detox" | "protocols" | "practices";
 
 interface ClientProfileTabsProps {
   client: any;
@@ -167,12 +166,6 @@ export default function ClientProfileTabs({
    TAB 1 — Vue generale
    ───────────────────────────────────────────── */
 function OverviewTab({ client, dayNumber, recentCheckins = [], nextSession }: { client: any; dayNumber: number; recentCheckins?: any[]; nextSession?: any }) {
-  // Prescriptions avec stock critique
-  const criticalPrescriptions = client.elixirPrescriptions.filter((rx: any) => {
-    const stock = computeStockInfo(rx);
-    return stock.isLow;
-  });
-
   // Badge prochain RDV — dans moins de 48h ?
   const nextSessionDate = nextSession ? new Date(nextSession.scheduledAt) : null;
   const hoursUntilSession = nextSessionDate
@@ -374,60 +367,6 @@ function OverviewTab({ client, dayNumber, recentCheckins = [], nextSession }: { 
           )}
         </div>
 
-        {/* Alertes stock */}
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5">
-          <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-4">
-            Alertes stock
-          </h2>
-          {criticalPrescriptions.length === 0 ? (
-            <p className="text-sm text-brun-mid/60 font-ui text-center py-4">
-              Aucune alerte de stock.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {criticalPrescriptions.map((rx: any) => {
-                const stock = computeStockInfo(rx);
-                return (
-                  <div
-                    key={rx.id}
-                    className="flex items-center justify-between p-3 border border-or-pale/50 rounded-[10px]"
-                  >
-                    <div>
-                      <p className="text-sm font-ui text-brun-chaud">
-                        {rx.elixir.name}
-                      </p>
-                      <p
-                        className={`text-xs font-ui mt-0.5 ${stockTextColor(stock.percentRemaining ?? 0)}`}
-                      >
-                        {stock.daysRemaining} jours restants
-                      </p>
-                    </div>
-                    <div className="w-20">
-                      <div className="h-2 bg-or-pale/30 rounded-full">
-                        <div
-                          className={`h-full rounded-full ${stockColor(stock.percentRemaining ?? 0)}`}
-                          style={{
-                            width: `${stock.percentRemaining ?? 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    {rx.reorderUrl && (
-                      <a
-                        href={rx.reorderUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-ui text-or-sacre hover:text-ambre-vif underline ml-3"
-                      >
-                        Commander
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -518,7 +457,6 @@ function ProgramTab({
 }) {
   const subTabs: { key: ProgramSubTab; label: string }[] = [
     { key: "detox", label: "Détox" },
-    { key: "elixirs", label: "Elixirs" },
     { key: "protocols", label: "Protocoles" },
     { key: "practices", label: "Pratiques" },
   ];
@@ -544,187 +482,12 @@ function ProgramTab({
 
       {/* Contenu du sous-onglet */}
       {subTab === "detox" && <DetoxSection clientId={client.id} />}
-      {subTab === "elixirs" && <ElixirsSubTab client={client} />}
       {subTab === "protocols" && <ProtocolsSubTab client={client} />}
       {subTab === "practices" && (
         <ClientPracticesSection
           clientId={client.id}
           initialPractices={client.clientPractices}
         />
-      )}
-    </div>
-  );
-}
-
-/** Sous-onglet Elixirs — table prescriptions + formulaire ajout */
-function ElixirsSubTab({ client }: { client: any }) {
-  const [showForm, setShowForm] = useState(false);
-  const [elixirs, setElixirs] = useState<any[]>([]);
-  const [prescriptions, setPrescriptions] = useState<any[]>(client.elixirPrescriptions);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    elixirId: "",
-    dosage: "",
-    quantity: "",
-    dailyDose: "",
-    notes: "",
-    reorderUrl: "",
-  });
-
-  async function loadElixirs() {
-    if (elixirs.length > 0) return;
-    const res = await fetch("/api/elixirs");
-    if (res.ok) {
-      const data = await res.json();
-      setElixirs(data.elixirs || []);
-    }
-  }
-
-  async function handleAdd() {
-    if (!form.elixirId) return;
-    setLoading(true);
-    try {
-      const res = await fetch("/api/prescriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientId: client.id,
-          elixirId: form.elixirId,
-          dosage: form.dosage || null,
-          quantity: form.quantity ? Number(form.quantity) : null,
-          dailyDose: form.dailyDose ? Number(form.dailyDose) : null,
-          notes: form.notes || null,
-          reorderUrl: form.reorderUrl || null,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPrescriptions((prev) => [data.prescription, ...prev]);
-        setForm({ elixirId: "", dosage: "", quantity: "", dailyDose: "", notes: "", reorderUrl: "" });
-        setShowForm(false);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Bouton ajouter */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => { setShowForm(!showForm); loadElixirs(); }}
-          className="px-3 py-1.5 bg-or-sacre text-white text-xs font-ui uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors"
-        >
-          {showForm ? "Annuler" : "Prescrire un elixir"}
-        </button>
-      </div>
-
-      {/* Formulaire */}
-      {showForm && (
-        <div className="bg-cire-chaude border border-or-sacre rounded-[10px] p-5 space-y-3">
-          <h3 className="font-caps text-sm text-brun-mid uppercase tracking-wider">Nouvelle prescription</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-ui text-brun-mid/60 mb-1">Elixir</label>
-              <select
-                value={form.elixirId}
-                onChange={(e) => setForm({ ...form, elixirId: e.target.value })}
-                className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud"
-              >
-                <option value="">Choisir un elixir...</option>
-                {elixirs.map((e: any) => (
-                  <option key={e.id} value={e.id}>{e.name} — {e.dosage}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-ui text-brun-mid/60 mb-1">Dosage (override)</label>
-              <input type="text" value={form.dosage} onChange={(e) => setForm({ ...form, dosage: e.target.value })} placeholder="Ex: 20 gouttes 2x/jour" className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
-            </div>
-            <div>
-              <label className="block text-xs font-ui text-brun-mid/60 mb-1">Quantite totale</label>
-              <input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="Ex: 60" className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
-            </div>
-            <div>
-              <label className="block text-xs font-ui text-brun-mid/60 mb-1">Dose/jour</label>
-              <input type="number" step="0.5" value={form.dailyDose} onChange={(e) => setForm({ ...form, dailyDose: e.target.value })} placeholder="Ex: 2" className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
-            </div>
-            <div>
-              <label className="block text-xs font-ui text-brun-mid/60 mb-1">Lien commande</label>
-              <input type="url" value={form.reorderUrl} onChange={(e) => setForm({ ...form, reorderUrl: e.target.value })} placeholder="https://..." className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-ui text-brun-mid/60 mb-1">Notes</label>
-              <input type="text" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes internes..." className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
-            </div>
-          </div>
-          <button
-            onClick={handleAdd}
-            disabled={loading || !form.elixirId}
-            className="px-4 py-2 bg-or-sacre text-white text-xs font-ui uppercase tracking-wider rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
-          >
-            {loading ? "..." : "Ajouter la prescription"}
-          </button>
-        </div>
-      )}
-
-      {/* Table */}
-      {prescriptions.length === 0 ? (
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-8 text-center">
-          <p className="text-sm text-brun-mid/60 font-ui">Aucune prescription.</p>
-        </div>
-      ) : (
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] overflow-hidden overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-or-pale/50">
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Elixir</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Dosage</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Quantite</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Dose/jour</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Stock</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Debut</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Fin</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Commande</th>
-                <th className="text-left px-4 py-3 font-caps text-xs text-brun-mid uppercase tracking-wider">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prescriptions.map((rx: any) => {
-                const stock = computeStockInfo(rx);
-                return (
-                  <tr key={rx.id} className="border-b border-or-pale/20 last:border-b-0">
-                    <td className="px-4 py-3 text-sm font-ui text-brun-chaud">{rx.elixir?.name || "—"}</td>
-                    <td className="px-4 py-3 text-sm font-ui text-brun-mid">{rx.dosage || "—"}</td>
-                    <td className="px-4 py-3 text-sm font-ui text-brun-mid">{rx.quantity ?? "—"}</td>
-                    <td className="px-4 py-3 text-sm font-ui text-brun-mid">{rx.dailyDose ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      {stock.percentRemaining !== null ? (
-                        <div>
-                          <div className="h-2 bg-or-pale/30 rounded-full w-24">
-                            <div className={`h-full rounded-full ${stockColor(stock.percentRemaining)}`} style={{ width: `${stock.percentRemaining}%` }} />
-                          </div>
-                          <p className={`text-xs font-ui mt-1 ${stockTextColor(stock.percentRemaining)}`}>{stock.daysRemaining} jours</p>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-ui text-brun-mid/60">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-ui text-brun-mid/70">{new Date(rx.startDate).toLocaleDateString("fr-FR")}</td>
-                    <td className="px-4 py-3 text-xs font-ui text-brun-mid/70">{rx.endDate ? new Date(rx.endDate).toLocaleDateString("fr-FR") : "En cours"}</td>
-                    <td className="px-4 py-3 text-xs font-ui">
-                      {rx.reorderUrl ? (
-                        <a href={rx.reorderUrl} target="_blank" rel="noopener noreferrer" className="text-or-sacre hover:text-ambre-vif underline">Commander</a>
-                      ) : <span className="text-brun-mid/60">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-ui text-brun-mid/60">{rx.notes || "—"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
       )}
     </div>
   );

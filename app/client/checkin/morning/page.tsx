@@ -112,7 +112,7 @@ export default function MorningCheckinPage() {
             body: JSON.stringify({
               dailyCheckinId: checkinData.checkin.id,
               elixirs: Object.entries(elixirsTaken).map(([id, taken]) => ({
-                elixirPrescriptionId: id,
+                phaseElixirId: id,
                 taken,
               })),
             }),

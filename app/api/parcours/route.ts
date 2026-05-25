@@ -13,7 +13,7 @@ export async function GET() {
     where: { userId: session.userId },
     select: {
       id: true,
-      startDate: true,
+      detoxStartDate: true,
       clientPhases: {
         orderBy: [{ startDate: "asc" }],
         include: {
@@ -26,8 +26,10 @@ export async function GET() {
 
   if (!client) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
 
-  const phases = computePhases(client.startDate);
-  const activeInfo = getActivePhaseInfo(client.startDate);
+  // Source de date canonique : detoxStartDate. Si non défini, le programme n'a pas démarré.
+  const programStart = client.detoxStartDate;
+  const phases = programStart ? computePhases(programStart) : [];
+  const activeInfo = programStart ? getActivePhaseInfo(programStart) : null;
 
   // Trouver la phase active en base pour récupérer les élixirs/pratiques assignés
   let todayElixirs: any[] = [];

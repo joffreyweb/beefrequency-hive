@@ -21,10 +21,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         where: { isPrivate: false },
         orderBy: { createdAt: "desc" },
       },
-      elixirPrescriptions: {
-        orderBy: { createdAt: "desc" },
-        include: { elixir: true },
-      },
       protocols: { orderBy: { createdAt: "desc" } },
       sessions: { orderBy: { scheduledAt: "desc" } },
     },

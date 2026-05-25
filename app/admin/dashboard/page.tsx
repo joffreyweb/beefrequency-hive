@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { computeStockInfo } from "@/lib/stock-utils";
+import { TOTAL_PROGRAM_DAYS } from "@/lib/parcours";
 import DashboardActions from "./DashboardActions";
 import AgendaZoomButton from "./AgendaZoomButton";
 import ClientTimeline from "./ClientTimeline";
@@ -29,6 +29,13 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
+// Label de phase affiché (aligné sur la structure canonique lib/parcours.ts)
+const PHASE_LABELS: Record<string, string> = { CYCLE: "Cycle", BREAK: "Intégration" };
+function phaseLabel(p: { phaseType: string; phaseNumber: number; customName: string | null }): string {
+  if (p.customName) return p.customName;
+  return p.phaseType === "DETOX" ? "Détox" : `${PHASE_LABELS[p.phaseType] ?? p.phaseType} ${p.phaseNumber}`;
+}
+
 export default async function AdminDashboard() {
   // Compute today boundaries in Europe/Brussels (DST-aware)
   const TZ = "Europe/Brussels";
@@ -48,7 +55,7 @@ export default async function AdminDashboard() {
   const todayStart = new Date(midnightRef.getTime() - offsetMs);
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, allPrescriptions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments, workflowClients] =
+  const [activeClientsCount, todaySessionsRaw, todayAppointments, pendingActions, activeClients, unreadMessages, pendingQuestionnaires, upcomingAppointments, workflowClients] =
     await Promise.all([
       prisma.client.count({ where: { status: "ACTIVE" } }),
       prisma.session.findMany({
@@ -65,19 +72,12 @@ export default async function AdminDashboard() {
         where: { completedAt: null },
         include: { client: { include: { user: { select: { name: true } } } } },
       }),
-      prisma.elixirPrescription.findMany({
-        where: { client: { status: "ACTIVE" } },
-      }),
       // Detailed client data for overview
       prisma.client.findMany({
         where: { status: { in: ["ACTIVE", "PAUSED"] } },
         include: {
           user: { select: { name: true, lastLoginAt: true, lastSeenAt: true } },
           intake: { select: { firstName: true } },
-          elixirPrescriptions: {
-            where: { endDate: null },
-            include: { elixir: { select: { name: true } } },
-          },
           sessions: {
             where: { status: "SCHEDULED", scheduledAt: { gte: new Date() } },
             orderBy: { scheduledAt: "asc" },
@@ -89,6 +89,7 @@ export default async function AdminDashboard() {
           },
           clientPhases: {
             orderBy: { startDate: "asc" },
+            include: { phaseElixirs: { include: { elixirLibrary: true } } },
           },
           sessionPacks: {
             select: { totalSessions: true },
@@ -185,10 +186,6 @@ export default async function AdminDashboard() {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const criticalStocksCount = allPrescriptions.filter(
-    (rx) => computeStockInfo(rx).isLow
-  ).length;
-
   const serializedActions = pendingActions.map((a) => ({
     id: a.id,
     type: a.type,
@@ -202,8 +199,8 @@ export default async function AdminDashboard() {
 
   // Prepare client overview data
   const clientOverviews = activeClients.map((c) => {
-    // Programme n'a démarré que si produits reçus ET date de départ atteinte
-    const programStart = c.detoxStartDate || c.programmeStartDate;
+    // Source de date canonique : detoxStartDate. Programme démarré = produits reçus ET date atteinte.
+    const programStart = c.detoxStartDate;
     const programHasStarted =
       c.produitsRecus &&
       !!programStart &&
@@ -221,17 +218,26 @@ export default async function AdminDashboard() {
     else if (c.colisEnvoye && !c.produitsRecus) stageLabel = "Colis envoyé";
     else if (!c.colisEnvoye && !c.produitsRecus) stageLabel = "Inscrit";
 
-    // Determine current cycle (uniquement si programme démarré)
+    // Phase active = celle dont [startDate, endDate] contient aujourd'hui (données matérialisées,
+    // dérivées de detoxStartDate). Source unique : on lit les ClientPhase réelles, pas un calcul parallèle.
+    const nowMs = Date.now();
+    const activeDbPhase =
+      c.clientPhases.find((p) => {
+        const s = new Date(p.startDate); s.setHours(0, 0, 0, 0);
+        const e = new Date(p.endDate); e.setHours(23, 59, 59, 999);
+        return nowMs >= s.getTime() && nowMs <= e.getTime();
+      }) ?? null;
+
     let currentCycle = stageLabel;
     let currentWeek = 0;
-    if (programHasStarted) {
-      if (dayNumber <= 21) { currentCycle = "Cycle 1"; currentWeek = Math.ceil(dayNumber / 7); }
-      else if (dayNumber <= 31) { currentCycle = "Break 1"; currentWeek = Math.ceil((dayNumber - 21) / 7); }
-      else if (dayNumber <= 52) { currentCycle = "Cycle 2"; currentWeek = Math.ceil((dayNumber - 31) / 7); }
-      else if (dayNumber <= 62) { currentCycle = "Break 2"; currentWeek = Math.ceil((dayNumber - 52) / 7); }
-      else if (dayNumber <= 83) { currentCycle = "Cycle 3"; currentWeek = Math.ceil((dayNumber - 62) / 7); }
-      else { currentCycle = "Break 3"; currentWeek = Math.ceil((dayNumber - 83) / 7); }
+    if (programHasStarted && activeDbPhase) {
+      currentCycle = phaseLabel(activeDbPhase);
+      const phaseStart = new Date(activeDbPhase.startDate); phaseStart.setHours(0, 0, 0, 0);
+      currentWeek = Math.ceil((Math.floor((nowMs - phaseStart.getTime()) / 86400000) + 1) / 7);
     }
+
+    // Élixirs affichés = ceux assignés à la phase active (PhaseElixir -> Elixir)
+    const phaseElixirs = activeDbPhase?.phaseElixirs ?? [];
 
     const lastCheckin = c.dailyCheckins[0];
     const nextSession = c.sessions[0];
@@ -253,7 +259,7 @@ export default async function AdminDashboard() {
       id: c.id,
       name: displayName,
       dayNumber,
-      totalDays: 93,
+      totalDays: TOTAL_PROGRAM_DAYS,
       currentCycle,
       currentWeek,
       status: c.status,
@@ -261,9 +267,9 @@ export default async function AdminDashboard() {
       lastCheckinDate: lastCheckin?.date ? new Date(lastCheckin.date).toISOString() : null,
       hasMorningCheckin: lastCheckin?.energyLevel != null,
       hasEveningCheckin: lastCheckin?.gratitudeMoment != null,
-      elixirs: c.elixirPrescriptions.map((rx) => ({
-        name: rx.elixir.name,
-        dosage: rx.dosage || "",
+      elixirs: phaseElixirs.map((pe) => ({
+        name: pe.elixirLibrary.name,
+        dosage: pe.dose || pe.elixirLibrary.dosage,
       })),
       nextSession: nextRdv ? {
         date: new Date(nextRdv.date).toISOString(),

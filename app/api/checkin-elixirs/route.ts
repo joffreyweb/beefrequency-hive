@@ -32,19 +32,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Check-in non autorise" }, { status: 403 });
   }
 
-  // Upsert chaque elixir
-  for (const { elixirPrescriptionId, taken } of elixirs) {
+  // Upsert chaque elixir (clé = PhaseElixir assigné à la phase du client)
+  for (const { phaseElixirId, taken } of elixirs) {
     await prisma.checkinElixir.upsert({
       where: {
-        dailyCheckinId_elixirPrescriptionId: {
+        dailyCheckinId_phaseElixirId: {
           dailyCheckinId,
-          elixirPrescriptionId,
+          phaseElixirId,
         },
       },
       update: { taken },
       create: {
         dailyCheckinId,
-        elixirPrescriptionId,
+        phaseElixirId,
         taken,
       },
     });

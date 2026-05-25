@@ -37,7 +37,6 @@ export default function Sidebar({
 
   const isAtelier =
     isActive("/admin/atelier") ||
-    isActive("/admin/elixirs") ||
     isActive("/admin/practices") ||
     isActive("/admin/recommendations") ||
     isActive("/admin/day-messages") ||

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
-import { computeStockInfo } from "@/lib/stock-utils";
 
 // POST — Synchroniser / générer les actions automatiques au chargement du dashboard
 export async function POST() {
@@ -52,29 +51,6 @@ export async function POST() {
         created++;
         // Ajouter aux existantes pour éviter les doublons dans la même boucle
         existingActions.push({ type: "RECAP", clientId: s.clientId, title: "" });
-      }
-    }
-
-    // --- b) ELIXIR — Prescriptions avec stock critique ---
-    const prescriptions = await prisma.elixirPrescription.findMany({
-      where: { client: { status: "ACTIVE" } },
-      include: { elixir: true, client: { include: { user: true } } },
-    });
-
-    for (const rx of prescriptions) {
-      const stock = computeStockInfo(rx);
-      if (stock.isLow && !actionExists("ELIXIR", rx.clientId)) {
-        await prisma.pendingAction.create({
-          data: {
-            adminId,
-            clientId: rx.clientId,
-            type: "ELIXIR",
-            title: `Stock bas — ${rx.elixir.name} (${rx.client.user.name})`,
-            urgency: (stock.daysRemaining ?? 0) <= 3 ? "red" : "amber",
-          },
-        });
-        created++;
-        existingActions.push({ type: "ELIXIR", clientId: rx.clientId, title: "" });
       }
     }
 

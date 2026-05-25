@@ -38,7 +38,7 @@ jobs:
             rm -rf .next
             npm install --production=false
             npx prisma generate
-            npx prisma db push --accept-data-loss
+            npx prisma migrate deploy
             npm run build
             pm2 restart hive --update-env
             pm2 save
