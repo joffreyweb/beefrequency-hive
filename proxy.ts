@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback_secret_do_not_use_in_production"
-);
+const jwtSecretString = process.env.JWT_SECRET;
+if (!jwtSecretString) {
+  throw new Error("[FATAL] JWT_SECRET environment variable is required");
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
 
 // Routes publiques qui ne nécessitent pas d'auth
 const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth/login", "/blocked", "/client/booking", "/api/booking", "/api/availability", "/forgot-password", "/reset-password", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/newsletter/unsubscribe", "/api/public-uploads/journal"];

@@ -1,9 +1,11 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback_secret_do_not_use_in_production"
-);
+const jwtSecretString = process.env.JWT_SECRET;
+if (!jwtSecretString) {
+  throw new Error("[FATAL] JWT_SECRET environment variable is required");
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
 
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 

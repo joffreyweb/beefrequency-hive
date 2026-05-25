@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
+  const auth = await requireAdmin();
+  if (isErrorResponse(auth)) return auth;
+
   const { clientId } = await params;
   const client = await prisma.client.findUnique({
     where: { id: clientId },
@@ -16,11 +19,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ cli
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
+  const auth = await requireAdmin();
+  if (isErrorResponse(auth)) return auth;
+
   const { clientId } = await params;
-  const token = req.cookies.get("token")?.value;
-  if (!token) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  const payload = await verifyToken(token);
-  if (!payload || payload.role !== "ADMIN") return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   const data = await req.json();
   await prisma.client.update({
     where: { id: clientId },
