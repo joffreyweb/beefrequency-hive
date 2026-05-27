@@ -87,6 +87,12 @@ export default async function ClientHomePage() {
   const lang = (client.language === "EN" ? "EN" : "FR") as Lang;
   const T = (key: { EN: string; FR: string }) => key[lang];
 
+  // Élixirs : a-t-il au moins un élixir assigné (toute phase) ? + ceux du jour (phase active)
+  const hasAnyElixir = allPhases.some((p) => p.phaseElixirs.length > 0);
+  const todaysElixirs = activePhase
+    ? activePhase.phaseElixirs.filter((pe) => isElixirDayMatch(pe.frequency, new Date()))
+    : [];
+
   // Date de référence pour le programme — source canonique detoxStartDate, si produits reçus ET date passée
   const programStart = client.detoxStartDate;
   const programHasStarted =
@@ -408,16 +414,27 @@ export default async function ClientHomePage() {
       {/* Timeline widget — masqué si parcours sans timeline */}
       {client.requiresProgramTimeline && <TimelineWidget />}
 
-      {/* Élixirs du jour (phase actuelle) */}
-      {activePhase && activePhase.phaseElixirs.length > 0 && (
+      {/* Élixirs du jour (phase actuelle) + lien vers tous les élixirs assignés */}
+      {hasAnyElixir && (
         <div>
-          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-            {T({ EN: "Today's Elixirs", FR: "Élixirs du jour" })}
-          </h2>
-          <div className="space-y-3">
-            {activePhase.phaseElixirs
-              .filter((pe) => isElixirDayMatch(pe.frequency, new Date()))
-              .map((pe) => {
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid">
+              {T({ EN: "Today's Elixirs", FR: "Élixirs du jour" })}
+            </h2>
+            <Link
+              href="/client/elixirs"
+              className="font-caps text-[10px] uppercase tracking-wider text-or-sacre hover:text-ambre-vif transition-colors"
+            >
+              {T({ EN: "See all →", FR: "Voir tous →" })}
+            </Link>
+          </div>
+          {todaysElixirs.length === 0 ? (
+            <p className="font-ui text-sm text-brun-mid/60">
+              {T({ EN: "No elixir scheduled today — see all your elixirs.", FR: "Aucun élixir prévu aujourd'hui — vois tous tes élixirs." })}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {todaysElixirs.map((pe) => {
                 const timingLabel: Record<string, Record<Lang, string>> = {
                   MATIN: { EN: "Morning", FR: "Matin" },
                   SOIR: { EN: "Evening", FR: "Soir" },
@@ -441,7 +458,8 @@ export default async function ClientHomePage() {
                   </div>
                 );
               })}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
