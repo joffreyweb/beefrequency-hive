@@ -744,16 +744,38 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
   const [editDose, setEditDose] = useState("");
   const [editFrequency, setEditFrequency] = useState("DAILY");
   const [editTiming, setEditTiming] = useState("FLEXIBLE");
+  const [editPhaseId, setEditPhaseId] = useState(phase.id); // phase d'attribution (déplacement)
+  const [saveMsg, setSaveMsg] = useState(""); // confirmation transitoire
 
   function startEdit(pe: ClientPhase["phaseElixirs"][0]) {
     setEditingId(pe.id);
     setEditDose(pe.dose || "");
     setEditFrequency(pe.frequency);
     setEditTiming(pe.timing);
+    setEditPhaseId(phase.id);
   }
 
   async function handleSaveEdit() {
     if (!editingId) return;
+    const moving = editPhaseId !== phase.id;
+
+    // Garde-fou doublon : la phase de destination a-t-elle déjà un élixir IDENTIQUE ?
+    if (moving) {
+      const pe = phase.phaseElixirs.find((p) => p.id === editingId);
+      const target = allPhases.find((p) => p.id === editPhaseId);
+      const dup = pe && target?.phaseElixirs.some(
+        (x) =>
+          x.id !== editingId &&
+          x.elixirLibraryId === pe.elixirLibraryId &&
+          (x.dose ?? "") === (editDose || "") &&
+          x.timing === editTiming &&
+          x.frequency === editFrequency
+      );
+      if (dup && !confirm(`${target ? phaseShortLabel(target) : "Cette phase"} a déjà ce même élixir (dose/timing/fréquence identiques). Déplacer quand même et créer un doublon ?`)) {
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       await fetch(`/api/client-phases/${phase.id}/elixirs?phaseElixirId=${editingId}`, {
@@ -763,9 +785,12 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
           dose: editDose || null,
           frequency: editFrequency,
           timing: editTiming,
+          ...(moving ? { clientPhaseId: editPhaseId } : {}),
         }),
       });
       setEditingId(null);
+      setSaveMsg(moving ? "Élixir déplacé ✓" : "Modifié ✓");
+      setTimeout(() => setSaveMsg(""), 3000);
       onUpdate();
     } catch {
       // silent
@@ -790,12 +815,15 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
         <h4 className="font-caps text-sm text-brun-mid uppercase tracking-wider">
           Élixirs ({phase.phaseElixirs.length})
         </h4>
-        <button
-          onClick={() => setShowAssign(!showAssign)}
-          className="px-3 py-1.5 text-xs font-ui text-or-sacre border border-or-pale rounded-sharp hover:bg-or-sacre/10 transition-colors"
-        >
-          {showAssign ? "Annuler" : "Assigner"}
-        </button>
+        <div className="flex items-center gap-3">
+          {saveMsg && <span className="text-xs font-ui text-foret">{saveMsg}</span>}
+          <button
+            onClick={() => setShowAssign(!showAssign)}
+            className="px-3 py-1.5 text-xs font-ui text-or-sacre border border-or-pale rounded-sharp hover:bg-or-sacre/10 transition-colors"
+          >
+            {showAssign ? "Annuler" : "Assigner"}
+          </button>
+        </div>
       </div>
 
       {/* Assign form */}
@@ -892,6 +920,15 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
               {editingId === pe.id ? (
                 <div className="bg-creme-sacree border border-or-pale/50 rounded p-3 space-y-2">
                   <p className="text-sm font-ui text-brun-chaud font-medium">{pe.elixirLibrary.name}</p>
+                  <div>
+                    <label className="block text-[10px] font-ui text-brun-mid mb-1 uppercase tracking-wider">Phase</label>
+                    <select value={editPhaseId} onChange={(e) => setEditPhaseId(e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs font-ui bg-white border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
+                      {allPhases.map((p) => (
+                        <option key={p.id} value={p.id}>{phaseShortLabel(p)}{p.id === phase.id ? " (actuelle)" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <input type="text" value={editDose} onChange={(e) => setEditDose(e.target.value)}
                       placeholder={pe.elixirLibrary.dosage}

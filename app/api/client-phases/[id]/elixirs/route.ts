@@ -74,6 +74,8 @@ export async function PATCH(req: Request) {
   if (body.frequency !== undefined) data.frequency = body.frequency;
   if (body.timing !== undefined) data.timing = body.timing;
   if (body.notes !== undefined) data.notes = body.notes;
+  // Déplacer l'élixir vers une autre phase du même client
+  if (body.clientPhaseId !== undefined) data.clientPhaseId = body.clientPhaseId;
 
   const updated = await prisma.phaseElixir.update({
     where: { id: phaseElixirId },
