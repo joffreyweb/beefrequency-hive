@@ -7,6 +7,7 @@ import {
   type ParcoursFlags,
 } from "@/lib/parcours-defaults";
 import { getParcoursTypeForOffer, PARCOURS_CONFIG } from "@/lib/offer-parcours-binding";
+import { sendInvitationEmail } from "@/lib/mailer";
 import type { ParcoursType } from "@prisma/client";
 
 function isValidParcoursType(v: unknown): v is ParcoursType {
@@ -117,10 +118,27 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const inviteLink = `${baseUrl}/register?token=${inviteToken.token}`;
 
+    // Envoi automatique de l'email d'invitation.
+    // Fallback : si SMTP échoue, l'invitation reste valide → l'admin peut copier le lien manuellement.
+    let emailSent = false;
+    if (process.env.SMTP_HOST) {
+      try {
+        await sendInvitationEmail({
+          to: email,
+          inviteUrl: inviteLink,
+          language: language === "EN" ? "EN" : "FR",
+        });
+        emailSent = true;
+      } catch (err) {
+        console.error("[invite] Échec envoi email invitation:", err);
+      }
+    }
+
     return NextResponse.json(
       {
         inviteToken,
         inviteLink,
+        emailSent,
       },
       { status: 201 }
     );

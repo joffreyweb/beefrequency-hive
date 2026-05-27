@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import { ensureClientPhases } from "@/lib/parcours-phases";
 
 // PATCH /api/admin/clients/[clientId]/parcours-stage — Mettre a jour les etapes du parcours
 export async function PATCH(
@@ -55,5 +56,16 @@ export async function PATCH(
     data: updateData,
   });
 
-  return NextResponse.json({ success: true });
+  // Auto-création des 7 phases si une detoxStartDate vient d'être posée (idempotent).
+  let phasesCreated = 0;
+  if (body.detoxStartDate) {
+    try {
+      const res = await ensureClientPhases(clientId);
+      phasesCreated = res.created;
+    } catch (err) {
+      console.error("[parcours-stage] ensureClientPhases:", err);
+    }
+  }
+
+  return NextResponse.json({ success: true, phasesCreated });
 }

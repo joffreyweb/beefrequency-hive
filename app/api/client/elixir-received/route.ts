@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireClient, isErrorResponse } from "@/lib/api-utils";
 import { transporter } from "@/lib/mailer";
 import { getNextMonday } from "@/lib/parcours";
+import { ensureClientPhases } from "@/lib/parcours-phases";
 
 // POST /api/client/elixir-received — Client confirme avoir reçu ses élixirs
 export async function POST() {
@@ -51,6 +52,14 @@ export async function POST() {
       detoxStartDate: mondayStart,
     },
   });
+
+  // Auto-création des 7 phases (103j) maintenant que la détox démarre (idempotent).
+  // Ne doit jamais casser la confirmation client si ça échoue.
+  try {
+    await ensureClientPhases(client.id);
+  } catch (err) {
+    console.error("[elixir-received] ensureClientPhases:", err);
+  }
 
   // Notification admin — élixirs reçus
   import("@/lib/notifications")
