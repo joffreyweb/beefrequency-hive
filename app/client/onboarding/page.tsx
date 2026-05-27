@@ -68,6 +68,15 @@ export default function OnboardingPage() {
     return steps;
   }, [flags]);
 
+  // Garde-fou : si les flags désactivent l'étape courante (ex. step restauré depuis
+  // localStorage alors que requiresWelcomeVideo/Convention=false), repli sur la 1ère
+  // étape active — évite d'afficher une étape (vidéo accueil/charte) désactivée.
+  useEffect(() => {
+    if (flags && step > 1 && !activeSteps.includes(step)) {
+      setStep(activeSteps[0] ?? 1);
+    }
+  }, [flags, step, activeSteps]);
+
   function goToNextStep(fromStep: number) {
     const idx = activeSteps.indexOf(fromStep);
     const next = activeSteps[idx + 1];
@@ -518,7 +527,7 @@ export default function OnboardingPage() {
               )}
 
               {/* Step 3 — Convention (AVANT vidéo) */}
-              {step === 3 && (
+              {step === 3 && activeSteps.includes(3) && (
                 <div className="space-y-4">
                   <CharteEngagement
                     lang={lang}
@@ -536,7 +545,7 @@ export default function OnboardingPage() {
               )}
 
               {/* Step 4 — Video Seuil 1 (après Convention) */}
-              {step === 4 && (
+              {step === 4 && activeSteps.includes(4) && (
                 <div className="space-y-4">
                   <div className="bg-cire-chaude border border-or-pale rounded-sm p-4">
                     <p className="font-display text-sm text-brun-chaud leading-relaxed italic">

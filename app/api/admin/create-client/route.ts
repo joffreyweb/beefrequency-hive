@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     parcoursType,
     requiresWelcomeVideo, requiresConvention, requiresQuestionnaire,
     requiresPhaseVideos, requiresMorningCheckin, requiresEveningCheckin,
-    requiresJournal, requiresProgramTimeline,
+    requiresJournal, requiresProgramTimeline, requiresElixirs,
   } = await request.json();
 
   if (!firstName || !lastName || !email) {
@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
       ...(requiresEveningCheckin !== undefined ? { requiresEveningCheckin } : {}),
       ...(requiresJournal !== undefined ? { requiresJournal } : {}),
       ...(requiresProgramTimeline !== undefined ? { requiresProgramTimeline } : {}),
+      ...(requiresElixirs !== undefined ? { requiresElixirs } : {}),
       ...(isLegacy ? {
         charteSignee: true,
         charteSignedAt: new Date(),
