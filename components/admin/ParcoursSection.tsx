@@ -634,6 +634,42 @@ function CheckinsTab({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPh
 
 // ─── Elixirs Block ───
 
+// Libellé court d'une phase : Détox / Cycle 1 / Intégration 2
+function phaseShortLabel(p: { phaseType: string; phaseNumber: number }): string {
+  if (p.phaseType === "DETOX") return "Détox";
+  return `${PHASE_LABELS[p.phaseType] ?? p.phaseType} ${p.phaseNumber}`;
+}
+
+// Badge de portée : sur quelles phases la MÊME assignation (élixir + dose + timing + fréquence)
+// existe, regroupée intelligemment (Tous les Cycles / Toutes les Intégrations / Toutes les phases).
+function elixirScopeLabel(
+  pe: { elixirLibraryId: string; dose: string | null; timing: string; frequency: string },
+  allPhases: ClientPhase[]
+): string {
+  const same = (x: PhaseElixir) =>
+    x.elixirLibraryId === pe.elixirLibraryId &&
+    (x.dose ?? "") === (pe.dose ?? "") &&
+    x.timing === pe.timing &&
+    x.frequency === pe.frequency;
+
+  const matched = allPhases.filter((ph) => ph.phaseElixirs.some(same));
+  const cyclesTotal = allPhases.filter((p) => p.phaseType === "CYCLE").length;
+  const breaksTotal = allPhases.filter((p) => p.phaseType === "BREAK").length;
+  const mCycles = matched.filter((p) => p.phaseType === "CYCLE").length;
+  const mBreaks = matched.filter((p) => p.phaseType === "BREAK").length;
+  const mDetox = matched.some((p) => p.phaseType === "DETOX");
+
+  if (allPhases.length > 1 && matched.length === allPhases.length) return "Toutes les phases";
+  if (cyclesTotal > 0 && mCycles === cyclesTotal && mBreaks === 0 && !mDetox) return "Tous les Cycles";
+  if (breaksTotal > 0 && mBreaks === breaksTotal && mCycles === 0 && !mDetox) return "Toutes les Intégrations";
+  if (matched.length === 1) return phaseShortLabel(matched[0]);
+  return matched
+    .slice()
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .map(phaseShortLabel)
+    .join(" · ");
+}
+
 function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
   const [showAssign, setShowAssign] = useState(false);
   const [library, setLibrary] = useState<ElixirLib[]>([]);
@@ -883,6 +919,9 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
                     <span className="text-sm font-ui text-brun-chaud">{pe.elixirLibrary.name}</span>
                     <span className="text-xs font-ui text-brun-mid/60 ml-2">
                       {pe.dose || pe.elixirLibrary.dosage} · {TIMING_LABELS[pe.timing]} · {FREQ_LABELS[pe.frequency]}
+                    </span>
+                    <span className="inline-block text-[10px] font-caps uppercase tracking-wider px-2 py-0.5 ml-2 rounded-full bg-or-pale/40 text-brun-mid/80 align-middle">
+                      {elixirScopeLabel(pe, allPhases)}
                     </span>
                   </div>
                   <div className="flex gap-2">
