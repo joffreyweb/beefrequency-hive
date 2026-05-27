@@ -60,12 +60,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
   }
 
-  // Vérifier si les phases existent déjà
-  const existing = await prisma.clientPhase.count({ where: { clientId } });
-  if (existing > 0) {
-    return NextResponse.json({ error: "Les phases existent déjà pour ce client" }, { status: 409 });
-  }
-
   // Date de départ : override > detoxStartDate > lundi suivant
   const programStart = overrideStart
     ? new Date(overrideStart)
@@ -83,10 +77,21 @@ export async function POST(req: Request) {
     });
   }
 
+  // Upsert par (clientId, phaseType, phaseNumber) : crée les phases manquantes,
+  // met à jour les dates/statut des existantes. JAMAIS de DELETE → les PhaseElixir
+  // déjà assignés (FK vers ClientPhase) sont préservés. Idempotent + ré-générable.
   const phases = await prisma.$transaction(
     computed.map((p) =>
-      prisma.clientPhase.create({
-        data: {
+      prisma.clientPhase.upsert({
+        where: {
+          clientId_phaseType_phaseNumber: {
+            clientId,
+            phaseType: p.phaseType,
+            phaseNumber: p.phaseNumber,
+          },
+        },
+        update: { startDate: p.startDate, endDate: p.endDate, status: p.status },
+        create: {
           clientId,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
@@ -116,19 +121,26 @@ export async function PATCH(req: Request) {
   const newStart = new Date(startDate);
   const computed = computePhases(newStart);
 
-  // Supprimer les anciennes phases et recréer
-  await prisma.clientPhase.deleteMany({ where: { clientId } });
-
   // Mettre à jour detoxStartDate sur le client
   await prisma.client.update({
     where: { id: clientId },
     data: { detoxStartDate: newStart },
   });
 
+  // Upsert (pas de deleteMany) : recalcule les dates des 7 phases en conservant
+  // les mêmes lignes ClientPhase → les PhaseElixir assignés NE SONT PAS effacés.
   const phases = await prisma.$transaction(
     computed.map((p) =>
-      prisma.clientPhase.create({
-        data: {
+      prisma.clientPhase.upsert({
+        where: {
+          clientId_phaseType_phaseNumber: {
+            clientId,
+            phaseType: p.phaseType,
+            phaseNumber: p.phaseNumber,
+          },
+        },
+        update: { startDate: p.startDate, endDate: p.endDate, status: p.status },
+        create: {
           clientId,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
