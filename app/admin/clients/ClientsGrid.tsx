@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { EDITABLE_FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
 import { FLAG_LABELS } from "@/lib/parcours-labels";
 import type { ParcoursType } from "@prisma/client";
 
@@ -252,7 +252,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                     Modules actifs
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {FLAG_KEYS.map((flag) => (
+                    {EDITABLE_FLAG_KEYS.map((flag) => (
                       <label
                         key={flag}
                         className={`flex items-center gap-2 px-3 py-2 bg-creme-sacree border border-or-pale rounded-sharp text-sm font-ui cursor-pointer hover:border-or-sacre transition-colors ${creating ? "opacity-50 cursor-not-allowed" : ""}`}

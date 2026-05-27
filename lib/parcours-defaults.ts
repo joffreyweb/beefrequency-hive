@@ -25,6 +25,12 @@ export const FLAG_KEYS = [
   "requiresElixirs",
 ] as const satisfies readonly (keyof ParcoursFlags)[];
 
+// Flags éditables par l'admin (UI). requiresWelcomeVideo en est exclu : il est
+// dérivé de l'offre côté serveur (welcomeVideoForOffer), jamais coché à la main.
+export const EDITABLE_FLAG_KEYS = FLAG_KEYS.filter(
+  (k) => k !== "requiresWelcomeVideo"
+) as Exclude<(typeof FLAG_KEYS)[number], "requiresWelcomeVideo">[];
+
 // Dérivé de PARCOURS_CONFIG (source unique du binding — lib/offer-parcours-binding.ts).
 // Chaque parcoursType expose ses 8 flags legacy via PARCOURS_CONFIG[type].flags.
 export const PARCOURS_DEFAULTS: Record<ParcoursType, ParcoursFlags> = Object.fromEntries(

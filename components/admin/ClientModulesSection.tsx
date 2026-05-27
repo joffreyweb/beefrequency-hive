@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { EDITABLE_FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
 import { FLAG_LABELS } from "@/lib/parcours-labels";
 
 // Section éditable "Modules actifs" sur la fiche client — 9 toggles.
@@ -48,7 +48,7 @@ export default function ClientModulesSection({
         )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {FLAG_KEYS.map((key) => (
+        {EDITABLE_FLAG_KEYS.map((key) => (
           <label
             key={key}
             className="flex items-center gap-2 text-sm font-ui text-brun-chaud cursor-pointer select-none"

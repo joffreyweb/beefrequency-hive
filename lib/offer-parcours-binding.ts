@@ -100,6 +100,25 @@ export const OFFER_TO_PARCOURS: Record<OfferType, ParcoursType> = {
   THE_PASSAGE: "LE_PASSAGE",
 };
 
+// ── Vidéo Seuil 1 forcée par l'offre (règle métier Joffrey, 27/05) ──
+// requiresWelcomeVideo n'est PLUS un toggle admin : il est dérivé de l'offre,
+// jamais lu du body. Câblé dans create-client + invite + register.
+//   TRUE  : Le Passage 1:1, Cycles de la Ruche, Souveraineté (= 3× Le Passage),
+//           + legacy Le Passage (THE_PASSAGE / HIVE_EXPERIENCE — sans effet car
+//           les clients legacy skippent l'onboarding, mais cohérence sémantique).
+//   FALSE : toutes les autres offres (dont Chambre de la Reine = VIP Day modulaire).
+const WELCOME_VIDEO_OFFERS: ReadonlySet<OfferType> = new Set<OfferType>([
+  "LE_PASSAGE_1_1",
+  "LES_CYCLES_DE_LA_RUCHE",
+  "SOUVERAINETE",
+  "THE_PASSAGE",
+  "HIVE_EXPERIENCE",
+]);
+
+export function welcomeVideoForOffer(offerType?: string | null): boolean {
+  return offerType != null && WELCOME_VIDEO_OFFERS.has(offerType as OfferType);
+}
+
 // ── Configuration par ParcoursType ──
 export const PARCOURS_CONFIG: Record<ParcoursType, ParcoursConfig> = {
   DISCOVERY: {

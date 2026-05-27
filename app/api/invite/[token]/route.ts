@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, setAuthCookie } from "@/lib/auth";
-import { requiresQuestionnaire } from "@/lib/offer-parcours-binding";
+import { requiresQuestionnaire, welcomeVideoForOffer } from "@/lib/offer-parcours-binding";
 
 // GET — Verifie que le token d'invitation est valide
 export async function GET(
@@ -161,7 +161,8 @@ export async function POST(
     // Propagation parcoursType + 8 flags depuis l'InviteToken vers le Client
     const parcoursPayload = {
       parcoursType: invite.parcoursType,
-      requiresWelcomeVideo: invite.requiresWelcomeVideo,
+      // Vidéo Seuil 1 : forcée par l'offre (jamais éditée par l'admin)
+      requiresWelcomeVideo: welcomeVideoForOffer(invite.offerType),
       requiresConvention: invite.requiresConvention,
       requiresQuestionnaire: invite.requiresQuestionnaire,
       requiresPhaseVideos: invite.requiresPhaseVideos,

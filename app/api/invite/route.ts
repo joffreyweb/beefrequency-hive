@@ -6,7 +6,7 @@ import {
   getDefaultsForParcoursType,
   type ParcoursFlags,
 } from "@/lib/parcours-defaults";
-import { getParcoursTypeForOffer, PARCOURS_CONFIG } from "@/lib/offer-parcours-binding";
+import { getParcoursTypeForOffer, PARCOURS_CONFIG, welcomeVideoForOffer } from "@/lib/offer-parcours-binding";
 import { sendInvitationEmail } from "@/lib/mailer";
 import type { ParcoursType } from "@prisma/client";
 
@@ -36,6 +36,8 @@ function resolveParcoursPayload(
       flags[key] = provided;
     }
   }
+  // Vidéo Seuil 1 : forcée par l'offre (jamais éditée par l'admin)
+  flags.requiresWelcomeVideo = welcomeVideoForOffer(offerType);
   return { parcoursType, flags };
 }
 

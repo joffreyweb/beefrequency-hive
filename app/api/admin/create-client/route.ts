@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import * as bcrypt from "bcryptjs";
-import { getParcoursTypeForOffer, requiresQuestionnaire as parcoursNeedsQuestionnaire } from "@/lib/offer-parcours-binding";
+import { getParcoursTypeForOffer, requiresQuestionnaire as parcoursNeedsQuestionnaire, welcomeVideoForOffer } from "@/lib/offer-parcours-binding";
 import { getDefaultsForParcoursType } from "@/lib/parcours-defaults";
 import type { ParcoursType } from "@prisma/client";
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   const {
     firstName, lastName, email, offerType, language, isLegacy, startDate, dayDirect,
     parcoursType,
-    requiresWelcomeVideo, requiresConvention, requiresQuestionnaire,
+    requiresConvention, requiresQuestionnaire,
     requiresPhaseVideos, requiresMorningCheckin, requiresEveningCheckin,
     requiresJournal, requiresProgramTimeline, requiresElixirs,
   } = await request.json();
@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
       parcoursType: resolvedParcours,
       // Flags : défauts du parcours, surchargés par toute valeur fournie explicitement
       ...parcoursDefaults,
-      ...(requiresWelcomeVideo !== undefined ? { requiresWelcomeVideo } : {}),
+      // Vidéo Seuil 1 : forcée par l'offre (jamais éditée par l'admin)
+      requiresWelcomeVideo: welcomeVideoForOffer(resolvedOffer),
       ...(requiresConvention !== undefined ? { requiresConvention } : {}),
       ...(requiresQuestionnaire !== undefined ? { requiresQuestionnaire } : {}),
       ...(requiresPhaseVideos !== undefined ? { requiresPhaseVideos } : {}),
