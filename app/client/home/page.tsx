@@ -415,7 +415,7 @@ export default async function ClientHomePage() {
       {client.requiresProgramTimeline && <TimelineWidget />}
 
       {/* Élixirs du jour (phase actuelle) + lien vers tous les élixirs assignés */}
-      {hasAnyElixir && (
+      {client.requiresElixirs && hasAnyElixir && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid">

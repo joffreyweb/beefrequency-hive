@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const TIMING_LABELS: Record<string, string> = {
   MATIN: "Morning",
@@ -50,8 +51,10 @@ function phaseName(p: ClientPhase): string {
 
 // Mes élixirs — page client (élixirs assignés par phase, source unique = PhaseElixir)
 export default function ClientElixirsPage() {
+  const router = useRouter();
   const [phases, setPhases] = useState<ClientPhase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
   const [ordering, setOrdering] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
@@ -61,6 +64,12 @@ export default function ClientElixirsPage() {
         const res = await fetch("/api/parcours");
         if (res.ok) {
           const data = await res.json();
+          // Module élixirs désactivé → redirection vers l'accueil
+          if (data.requiresElixirs === false) {
+            setBlocked(true);
+            router.replace("/client/home");
+            return;
+          }
           setPhases((data.clientPhases ?? []) as ClientPhase[]);
         }
       } catch {
@@ -69,7 +78,7 @@ export default function ClientElixirsPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [router]);
 
   // Demande de réassort — message automatique à Joffrey
   async function handleOrder(elixirName: string, id: string) {
@@ -94,10 +103,12 @@ export default function ClientElixirsPage() {
     }
   }
 
-  if (loading) {
+  if (loading || blocked) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-sm font-ui text-brun-mid/60">Loading your elixirs...</p>
+        <p className="text-sm font-ui text-brun-mid/60">
+          {blocked ? "Module non actif." : "Loading your elixirs..."}
+        </p>
       </div>
     );
   }

@@ -14,6 +14,7 @@ export async function GET() {
     select: {
       id: true,
       detoxStartDate: true,
+      requiresElixirs: true,
       clientPhases: {
         orderBy: [{ startDate: "asc" }],
         include: {
@@ -80,5 +81,6 @@ export async function GET() {
     todayPractices,
     todayCheckin,
     clientPhases: client.clientPhases,
+    requiresElixirs: client.requiresElixirs,
   });
 }

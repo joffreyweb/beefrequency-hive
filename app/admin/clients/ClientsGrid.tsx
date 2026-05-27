@@ -39,6 +39,7 @@ const ALL_FLAGS_TRUE: ParcoursFlags = {
   requiresEveningCheckin: true,
   requiresJournal: true,
   requiresProgramTimeline: true,
+  requiresElixirs: true,
 };
 
 const OFFER_OPTIONS = [

@@ -19,6 +19,7 @@ const FLAG_SELECT = {
   requiresEveningCheckin: true,
   requiresJournal: true,
   requiresProgramTimeline: true,
+  requiresElixirs: true,
 } as const;
 
 export async function getClientFlagsByUserId(

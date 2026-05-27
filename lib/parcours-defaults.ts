@@ -10,6 +10,7 @@ export type ParcoursFlags = {
   requiresEveningCheckin: boolean;
   requiresJournal: boolean;
   requiresProgramTimeline: boolean;
+  requiresElixirs: boolean;
 };
 
 export const FLAG_KEYS = [
@@ -21,6 +22,7 @@ export const FLAG_KEYS = [
   "requiresEveningCheckin",
   "requiresJournal",
   "requiresProgramTimeline",
+  "requiresElixirs",
 ] as const satisfies readonly (keyof ParcoursFlags)[];
 
 // Dérivé de PARCOURS_CONFIG (source unique du binding — lib/offer-parcours-binding.ts).

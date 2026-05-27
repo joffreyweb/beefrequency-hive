@@ -12,11 +12,16 @@ export async function GET() {
 
   const client = await prisma.client.findUnique({
     where: { userId: result.session.userId },
-    select: { id: true },
+    select: { id: true, requiresElixirs: true },
   });
 
   if (!client) {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
+  }
+
+  // Module élixirs désactivé pour ce client → aucune donnée (sécurité + check-in sans étape élixir)
+  if (!client.requiresElixirs) {
+    return NextResponse.json({ elixirs: [] });
   }
 
   // Phase active = celle dont [startDate, endDate] contient aujourd'hui (calcul JS, robuste aux TZ)

@@ -119,7 +119,7 @@ model Client {
   timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
   isLegacy              Boolean      @default(false) // Client Legacy — admin only, skip onboarding
 
-  // Parcours modulable — type + 8 flags de gating UX
+  // Parcours modulable — type + 9 flags de gating UX
   parcoursType            ParcoursType @default(LE_PASSAGE)
   requiresWelcomeVideo    Boolean      @default(true)
   requiresConvention      Boolean      @default(true)
@@ -129,6 +129,7 @@ model Client {
   requiresEveningCheckin  Boolean      @default(true)
   requiresJournal         Boolean      @default(true)
   requiresProgramTimeline Boolean      @default(true)
+  requiresElixirs         Boolean      @default(true)
 
   // Cadre d'engagement Monitoring Passage
   fixedDay              String?
@@ -337,6 +338,7 @@ model InviteToken {
   requiresEveningCheckin  Boolean      @default(true)
   requiresJournal         Boolean      @default(true)
   requiresProgramTimeline Boolean      @default(true)
+  requiresElixirs         Boolean      @default(true)
 
   createdAt DateTime @default(now())
 }

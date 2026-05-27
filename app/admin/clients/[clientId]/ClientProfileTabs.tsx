@@ -622,6 +622,7 @@ function ParcoursTab({ client }: { client: any }) {
             requiresEveningCheckin: client.requiresEveningCheckin ?? true,
             requiresJournal: client.requiresJournal ?? true,
             requiresProgramTimeline: client.requiresProgramTimeline ?? true,
+            requiresElixirs: client.requiresElixirs ?? true,
           }}
         />
       </div>

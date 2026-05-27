@@ -4,6 +4,7 @@ import Link from "next/link";
 import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
+import ClientModulesSection from "@/components/admin/ClientModulesSection";
 import ClientProgramSection from "@/components/admin/ClientProgramSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
@@ -261,6 +262,22 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         produitsRecusAt={client.produitsRecusAt ? client.produitsRecusAt.toISOString() : null}
         detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
+      />
+
+      {/* Modules actifs — 9 toggles éditables */}
+      <ClientModulesSection
+        clientId={clientId}
+        initialFlags={{
+          requiresWelcomeVideo: client.requiresWelcomeVideo,
+          requiresConvention: client.requiresConvention,
+          requiresQuestionnaire: client.requiresQuestionnaire,
+          requiresPhaseVideos: client.requiresPhaseVideos,
+          requiresMorningCheckin: client.requiresMorningCheckin,
+          requiresEveningCheckin: client.requiresEveningCheckin,
+          requiresJournal: client.requiresJournal,
+          requiresProgramTimeline: client.requiresProgramTimeline,
+          requiresElixirs: client.requiresElixirs,
+        }}
       />
 
       {/* Actions requises */}

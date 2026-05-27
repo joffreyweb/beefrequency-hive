@@ -42,4 +42,5 @@ export const FLAG_LABELS: Record<keyof ParcoursFlags, string> = {
   requiresEveningCheckin: "Check-in soir",
   requiresJournal: "Journal",
   requiresProgramTimeline: "Timeline programme jour-par-jour",
+  requiresElixirs: "Élixirs",
 };

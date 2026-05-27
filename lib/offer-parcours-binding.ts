@@ -66,7 +66,7 @@ export interface ParcoursConfig {
 // sont dérivés (non spécifiés dans la matrice du 26/05) — ajustables.
 function mkFlags(f: {
   welcome: boolean; convention: boolean; questionnaire: boolean; phaseVideos: boolean;
-  morning: boolean; evening: boolean; journal: boolean; timeline: boolean;
+  morning: boolean; evening: boolean; journal: boolean; timeline: boolean; elixirs?: boolean;
 }): ParcoursFlags {
   return {
     requiresWelcomeVideo: f.welcome,
@@ -77,6 +77,7 @@ function mkFlags(f: {
     requiresEveningCheckin: f.evening,
     requiresJournal: f.journal,
     requiresProgramTimeline: f.timeline,
+    requiresElixirs: f.elixirs ?? false,
   };
 }
 
@@ -131,7 +132,7 @@ export const PARCOURS_CONFIG: Record<ParcoursType, ParcoursConfig> = {
     hasElixirs: true, hasCheckinMorning: true, hasCheckinEvening: true,
     hasPhases: true, hasJournal: true, hasZoomIntegration: true,
     sendBirthdayNotif: true, pwaAccessLevel: "FULL",
-    flags: mkFlags({ welcome: true, convention: true, questionnaire: true, phaseVideos: true, morning: true, evening: true, journal: true, timeline: true }),
+    flags: mkFlags({ welcome: true, convention: true, questionnaire: true, phaseVideos: true, morning: true, evening: true, journal: true, timeline: true, elixirs: true }),
   },
   CYCLES_RUCHE: {
     requiresQuestionnaire: true,
@@ -164,7 +165,7 @@ export const PARCOURS_CONFIG: Record<ParcoursType, ParcoursConfig> = {
     hasElixirs: true, hasCheckinMorning: true, hasCheckinEvening: true,
     hasPhases: true, hasJournal: true, hasZoomIntegration: true,
     sendBirthdayNotif: true, pwaAccessLevel: "FULL",
-    flags: mkFlags({ welcome: true, convention: true, questionnaire: true, phaseVideos: true, morning: true, evening: true, journal: true, timeline: true }),
+    flags: mkFlags({ welcome: true, convention: true, questionnaire: true, phaseVideos: true, morning: true, evening: true, journal: true, timeline: true, elixirs: true }),
   },
   CHAMBRE_REINE: {
     requiresQuestionnaire: false, // modulaire — activé par l'admin quand des sections sont ajoutées
@@ -172,7 +173,7 @@ export const PARCOURS_CONFIG: Record<ParcoursType, ParcoursConfig> = {
     hasElixirs: true, hasCheckinMorning: true, hasCheckinEvening: true,
     hasPhases: true, hasJournal: true, hasZoomIntegration: true,
     sendBirthdayNotif: true, pwaAccessLevel: "FULL",
-    flags: mkFlags({ welcome: true, convention: true, questionnaire: false, phaseVideos: true, morning: true, evening: true, journal: true, timeline: true }),
+    flags: mkFlags({ welcome: true, convention: true, questionnaire: false, phaseVideos: true, morning: true, evening: true, journal: true, timeline: true, elixirs: true }),
   },
   SOS_URGENCE: {
     requiresQuestionnaire: false,
@@ -188,7 +189,7 @@ export const PARCOURS_CONFIG: Record<ParcoursType, ParcoursConfig> = {
     hasElixirs: false, hasCheckinMorning: false, hasCheckinEvening: false,
     hasPhases: false, hasJournal: true, hasZoomIntegration: true,
     sendBirthdayNotif: true, pwaAccessLevel: "CONTINUITY",
-    flags: mkFlags({ welcome: false, convention: false, questionnaire: false, phaseVideos: false, morning: false, evening: false, journal: true, timeline: false }),
+    flags: mkFlags({ welcome: false, convention: false, questionnaire: false, phaseVideos: false, morning: false, evening: false, journal: true, timeline: false, elixirs: true }),
   },
   CUSTOM: {
     requiresQuestionnaire: false, // modulaire — activé par l'admin
