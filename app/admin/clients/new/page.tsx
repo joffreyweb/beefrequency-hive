@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import ParcoursTypeSelector from "@/components/admin/ParcoursTypeSelector";
 import { getDefaultsForParcoursType, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { getParcoursTypeForOffer } from "@/lib/offer-parcours-binding";
+import { PARCOURS_TYPE_LABELS } from "@/lib/parcours-labels";
 import type { ParcoursType } from "@prisma/client";
 
 // Options d'offres disponibles
@@ -19,19 +21,36 @@ const OFFER_OPTIONS = [
   { value: "LA_CHAMBRE_DE_LA_REINE", label: "La Chambre de la Reine" },
   { value: "SOS_URGENCE_VIP", label: "SOS · Urgence VIP" },
   { value: "LE_FIL_DE_LA_RUCHE", label: "Le Fil de la Ruche" },
+  { value: "PARCOURS_PERSONNALISE", label: "Parcours personnalisé" },
 ];
+
+const DEFAULT_OFFER = "CONVERSATION_EXPLORATOIRE";
 
 export default function InviteClientPage() {
   const [email, setEmail] = useState("");
-  const [offerType, setOfferType] = useState("CONVERSATION_EXPLORATOIRE");
+  const [offerType, setOfferType] = useState(DEFAULT_OFFER);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [inviteLink, setInviteLink] = useState("");
   const [language, setLanguage] = useState("FR");
-  const [parcoursType, setParcoursType] = useState<ParcoursType>("LE_PASSAGE");
-  const [flags, setFlags] = useState<ParcoursFlags>(() =>
-    getDefaultsForParcoursType("LE_PASSAGE")
+  // parcoursType dérivé de l'offre via le binding (plus de défaut hardcodé)
+  const [parcoursType, setParcoursType] = useState<ParcoursType>(() =>
+    getParcoursTypeForOffer(DEFAULT_OFFER)
   );
+  const [flags, setFlags] = useState<ParcoursFlags>(() =>
+    getDefaultsForParcoursType(getParcoursTypeForOffer(DEFAULT_OFFER))
+  );
+  // true = parcours configuré automatiquement depuis l'offre ; false = override manuel admin
+  const [autoBound, setAutoBound] = useState(true);
+
+  // Quand l'offre change → bascule auto le parcoursType + flags (sauf override manuel ultérieur)
+  function handleOfferChange(nextOffer: string) {
+    setOfferType(nextOffer);
+    const pt = getParcoursTypeForOffer(nextOffer);
+    setParcoursType(pt);
+    setFlags(getDefaultsForParcoursType(pt));
+    setAutoBound(true);
+  }
 
   // Envoie l'invitation via POST /api/invite
   async function handleSubmit(e: React.FormEvent) {
@@ -116,7 +135,7 @@ export default function InviteClientPage() {
             <select
               id="offerType"
               value={offerType}
-              onChange={(e) => setOfferType(e.target.value)}
+              onChange={(e) => handleOfferChange(e.target.value)}
               className="w-full px-3 py-2.5 bg-cire-chaude border border-or-pale rounded-sm text-brun-chaud font-ui font-light text-sm focus:outline-none focus:border-or-sacre transition-colors duration-200"
             >
               {OFFER_OPTIONS.map((opt) => (
@@ -125,6 +144,18 @@ export default function InviteClientPage() {
                 </option>
               ))}
             </select>
+            {/* Badge configuration auto vs override manuel */}
+            <p className="mt-1.5 text-xs font-ui">
+              {autoBound ? (
+                <span className="text-foret">
+                  ✓ Configuration auto — parcours : <strong>{PARCOURS_TYPE_LABELS[parcoursType]}</strong>
+                </span>
+              ) : (
+                <span className="text-ambre-vif">
+                  ⚙ Override manuel — parcours : <strong>{PARCOURS_TYPE_LABELS[parcoursType]}</strong>
+                </span>
+              )}
+            </p>
           </div>
 
           {/* Langue */}
@@ -143,6 +174,7 @@ export default function InviteClientPage() {
             onChange={(next) => {
               setParcoursType(next.parcoursType);
               setFlags(next.flags);
+              setAutoBound(false); // l'admin a forcé manuellement
             }}
             disabled={loading}
           />

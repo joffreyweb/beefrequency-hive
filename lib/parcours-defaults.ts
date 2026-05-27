@@ -1,4 +1,5 @@
 import type { ParcoursType } from "@prisma/client";
+import { PARCOURS_CONFIG } from "./offer-parcours-binding";
 
 export type ParcoursFlags = {
   requiresWelcomeVideo: boolean;
@@ -22,52 +23,11 @@ export const FLAG_KEYS = [
   "requiresProgramTimeline",
 ] as const satisfies readonly (keyof ParcoursFlags)[];
 
-const allTrue: ParcoursFlags = {
-  requiresWelcomeVideo: true,
-  requiresConvention: true,
-  requiresQuestionnaire: true,
-  requiresPhaseVideos: true,
-  requiresMorningCheckin: true,
-  requiresEveningCheckin: true,
-  requiresJournal: true,
-  requiresProgramTimeline: true,
-};
-
-const allFalse: ParcoursFlags = {
-  requiresWelcomeVideo: false,
-  requiresConvention: false,
-  requiresQuestionnaire: false,
-  requiresPhaseVideos: false,
-  requiresMorningCheckin: false,
-  requiresEveningCheckin: false,
-  requiresJournal: false,
-  requiresProgramTimeline: false,
-};
-
-export const PARCOURS_DEFAULTS: Record<ParcoursType, ParcoursFlags> = {
-  LE_PASSAGE: { ...allTrue },
-  NECTAR_CYCLE: {
-    ...allFalse,
-    requiresWelcomeVideo: true,
-    requiresConvention: true,
-    requiresQuestionnaire: true,
-  },
-  SEANCE_UNIQUE: {
-    ...allFalse,
-    requiresWelcomeVideo: true,
-    requiresConvention: true,
-  },
-  RESET_6: {
-    ...allFalse,
-    requiresWelcomeVideo: true,
-    requiresConvention: true,
-    requiresQuestionnaire: true,
-    requiresMorningCheckin: true,
-    requiresEveningCheckin: true,
-    requiresJournal: true,
-  },
-  CUSTOM: { ...allFalse },
-};
+// Dérivé de PARCOURS_CONFIG (source unique du binding — lib/offer-parcours-binding.ts).
+// Chaque parcoursType expose ses 8 flags legacy via PARCOURS_CONFIG[type].flags.
+export const PARCOURS_DEFAULTS: Record<ParcoursType, ParcoursFlags> = Object.fromEntries(
+  Object.entries(PARCOURS_CONFIG).map(([type, cfg]) => [type, cfg.flags])
+) as Record<ParcoursType, ParcoursFlags>;
 
 export function getDefaultsForParcoursType(type: ParcoursType): ParcoursFlags {
   return { ...PARCOURS_DEFAULTS[type] };

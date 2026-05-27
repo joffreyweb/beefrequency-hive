@@ -24,8 +24,17 @@ enum ParcoursType {
   LE_PASSAGE
   NECTAR_CYCLE
   SEANCE_UNIQUE
-  RESET_6
+  RESET_6 // legacy — remplacé par CEREMONIE_RESET
   CUSTOM
+  // LOT P0 — binding offres complet
+  DISCOVERY
+  CYCLES_RUCHE
+  CEREMONIE_RESET
+  RUCHE_VIVANTE
+  SOUVERAINETE
+  CHAMBRE_REINE
+  SOS_URGENCE
+  FIL_RUCHE
 }
 
 enum OfferType {
@@ -153,6 +162,11 @@ model Client {
   produitsRecusAt       DateTime?
   detoxStartDate        DateTime?    // Début détox (10 jours) — SOURCE DE DATE CANONIQUE du parcours
 
+  // Suivi de continuité (parcoursType FIL_RUCHE)
+  followUpActive            Boolean   @default(false)
+  followUpSessionsRemaining Int?
+  followUpStartedAt         DateTime?
+
   // Données de naissance étendues
   birthTime             String?      // Format HH:MM
   birthCity             String?
@@ -197,6 +211,43 @@ model Client {
   sessionFollowups       SessionFollowup[]
   clientPrograms         ClientProgram[]
   clientModules          ClientModule[]
+  questionnaireSections  ClientQuestionnaireSection[]
+}
+
+// ═══════════════════════════════════════
+// MODULE — QUESTIONNAIRE MODULAIRE PAR SECTIONS (LOT P0)
+// ═══════════════════════════════════════
+
+// Bibliothèque de sections réutilisables (identity, postal_address, ...).
+// Chaque parcoursType inclut une liste de slugs (cf. lib/offer-parcours-binding.ts).
+model QuestionnaireSection {
+  id        String   @id @default(uuid())
+  slug      String   @unique // "identity", "postal_address", "hd_astro", ...
+  title     String
+  order     Int      @default(0) // ordre d'affichage par défaut
+  questions Json     @default("[]") // [{id, type, question, questionFr, options?, required}]
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  responses ClientQuestionnaireSection[]
+}
+
+// Réponses d'un client à une section (1 ligne par client × section)
+model ClientQuestionnaireSection {
+  id          String               @id @default(uuid())
+  clientId    String
+  client      Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sectionId   String
+  section     QuestionnaireSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  answers     Json                 @default("{}") // { questionId: answer }
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, sectionId])
 }
 
 model JournalEntry {

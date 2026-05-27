@@ -6,26 +6,26 @@ import {
   getDefaultsForParcoursType,
   type ParcoursFlags,
 } from "@/lib/parcours-defaults";
+import { getParcoursTypeForOffer, PARCOURS_CONFIG } from "@/lib/offer-parcours-binding";
 import type { ParcoursType } from "@prisma/client";
 
-const VALID_PARCOURS_TYPES: readonly ParcoursType[] = [
-  "LE_PASSAGE",
-  "NECTAR_CYCLE",
-  "SEANCE_UNIQUE",
-  "RESET_6",
-  "CUSTOM",
-];
+function isValidParcoursType(v: unknown): v is ParcoursType {
+  return typeof v === "string" && v in PARCOURS_CONFIG;
+}
 
-function resolveParcoursPayload(body: Record<string, unknown>): {
+// Résout parcoursType + flags. Si parcoursType n'est pas fourni explicitement,
+// on dérive du binding de l'offre (garde-fou serveur — plus de défaut LE_PASSAGE).
+function resolveParcoursPayload(
+  body: Record<string, unknown>,
+  offerType: string
+): {
   parcoursType: ParcoursType;
   flags: ParcoursFlags;
 } {
   const rawType = body.parcoursType;
-  const parcoursType: ParcoursType = VALID_PARCOURS_TYPES.includes(
-    rawType as ParcoursType
-  )
-    ? (rawType as ParcoursType)
-    : "LE_PASSAGE";
+  const parcoursType: ParcoursType = isValidParcoursType(rawType)
+    ? rawType
+    : getParcoursTypeForOffer(offerType);
 
   const defaults = getDefaultsForParcoursType(parcoursType);
   const flags: ParcoursFlags = { ...defaults };
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       "CONVERSATION_EXPLORATOIRE", "SESSION_SEUIL", "LE_NECTAR_CYCLE",
       "LE_PASSAGE_1_1", "LES_CYCLES_DE_LA_RUCHE", "CEREMONIE_RESET",
       "LA_RUCHE_VIVANTE", "SOUVERAINETE", "LA_CHAMBRE_DE_LA_REINE",
-      "SOS_URGENCE_VIP", "LE_FIL_DE_LA_RUCHE",
+      "SOS_URGENCE_VIP", "LE_FIL_DE_LA_RUCHE", "PARCOURS_PERSONNALISE",
       "HIVE_EXPERIENCE", "THE_PASSAGE", // Legacy
     ];
     if (!validOffers.includes(offerType)) {
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Résolution parcoursType + 8 flags (defaults selon type si non fournis)
-    const { parcoursType, flags } = resolveParcoursPayload(body);
+    // Résolution parcoursType + 8 flags (binding depuis l'offre si parcoursType absent)
+    const { parcoursType, flags } = resolveParcoursPayload(body, offerType);
 
     // Création du token d'invitation
     const inviteToken = await prisma.inviteToken.create({

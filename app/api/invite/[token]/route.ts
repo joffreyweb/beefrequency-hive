@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, setAuthCookie } from "@/lib/auth";
+import { requiresQuestionnaire } from "@/lib/offer-parcours-binding";
 
 // GET — Verifie que le token d'invitation est valide
 export async function GET(
@@ -170,6 +171,10 @@ export async function POST(
       requiresProgramTimeline: invite.requiresProgramTimeline,
     };
 
+    // Blocage PWA : onboarding requis uniquement si le parcours exige le questionnaire
+    // (DISCOVERY / SOS_URGENCE exemptés). Sinon onboardingCompleted=true → accès direct.
+    const onboardingCompleted = !requiresQuestionnaire(invite.parcoursType);
+
     let user;
 
     if (existingUser) {
@@ -192,6 +197,7 @@ export async function POST(
               offerType: invite.offerType,
               status: "ACTIVE",
               language: invite.language || "FR",
+              onboardingCompleted,
               ...parcoursPayload,
             },
           });
@@ -230,6 +236,7 @@ export async function POST(
             offerType: invite.offerType,
             status: "ACTIVE",
             language: invite.language || "FR",
+            onboardingCompleted,
             ...parcoursPayload,
           },
         });

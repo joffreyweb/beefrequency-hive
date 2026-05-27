@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import * as bcrypt from "bcryptjs";
+import { getParcoursTypeForOffer, requiresQuestionnaire as parcoursNeedsQuestionnaire } from "@/lib/offer-parcours-binding";
+import { getDefaultsForParcoursType } from "@/lib/parcours-defaults";
+import type { ParcoursType } from "@prisma/client";
 
 // POST /api/admin/create-client — Creer un client directement (avec ou sans legacy)
 export async function POST(request: NextRequest) {
@@ -52,6 +55,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Binding offre → parcours (garde-fou serveur) + defaults flags
+  const resolvedOffer = offerType || "CONVERSATION_EXPLORATOIRE";
+  const resolvedParcours: ParcoursType =
+    typeof parcoursType === "string" && parcoursType
+      ? (parcoursType as ParcoursType)
+      : getParcoursTypeForOffer(resolvedOffer);
+  const parcoursDefaults = getDefaultsForParcoursType(resolvedParcours);
+
   // Create user + client in transaction
   const user = await prisma.user.create({
     data: {
@@ -65,12 +76,15 @@ export async function POST(request: NextRequest) {
   const client = await prisma.client.create({
     data: {
       userId: user.id,
-      offerType: offerType || "CONVERSATION_EXPLORATOIRE",
+      offerType: resolvedOffer,
       language: language || "FR",
       isLegacy: isLegacy || false,
       startDate: clientStartDate,
-      onboardingCompleted: isLegacy ? true : false,
-      ...(parcoursType !== undefined ? { parcoursType } : {}),
+      // Blocage PWA : onboarding requis seulement si le parcours exige le questionnaire
+      onboardingCompleted: isLegacy ? true : !parcoursNeedsQuestionnaire(resolvedParcours),
+      parcoursType: resolvedParcours,
+      // Flags : défauts du parcours, surchargés par toute valeur fournie explicitement
+      ...parcoursDefaults,
       ...(requiresWelcomeVideo !== undefined ? { requiresWelcomeVideo } : {}),
       ...(requiresConvention !== undefined ? { requiresConvention } : {}),
       ...(requiresQuestionnaire !== undefined ? { requiresQuestionnaire } : {}),
