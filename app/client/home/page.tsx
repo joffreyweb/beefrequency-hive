@@ -6,6 +6,7 @@ import Link from "next/link";
 import DocumentUploadButton from "@/components/client/DocumentUploadButton";
 import CheckinButtons from "@/components/client/CheckinButtons";
 import ElixirReceivedBanner from "@/components/client/ElixirReceivedBanner";
+import ElixirInstructions from "@/components/client/ElixirInstructions";
 import TimelineWidget from "@/components/client/TimelineWidget";
 import AppointmentActions from "@/components/client/AppointmentActions";
 import type { Lang } from "@/lib/translations";
@@ -455,6 +456,7 @@ export default async function ClientHomePage() {
                     {pe.notes && (
                       <p className="font-ui text-xs text-brun-mid/60 italic mt-1">{pe.notes}</p>
                     )}
+                    <ElixirInstructions description={pe.elixirLibrary.description} />
                   </div>
                 );
               })}

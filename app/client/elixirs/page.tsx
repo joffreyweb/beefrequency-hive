@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import ElixirInstructions from "@/components/client/ElixirInstructions";
 
 const TIMING_LABELS: Record<string, string> = {
   MATIN: "Morning",
@@ -158,12 +159,7 @@ export default function ClientElixirsPage() {
                 <div key={pe.id} className="bg-cire-chaude border border-or-pale rounded-sm p-5">
                   {/* En-tête : nom + timing */}
                   <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-display text-lg text-brun-chaud">{pe.elixirLibrary.name}</h3>
-                      <p className="text-xs font-ui text-brun-mid/70 mt-0.5">
-                        {pe.elixirLibrary.description}
-                      </p>
-                    </div>
+                    <h3 className="font-display text-lg text-brun-chaud">{pe.elixirLibrary.name}</h3>
                     <span className="text-xs font-ui px-2 py-0.5 rounded-sharp shrink-0 bg-or-sacre/10 text-or-sacre">
                       {TIMING_LABELS[pe.timing] ?? pe.timing}
                     </span>
@@ -195,6 +191,9 @@ export default function ClientElixirsPage() {
                   {pe.notes && (
                     <p className="text-xs font-ui text-brun-mid/60 italic mb-3">{pe.notes}</p>
                   )}
+
+                  {/* Instruction de prise (accordion replié) */}
+                  <ElixirInstructions description={pe.elixirLibrary.description} />
 
                   {/* Bouton Order (demande de réassort) */}
                   <div className="flex items-center justify-end gap-2">
