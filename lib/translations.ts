@@ -325,6 +325,69 @@ CADRE D'ENGAGEMENT MONITORING
     save: { EN: "Save", FR: "Enregistrer" },
     saving: { EN: "Saving...", FR: "Enregistrement..." },
     home: { EN: "Home", FR: "Accueil" },
+    // Refonte SOIR (08/06/2026) — nouveau formulaire structuré (4 sections, 9 champs)
+    ethos: {
+      EN: "no analysis · no fixing · no goal",
+      FR: "sans analyse · sans correction · sans objectif",
+    },
+    sectionAHeader: {
+      EN: "Three small moments I felt good about myself",
+      FR: "Trois micro-moments où j’ai été content(e) de moi",
+    },
+    sectionANote: {
+      EN: "No explanation, one sentence max.",
+      FR: "Pas d’explication, une phrase max.",
+    },
+    a1Label: {
+      EN: "Today, I felt good about myself when…",
+      FR: "Aujourd’hui, j’ai été content(e) de moi quand…",
+    },
+    a2Label: {
+      EN: "I appreciated the way I was when…",
+      FR: "J’ai apprécié ma façon d’être quand…",
+    },
+    a3Label: {
+      EN: "A small gesture, choice or word I honored in myself",
+      FR: "Un petit geste, choix ou parole que j’ai respecté chez moi",
+    },
+    sectionBHeader: {
+      EN: "Four little sparks of gratitude",
+      FR: "Quatre « piments » de gratitude",
+    },
+    sectionBNote: {
+      EN: "Small things, sometimes ordinary, but real. If a spark is missing, don’t replace it.",
+      FR: "Des choses petites, parfois banales, mais réelles. Si un piment manque, on ne remplace pas.",
+    },
+    b1Label: { EN: "A pleasant moment", FR: "Un moment agréable" },
+    b2Label: {
+      EN: "A body sensation that felt okay or pleasant",
+      FR: "Une sensation corporelle ok ou agréable",
+    },
+    b3Label: { EN: "Something I received", FR: "Quelque chose que j’ai reçu" },
+    b3Hint: { EN: "time, help, silence, a smile…", FR: "temps, aide, silence, sourire…" },
+    b4Label: {
+      EN: "Something I did for myself today",
+      FR: "Une chose que j’ai faite pour moi aujourd’hui",
+    },
+    sectionCHeader: {
+      EN: "One thing I recognize in myself today",
+      FR: "Une chose que je reconnais chez moi aujourd’hui",
+    },
+    sectionCNote: {
+      EN: "Not an « ideal » quality, a real presence.",
+      FR: "Pas une qualité « idéale », une présence réelle.",
+    },
+    c1Hint: {
+      EN: "my steadiness · my gentleness · my quiet courage · my ability to pause · my inner honesty…",
+      FR: "ma constance · ma douceur · mon courage discret · ma capacité à m’arrêter · mon honnêteté intérieure…",
+    },
+    sectionDHeader: { EN: "A gentle closing", FR: "Clôture douce" },
+    sectionDNote: {
+      EN: "One sentence to close your day.",
+      FR: "Une phrase pour refermer ta journée.",
+    },
+    cta: { EN: "Close my day", FR: "Refermer ma journée" },
+    skip: { EN: "Skip tonight", FR: "Passer ce soir" },
   },
 
   // === JOURNAL ===

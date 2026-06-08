@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         closingSentence: true,
         elixirTaken: true,
         eveningPhotoPath: true,
+        eveningReflection: true,
         createdAt: true,
         updatedAt: true,
       },

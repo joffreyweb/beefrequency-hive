@@ -795,6 +795,11 @@ model DailyCheckin {
   selfQuality       String?
   closingSentence   String?
 
+  // Refonte page check-in SOIR (08/06/2026) — nouveau format structuré.
+  // Shape JSON : { microMoments:{a1,a2,a3}, piments:{b1,b2,b3,b4}, reconnaissance, cloture }
+  // Les colonnes SOIR legacy ci-dessus restent intactes (historique préservé).
+  eveningReflection Json?
+
   elixirTaken       Boolean   @default(false)
 
   // Photos check-in (optionnelles · séparées matin/soir car 1 row/jour contient les 2 phases)

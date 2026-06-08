@@ -24,6 +24,26 @@ interface CheckinRow {
   closingSentence: string | null;
   elixirTaken: boolean;
   eveningPhotoPath: string | null;
+  // Refonte SOIR (08/06/2026) — nouveau format structuré
+  eveningReflection: EveningReflection | null;
+}
+
+interface EveningReflection {
+  microMoments: { a1: string | null; a2: string | null; a3: string | null };
+  piments: { b1: string | null; b2: string | null; b3: string | null; b4: string | null };
+  reconnaissance: string | null;
+  cloture: string | null;
+}
+
+function reflectionHasContent(r: EveningReflection | null): boolean {
+  if (!r) return false;
+  const m = r.microMoments || ({} as EveningReflection["microMoments"]);
+  const p = r.piments || ({} as EveningReflection["piments"]);
+  return Boolean(
+    m.a1 || m.a2 || m.a3 ||
+    p.b1 || p.b2 || p.b3 || p.b4 ||
+    r.reconnaissance || r.cloture
+  );
 }
 
 interface Props {
@@ -57,7 +77,8 @@ function hasEvening(c: CheckinRow): boolean {
     c.gratitudeSoi !== null ||
     c.selfQuality !== null ||
     c.closingSentence !== null ||
-    c.eveningPhotoPath !== null
+    c.eveningPhotoPath !== null ||
+    reflectionHasContent(c.eveningReflection)
   );
 }
 
@@ -116,16 +137,6 @@ export default function CheckinsTab({ clientId, onGoToParcours }: Props) {
             {total} jour{total > 1 ? "s" : ""} avec entrée · du plus récent au plus ancien
           </p>
         </div>
-        {onGoToParcours && (
-          <button
-            type="button"
-            onClick={onGoToParcours}
-            className="flex items-center gap-1.5 bg-or-sacre/10 text-or-sacre hover:bg-or-sacre/20 px-3 py-1.5 rounded font-ui text-xs transition-colors"
-            title="Personnaliser les questions de check-in (onglet Parcours)"
-          >
-            ✏️ Personnaliser les questions
-          </button>
-        )}
       </div>
 
       {error && (
@@ -202,35 +213,41 @@ export default function CheckinsTab({ clientId, onGoToParcours }: Props) {
                   <p className="font-caps text-[10px] uppercase tracking-wider text-or-sacre mb-2">🌙 Soir</p>
                   {e ? (
                     <div className="space-y-1 text-xs text-brun-chaud">
-                      {c.freeFeeling && (
-                        <p><span className="text-brun-mid">Ressenti :</span> {c.freeFeeling}</p>
+                      {reflectionHasContent(c.eveningReflection) ? (
+                        <ReflectionView r={c.eveningReflection!} />
+                      ) : (
+                        <>
+                          {c.freeFeeling && (
+                            <p><span className="text-brun-mid">Ressenti :</span> {c.freeFeeling}</p>
+                          )}
+                          {(c.pride1 || c.pride2 || c.pride3) && (
+                            <div>
+                              <p className="text-brun-mid">Fiertés :</p>
+                              <ul className="list-disc list-inside ml-2">
+                                {[c.pride1, c.pride2, c.pride3].filter(Boolean).map((p, i) => (
+                                  <li key={i}>{p}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {c.gratitudeMoment && (
+                            <p><span className="text-brun-mid">Moment :</span> {c.gratitudeMoment}</p>
+                          )}
+                          {c.gratitudeSensation && (
+                            <p><span className="text-brun-mid">Sensation :</span> {c.gratitudeSensation}</p>
+                          )}
+                          {c.gratitudeRecu && (
+                            <p><span className="text-brun-mid">Reçu :</span> {c.gratitudeRecu}</p>
+                          )}
+                          {c.gratitudeSoi && (
+                            <p><span className="text-brun-mid">Soi :</span> {c.gratitudeSoi}</p>
+                          )}
+                          {c.selfQuality && (
+                            <p><span className="text-brun-mid">Qualité :</span> {c.selfQuality}</p>
+                          )}
+                          {c.closingSentence && <p className="italic text-brun-mid">« {c.closingSentence} »</p>}
+                        </>
                       )}
-                      {(c.pride1 || c.pride2 || c.pride3) && (
-                        <div>
-                          <p className="text-brun-mid">Fiertés :</p>
-                          <ul className="list-disc list-inside ml-2">
-                            {[c.pride1, c.pride2, c.pride3].filter(Boolean).map((p, i) => (
-                              <li key={i}>{p}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {c.gratitudeMoment && (
-                        <p><span className="text-brun-mid">Moment :</span> {c.gratitudeMoment}</p>
-                      )}
-                      {c.gratitudeSensation && (
-                        <p><span className="text-brun-mid">Sensation :</span> {c.gratitudeSensation}</p>
-                      )}
-                      {c.gratitudeRecu && (
-                        <p><span className="text-brun-mid">Reçu :</span> {c.gratitudeRecu}</p>
-                      )}
-                      {c.gratitudeSoi && (
-                        <p><span className="text-brun-mid">Soi :</span> {c.gratitudeSoi}</p>
-                      )}
-                      {c.selfQuality && (
-                        <p><span className="text-brun-mid">Qualité :</span> {c.selfQuality}</p>
-                      )}
-                      {c.closingSentence && <p className="italic text-brun-mid">« {c.closingSentence} »</p>}
                       <p className={`text-xs ${c.elixirTaken ? "text-foret" : "text-brun-mid/50"}`}>
                         {c.elixirTaken ? "✓ Élixirs pris" : "Élixirs non pris"}
                       </p>
@@ -275,6 +292,48 @@ export default function CheckinsTab({ clientId, onGoToParcours }: Props) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rendu du nouveau format SOIR (08/06/2026) — 9 champs structurés.
+// Les colonnes legacy ne sont pas affichées si ce bloc rend (mutuellement
+// exclusif au niveau du rendu pour ne pas dupliquer l'info).
+// ─────────────────────────────────────────────────────────────────────────────
+function ReflectionView({ r }: { r: EveningReflection }) {
+  const m = r.microMoments ?? { a1: null, a2: null, a3: null };
+  const p = r.piments ?? { b1: null, b2: null, b3: null, b4: null };
+  const microItems = [m.a1, m.a2, m.a3].filter(Boolean) as string[];
+  const pimentItems = [p.b1, p.b2, p.b3, p.b4].filter(Boolean) as string[];
+  return (
+    <div className="space-y-2">
+      {microItems.length > 0 && (
+        <div>
+          <p className="text-brun-mid">Micro-moments :</p>
+          <ul className="list-disc list-inside ml-2">
+            {microItems.map((v, i) => (
+              <li key={`m${i}`}>{v}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {pimentItems.length > 0 && (
+        <div>
+          <p className="text-brun-mid">Piments :</p>
+          <ul className="list-disc list-inside ml-2">
+            {pimentItems.map((v, i) => (
+              <li key={`p${i}`}>{v}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {r.reconnaissance && (
+        <p>
+          <span className="text-brun-mid">Reconnaissance :</span> {r.reconnaissance}
+        </p>
+      )}
+      {r.cloture && <p className="italic text-brun-mid">« {r.cloture} »</p>}
     </div>
   );
 }

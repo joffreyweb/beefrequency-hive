@@ -540,10 +540,6 @@ function CheckinsTab({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPh
             <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="w-4 h-4 accent-or-sacre" />
             <span className="text-sm font-ui text-brun-chaud font-medium">Check-in {type === "morning" ? "matin" : "soir"}</span>
           </label>
-          <button onClick={() => openModal(type)}
-            className="flex items-center gap-1.5 bg-or-sacre/10 text-or-sacre hover:bg-or-sacre/20 px-3 py-1.5 rounded font-ui text-xs transition-colors">
-            ✏️ Personnaliser
-          </button>
         </div>
         {custom && <p className="text-[10px] font-ui text-foret mb-1">✓ Questions personnalisées</p>}
         <div className="pl-7 space-y-1">
