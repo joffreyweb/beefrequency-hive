@@ -70,6 +70,7 @@ export async function PATCH(
         ...(data.type !== undefined && { type: data.type }),
         ...(contentValue !== undefined && { content: contentValue }),
         ...(data.category !== undefined && { category: data.category }),
+        ...(data.subFolder !== undefined && { subFolder: data.subFolder }),
         ...(data.isGlobal !== undefined && { isGlobal: data.isGlobal }),
         ...(data.dayTrigger !== undefined && { dayTrigger: data.dayTrigger }),
       },

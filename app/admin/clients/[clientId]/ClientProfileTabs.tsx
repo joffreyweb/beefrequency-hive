@@ -623,6 +623,7 @@ function ParcoursTab({ client }: { client: any }) {
             requiresJournal: client.requiresJournal ?? true,
             requiresProgramTimeline: client.requiresProgramTimeline ?? true,
             requiresElixirs: client.requiresElixirs ?? true,
+            requiresModules: client.requiresModules ?? false,
           }}
         />
       </div>

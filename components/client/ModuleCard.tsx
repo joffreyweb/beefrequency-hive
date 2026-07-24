@@ -17,9 +17,10 @@ export interface ModuleCardData {
 interface Props {
   module: ModuleCardData;
   lang: Lang;
+  locked?: boolean;
 }
 
-export default function ModuleCard({ module: m, lang }: Props) {
+export default function ModuleCard({ module: m, lang, locked = false }: Props) {
   const T = (k: { EN: string; FR: string }) => k[lang];
   const title = lang === "FR" ? m.nameFr : m.nameEn;
 
@@ -36,20 +37,29 @@ export default function ModuleCard({ module: m, lang }: Props) {
     }
   }
 
-  return (
-    <Link
-      href={`/client/mes-modules/${m.id}`}
-      className="relative block bg-cire-chaude border border-or-pale rounded-sm overflow-hidden hover:border-or-sacre transition-colors"
-    >
-      {/* Image placeholder gradient (Module.imageUrl n'existe pas en V3b) */}
-      <div className="aspect-[16/9] bg-gradient-to-br from-or-sacre/30 via-ambre-vif/20 to-brun-chaud/40" />
+  const content = (
+    <>
+      {/* Vignette de marque — logo Joffrey centré */}
+      <div className="aspect-[16/9] bg-gradient-to-br from-cire-chaude via-creme-sacree to-or-pale/40 flex items-center justify-center p-4">
+        <img
+          src="/logo_joffrey_module.png"
+          alt="BeeFrequency"
+          className={`w-full h-auto max-h-full object-contain ${locked ? "opacity-60" : ""}`}
+        />
+      </div>
 
-      {badge && (
-        <span
-          className={`absolute top-2 right-2 text-[10px] font-ui uppercase tracking-wider px-2 py-0.5 rounded ${badge.classes}`}
-        >
-          {badge.label}
+      {locked ? (
+        <span className="absolute top-2 right-2 text-[11px] px-2 py-0.5 rounded bg-brun-mid/70 text-white">
+          🔒
         </span>
+      ) : (
+        badge && (
+          <span
+            className={`absolute top-2 right-2 text-[10px] font-ui uppercase tracking-wider px-2 py-0.5 rounded ${badge.classes}`}
+          >
+            {badge.label}
+          </span>
+        )
       )}
 
       <div className="p-4">
@@ -58,6 +68,23 @@ export default function ModuleCard({ module: m, lang }: Props) {
           {m.duration} {T(t.modules.days)}
         </p>
       </div>
+    </>
+  );
+
+  if (locked) {
+    return (
+      <div className="relative block bg-cire-chaude border border-or-pale rounded-sm overflow-hidden cursor-default">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/client/mes-modules/${m.id}`}
+      className="relative block bg-cire-chaude border border-or-pale rounded-sm overflow-hidden hover:border-or-sacre transition-colors"
+    >
+      {content}
     </Link>
   );
 }

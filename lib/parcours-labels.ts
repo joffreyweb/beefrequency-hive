@@ -43,4 +43,5 @@ export const FLAG_LABELS: Record<keyof ParcoursFlags, string> = {
   requiresJournal: "Journal",
   requiresProgramTimeline: "Timeline programme jour-par-jour",
   requiresElixirs: "Élixirs",
+  requiresModules: "Modules & Bibliothèque",
 };

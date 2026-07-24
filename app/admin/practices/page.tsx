@@ -4,9 +4,14 @@ import { useEffect, useState } from "react";
 
 // Labels français pour les catégories
 const CATEGORY_LABELS: Record<string, string> = {
-  RESPIRATION: "Respiration",
-  MEDITATION: "Méditation",
+  RESPIRATION: "Breath",
+  NUTRITION: "Nutrition",
+  SYSTEME_NERVEUX: "Système nerveux",
+  SLEEP: "Sleep",
+  DETOX: "Detox",
   MOUVEMENT: "Mouvement",
+  MINDSET: "Mindset",
+  MEDITATION: "Méditation",
   RITUAL: "Rituel",
 };
 
@@ -34,6 +39,7 @@ interface Practice {
   type: string;
   content: string;
   category: string;
+  subFolder: string | null;
   isGlobal: boolean;
   dayTrigger: number | null;
   createdAt: string;
@@ -90,6 +96,7 @@ export default function PracticesPage() {
   const [description, setDescription] = useState("");
   const [type, setType] = useState("BREATHING");
   const [category, setCategory] = useState("RESPIRATION");
+  const [subFolder, setSubFolder] = useState("");
   const [isGlobal, setIsGlobal] = useState(false);
   const [dayTrigger, setDayTrigger] = useState<string>("");
 
@@ -130,6 +137,7 @@ export default function PracticesPage() {
     setDescription("");
     setType("BREATHING");
     setCategory("RESPIRATION");
+    setSubFolder("");
     setIsGlobal(false);
     setDayTrigger("");
     setInhale(4);
@@ -150,6 +158,7 @@ export default function PracticesPage() {
     setDescription(practice.description);
     setType(practice.type);
     setCategory(practice.category);
+    setSubFolder(practice.subFolder ?? "");
     setIsGlobal(practice.isGlobal);
     setDayTrigger(practice.dayTrigger?.toString() ?? "");
 
@@ -203,6 +212,7 @@ export default function PracticesPage() {
       description: description.trim(),
       type,
       category,
+      subFolder: subFolder.trim() || null,
       isGlobal,
       dayTrigger: dayTrigger ? parseInt(dayTrigger, 10) : null,
       content: content ?? {},
@@ -336,6 +346,25 @@ export default function PracticesPage() {
             />
           </div>
 
+          {/* Sous-dossier */}
+          <div className="mb-4">
+            <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
+              Sous-dossier (optionnel)
+            </label>
+            <input
+              value={subFolder}
+              onChange={(e) => setSubFolder(e.target.value)}
+              list="subfolder-suggestions"
+              placeholder="ex. Reset, Meditation, Anxiety panic…"
+              className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+            />
+            <datalist id="subfolder-suggestions">
+              {Array.from(new Set(practices.map((p) => p.subFolder).filter(Boolean))).map((f) => (
+                <option key={f as string} value={f as string} />
+              ))}
+            </datalist>
+          </div>
+
           {/* Catégorie */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
@@ -347,10 +376,13 @@ export default function PracticesPage() {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
               >
-                <option value="RESPIRATION">Respiration</option>
-                <option value="MEDITATION">Méditation</option>
+                <option value="RESPIRATION">Breath</option>
+                <option value="NUTRITION">Nutrition</option>
+                <option value="SYSTEME_NERVEUX">Système nerveux</option>
+                <option value="SLEEP">Sleep</option>
+                <option value="DETOX">Detox</option>
                 <option value="MOUVEMENT">Mouvement</option>
-                <option value="RITUAL">Rituel</option>
+                <option value="MINDSET">Mindset</option>
               </select>
             </div>
 
@@ -576,6 +608,11 @@ export default function PracticesPage() {
                         <span className="text-xs font-caps uppercase px-2 py-0.5 rounded-sharp bg-or-sacre/10 text-or-sacre">
                           {CATEGORY_LABELS[practice.category]}
                         </span>
+                        {practice.subFolder && (
+                          <span className="text-xs font-ui px-2 py-0.5 rounded-sharp bg-cire-chaude border border-or-pale text-brun-mid">
+                            📁 {practice.subFolder}
+                          </span>
+                        )}
                         {practice.isGlobal && (
                           <span className="text-xs font-caps uppercase px-2 py-0.5 rounded-sharp bg-foret/10 text-foret">
                             Global
@@ -594,11 +631,11 @@ export default function PracticesPage() {
                       </p>
 
                       {/* Compteur assignations */}
-                      {practice._count.clientPractices > 0 && (
+                      {(practice._count?.clientPractices ?? 0) > 0 && (
                         <p className="text-xs font-ui text-brun-mid/50 mt-1">
-                          {practice._count.clientPractices} client
-                          {practice._count.clientPractices > 1 ? "s" : ""} assigné
-                          {practice._count.clientPractices > 1 ? "s" : ""}
+                          {(practice._count?.clientPractices ?? 0)} client
+                          {(practice._count?.clientPractices ?? 0) > 1 ? "s" : ""} assigné
+                          {(practice._count?.clientPractices ?? 0) > 1 ? "s" : ""}
                         </p>
                       )}
                     </div>

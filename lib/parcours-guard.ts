@@ -20,6 +20,7 @@ const FLAG_SELECT = {
   requiresJournal: true,
   requiresProgramTimeline: true,
   requiresElixirs: true,
+  requiresModules: true,
 } as const;
 
 export async function getClientFlagsByUserId(

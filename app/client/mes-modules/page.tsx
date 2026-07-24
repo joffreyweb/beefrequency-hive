@@ -103,15 +103,17 @@ export default function MesModulesPage() {
   const [loading, setLoading] = useState(true);
   const [activePractice, setActivePractice] = useState<ClientPractice | null>(null);
   const [modules, setModules] = useState<ModuleCardData[]>([]);
+  const [unlocked, setUnlocked] = useState<boolean | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [practicesRes, supportsRes, recosRes, modulesRes] = await Promise.all([
+      const [practicesRes, supportsRes, recosRes, modulesRes, flagsRes] = await Promise.all([
         fetch("/api/client-practices"),
         fetch("/api/supports"),
         fetch("/api/recommendations/client"),
         fetch("/api/client/modules"),
+        fetch("/api/client/me/flags"),
       ]);
 
       if (practicesRes.ok) {
@@ -130,6 +132,12 @@ export default function MesModulesPage() {
       if (modulesRes.ok) {
         const data = await modulesRes.json();
         setModules(data.modules ?? []);
+      }
+      if (flagsRes.ok) {
+        const data = await flagsRes.json();
+        setUnlocked(Boolean(data.flags?.requiresModules));
+      } else {
+        setUnlocked(false);
       }
     } catch {
       // Silent
@@ -164,6 +172,34 @@ export default function MesModulesPage() {
   ];
 
   const activePractices = practices.filter((cp) => cp.isActive);
+
+  if (unlocked === false) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-2xl text-brun-chaud">Mes Modules</h1>
+          <p className="font-ui text-sm text-brun-mid mt-1">{T(t.modules.subtitle)}</p>
+        </div>
+        <div className="bg-or-sacre/10 border border-or-sacre/30 rounded-sm p-4 flex items-center gap-3">
+          <span className="text-xl">🔒</span>
+          <p className="font-ui text-sm text-brun-mid">
+            Ton contenu sera débloqué par Joffrey. Voici un aperçu de ce qui t'attend.
+          </p>
+        </div>
+        {modules.length > 0 && (
+          <section>
+            <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.sectionTitle)}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {modules.map((m) => (
+                <ModuleCard key={m.id} module={m} lang={lang} locked />
+              ))}
+            </div>
+          </section>
+        )}
+        <LibrarySection locked />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -409,11 +445,13 @@ export default function MesModulesPage() {
 /* ─── Library section (practice categories) ─── */
 
 const LIBRARY_CATEGORIES = [
-  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Breathwork" },
-  { key: "SOMMEIL", emoji: "\uD83D\uDE34", label: "Sleep" },
-  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Anxiety" },
-  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Stress" },
-  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Reset" },
+  { key: "RESPIRATION", emoji: "🫁", label: "Breath" },
+  { key: "NUTRITION", emoji: "🥗", label: "Nutrition" },
+  { key: "SYSTEME_NERVEUX", emoji: "🧠", label: "Système nerveux" },
+  { key: "SLEEP", emoji: "😴", label: "Sleep" },
+  { key: "DETOX", emoji: "🌿", label: "Detox" },
+  { key: "MOUVEMENT", emoji: "🤸", label: "Mouvement" },
+  { key: "MINDSET", emoji: "✨", label: "Mindset" },
 ];
 
 interface LibPractice {
@@ -422,28 +460,27 @@ interface LibPractice {
   description: string;
   type: string;
   category: string;
+  subFolder: string | null;
 }
 
-function LibrarySection() {
+const GENERAL_FOLDER = "Général";
+
+function LibrarySection({ locked = false }: { locked?: boolean }) {
   const { lang } = useLanguage();
   const T = (k: { EN: string; FR: string }) => k[lang];
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [libPractices, setLibPractices] = useState<LibPractice[]>([]);
   const [libLoading, setLibLoading] = useState(false);
 
   async function openCategory(cat: string) {
-    if (selectedCat === cat) {
-      setSelectedCat(null);
-      return;
-    }
     setSelectedCat(cat);
+    setSelectedFolder(null);
     setLibLoading(true);
     try {
       const res = await fetch(`/api/practices?category=${cat}`);
-      if (res.ok) {
-        const data = await res.json();
-        setLibPractices(data.practices ?? []);
-      }
+      const data = res.ok ? await res.json() : { practices: [] };
+      setLibPractices(data.practices ?? []);
     } catch {
       setLibPractices([]);
     } finally {
@@ -451,41 +488,121 @@ function LibrarySection() {
     }
   }
 
+  const folderOf = (p: LibPractice) => (p.subFolder && p.subFolder.trim()) || GENERAL_FOLDER;
+  const folders = Array.from(new Set(libPractices.map(folderOf))).sort((a, b) =>
+    a.localeCompare(b, "fr")
+  );
+  const folderPractices = libPractices.filter((p) => folderOf(p) === selectedFolder);
+  const currentCat = LIBRARY_CATEGORIES.find((c) => c.key === selectedCat);
+
+  // ── Vue verrouillée : catégories visibles, non cliquables ──
+  if (locked) {
+    return (
+      <section>
+        <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.library)}</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {LIBRARY_CATEGORIES.map((cat) => (
+            <div
+              key={cat.key}
+              className="flex items-center justify-between gap-2 p-4 rounded-sm border bg-cire-chaude border-or-pale"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-xl">{cat.emoji}</span>
+                <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
+              </span>
+              <span className="text-sm">🔒</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // ── Vue 1 : grille des catégories ──
+  if (!selectedCat) {
+    return (
+      <section>
+        <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.library)}</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {LIBRARY_CATEGORIES.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => openCategory(cat.key)}
+              className="flex items-center gap-2 p-4 rounded-sm border bg-cire-chaude border-or-pale hover:border-or-sacre/50 transition-colors text-left"
+            >
+              <span className="text-xl">{cat.emoji}</span>
+              <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // ── Vue 2 : dossiers de la catégorie (pleine page) ──
+  if (!selectedFolder) {
+    return (
+      <section>
+        <button
+          onClick={() => setSelectedCat(null)}
+          className="font-ui text-sm text-or-sacre hover:text-ambre-vif mb-4"
+        >
+          ← Bibliothèque
+        </button>
+        <h2 className="font-display text-2xl text-brun-chaud mb-1">
+          {currentCat?.emoji} {currentCat?.label}
+        </h2>
+        <p className="font-ui text-sm text-brun-mid/60 mb-4">Choisis un dossier</p>
+        {libLoading ? (
+          <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Chargement…</p>
+        ) : folders.length === 0 ? (
+          <p className="text-sm font-ui text-brun-mid/60 text-center py-4">
+            Rien dans {currentCat?.label} pour l'instant.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {folders.map((f) => {
+              const count = libPractices.filter((p) => folderOf(p) === f).length;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setSelectedFolder(f)}
+                  className="flex items-center justify-between gap-2 p-4 rounded-sm border bg-cire-chaude border-or-pale hover:border-or-sacre/50 transition-colors text-left"
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-lg">📁</span>
+                    <span className="font-ui text-sm text-brun-chaud truncate">{f}</span>
+                  </span>
+                  <span className="font-ui text-xs text-brun-mid/60 shrink-0">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  // ── Vue 3 : pratiques du dossier (pleine page) ──
   return (
     <section>
-      <h2 className="font-display text-lg text-brun-chaud mb-4">{T(t.modules.library)}</h2>
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        {LIBRARY_CATEGORIES.map((cat) => (
-          <button
-            key={cat.key}
-            onClick={() => openCategory(cat.key)}
-            className={`flex items-center gap-2 p-4 rounded-sm border transition-colors text-left ${
-              selectedCat === cat.key
-                ? "bg-or-sacre/10 border-or-sacre"
-                : "bg-cire-chaude border-or-pale hover:border-or-sacre/50"
-            }`}
-          >
-            <span className="text-xl">{cat.emoji}</span>
-            <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
-          </button>
-        ))}
-      </div>
-      {selectedCat && (
-        <div className="mt-2">
-          {libLoading ? (
-            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Loading...</p>
-          ) : libPractices.length === 0 ? (
-            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Nothing here yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {libPractices.map((p) => (
-                <div key={p.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
-                  <p className="font-display text-base text-brun-chaud">{p.title}</p>
-                  <p className="font-ui text-sm text-brun-mid mt-1">{p.description}</p>
-                </div>
-              ))}
+      <button
+        onClick={() => setSelectedFolder(null)}
+        className="font-ui text-sm text-or-sacre hover:text-ambre-vif mb-4"
+      >
+        ← {currentCat?.emoji} {currentCat?.label}
+      </button>
+      <h2 className="font-display text-2xl text-brun-chaud mb-4">📁 {selectedFolder}</h2>
+      {folderPractices.length === 0 ? (
+        <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Rien dans ce dossier.</p>
+      ) : (
+        <div className="space-y-3">
+          {folderPractices.map((p) => (
+            <div key={p.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
+              <p className="font-display text-base text-brun-chaud">{p.title}</p>
+              <p className="font-ui text-sm text-brun-mid mt-1">{p.description}</p>
             </div>
-          )}
+          ))}
         </div>
       )}
     </section>

@@ -130,6 +130,7 @@ model Client {
   requiresJournal         Boolean      @default(true)
   requiresProgramTimeline Boolean      @default(true)
   requiresElixirs         Boolean      @default(true)
+  requiresModules         Boolean      @default(false)
 
   // Cadre d'engagement Monitoring Passage
   fixedDay             String?
@@ -340,6 +341,7 @@ model InviteToken {
   requiresJournal         Boolean      @default(true)
   requiresProgramTimeline Boolean      @default(true)
   requiresElixirs         Boolean      @default(true)
+  requiresModules         Boolean      @default(false)
 
   createdAt DateTime @default(now())
 }
@@ -584,6 +586,11 @@ enum PracticeCategory {
   MEDITATION
   MOUVEMENT
   RITUAL
+  NUTRITION
+  SYSTEME_NERVEUX
+  SLEEP
+  DETOX
+  MINDSET
 }
 
 model Practice {
@@ -593,6 +600,7 @@ model Practice {
   type        PracticeType
   content     String // JSON — structure dépend du type
   category    PracticeCategory
+  subFolder   String? // sous-dossier libre (ex. Matin, Avancé) — null = Général
   isGlobal    Boolean          @default(false)
   dayTrigger  Int? // Jour du parcours pour auto-assign (null = manuel)
 

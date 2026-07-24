@@ -282,6 +282,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           requiresJournal: client.requiresJournal,
           requiresProgramTimeline: client.requiresProgramTimeline,
           requiresElixirs: client.requiresElixirs,
+          requiresModules: client.requiresModules,
         }}
       />
 

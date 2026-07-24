@@ -66,7 +66,7 @@ export interface ParcoursConfig {
 // sont dérivés (non spécifiés dans la matrice du 26/05) — ajustables.
 function mkFlags(f: {
   welcome: boolean; convention: boolean; questionnaire: boolean; phaseVideos: boolean;
-  morning: boolean; evening: boolean; journal: boolean; timeline: boolean; elixirs?: boolean;
+  morning: boolean; evening: boolean; journal: boolean; timeline: boolean; elixirs?: boolean; modules?: boolean;
 }): ParcoursFlags {
   return {
     requiresWelcomeVideo: f.welcome,
@@ -78,6 +78,7 @@ function mkFlags(f: {
     requiresJournal: f.journal,
     requiresProgramTimeline: f.timeline,
     requiresElixirs: f.elixirs ?? false,
+    requiresModules: f.modules ?? false,
   };
 }
 

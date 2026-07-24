@@ -11,6 +11,7 @@ export type ParcoursFlags = {
   requiresJournal: boolean;
   requiresProgramTimeline: boolean;
   requiresElixirs: boolean;
+  requiresModules: boolean;
 };
 
 export const FLAG_KEYS = [
@@ -23,6 +24,7 @@ export const FLAG_KEYS = [
   "requiresJournal",
   "requiresProgramTimeline",
   "requiresElixirs",
+  "requiresModules",
 ] as const satisfies readonly (keyof ParcoursFlags)[];
 
 // Flags éditables par l'admin (UI). requiresWelcomeVideo en est exclu : il est
