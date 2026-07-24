@@ -22,6 +22,8 @@ interface ModuleInfo {
   duration: number;
 }
 
+type ProgramState = "pending" | "active" | "completed" | "paused";
+
 interface ClientProgram {
   programName: string;
   totalDays: number;
@@ -30,8 +32,26 @@ interface ClientProgram {
   currentPhase: Phase;
   nextPhase: NextPhase | null;
   modules: ModuleInfo[];
+  startDate: string;
   endDate: string;
-  status: string;
+  state: ProgramState;
+}
+
+const STATE_LABELS: Record<ProgramState, string> = {
+  pending: "En attente", active: "En cours", completed: "Terminé", paused: "En pause",
+};
+
+const STATE_BADGE: Record<ProgramState, string> = {
+  pending: "bg-amber-100 text-amber-600",
+  active: "bg-foret/10 text-foret",
+  completed: "bg-brun-mid/10 text-brun-mid",
+  paused: "bg-amber-100 text-amber-600",
+};
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-BE", {
+    day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Brussels",
+  });
 }
 
 const MODULE_COLORS: Record<string, string> = {
@@ -82,6 +102,12 @@ export default function ProgramProgress() {
         <p className="font-display text-2xl text-brun-chaud">
           Jour {data.currentDay} <span className="text-brun-mid/40 font-ui text-lg">/ {data.totalDays}</span>
         </p>
+        <p className="font-ui text-xs text-brun-mid/60 mt-1">
+          Du {fmtDate(data.startDate)} au {fmtDate(data.endDate)}
+        </p>
+        <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${STATE_BADGE[data.state]}`}>
+          {STATE_LABELS[data.state]}
+        </span>
         <div className="mt-3 mx-auto max-w-xs">
           <div className="h-2 bg-creme-sacree rounded-full overflow-hidden">
             <div className="h-full bg-or-sacre rounded-full transition-all duration-500" style={{ width: `${data.progress}%` }} />

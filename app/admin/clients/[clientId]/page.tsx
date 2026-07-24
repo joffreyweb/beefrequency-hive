@@ -313,7 +313,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       />
 
       {/* Programme assigné */}
-      <ClientProgramSection clientId={clientId} clientName={client.user.name} />
+      <ClientProgramSection clientId={clientId} clientName={client.user.name} parcoursType={client.parcoursType} />
 
       {/* Actions : desactiver, archiver, supprimer, envoyer email */}
       <ClientActions

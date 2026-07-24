@@ -8,6 +8,7 @@ import CheckinButtons from "@/components/client/CheckinButtons";
 import ElixirReceivedBanner from "@/components/client/ElixirReceivedBanner";
 import ElixirInstructions from "@/components/client/ElixirInstructions";
 import TimelineWidget from "@/components/client/TimelineWidget";
+import ProgramProgress from "@/components/client/ProgramProgress";
 import AppointmentActions from "@/components/client/AppointmentActions";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
@@ -440,6 +441,17 @@ export default async function ClientHomePage() {
 
       {/* Timeline widget — masqué si parcours sans timeline */}
       {client.requiresProgramTimeline && <TimelineWidget />}
+
+      {/* Parcours sur-mesure (CUSTOM) — timeline indépendante, jamais pour Le Passage.
+          ProgramProgress rend null si aucun ClientProgram n'est assigné. */}
+      {client.parcoursType === "CUSTOM" && (
+        <section className="space-y-3">
+          <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid text-center">
+            {T({ EN: "My program", FR: "Mon parcours" })}
+          </h2>
+          <ProgramProgress />
+        </section>
+      )}
 
       {/* Élixirs du jour (phase actuelle) + lien vers tous les élixirs assignés */}
       {client.requiresElixirs && hasAnyElixir && (

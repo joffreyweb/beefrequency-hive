@@ -40,6 +40,7 @@ const ALL_FLAGS_TRUE: ParcoursFlags = {
   requiresJournal: true,
   requiresProgramTimeline: true,
   requiresElixirs: true,
+  requiresModules: true,
 };
 
 const OFFER_OPTIONS = [

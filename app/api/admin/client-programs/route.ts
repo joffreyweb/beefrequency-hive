@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import { getProgramState } from "@/lib/program-state";
 
 // GET /api/admin/client-programs?clientId=xxx
 export async function GET(request: NextRequest) {
@@ -24,7 +25,17 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ clientProgram });
+  if (!clientProgram) return NextResponse.json({ clientProgram: null });
+
+  // endDate + state CALCULÉS (jamais lus depuis le champ status stocké).
+  const { startDate, endDate, totalDays, currentDay, state } = getProgramState(
+    clientProgram,
+    clientProgram.program,
+  );
+
+  return NextResponse.json({
+    clientProgram: { ...clientProgram, startDate, endDate, totalDays, currentDay, state },
+  });
 }
 
 // POST /api/admin/client-programs

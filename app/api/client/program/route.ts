@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getProgramState } from "@/lib/program-state";
 
 export async function GET() {
   const session = await getSession();
@@ -12,8 +13,11 @@ export async function GET() {
   });
   if (!client) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
 
+  // Programme principal du client — on NE filtre PAS sur status:"active" :
+  // l'état (actif/terminé/à venir) est calculé, pas lu depuis la base.
   const clientProgram = await prisma.clientProgram.findFirst({
-    where: { clientId: client.id, status: "active" },
+    where: { clientId: client.id },
+    orderBy: [{ isMain: "desc" }, { createdAt: "asc" }],
     include: {
       program: {
         include: {
@@ -35,12 +39,11 @@ export async function GET() {
     .filter((pm) => !skipped.includes(pm.module.id))
     .map((pm) => pm.module);
 
-  const totalDays = activeModules.reduce((acc, m) => acc + m.duration, 0);
-
-  // Compute current day from startDate
-  const now = new Date();
-  const start = new Date(clientProgram.startDate);
-  const currentDay = Math.max(1, Math.floor((now.getTime() - start.getTime()) / 86400000) + 1);
+  // Cycle de vie calculé (jour-calendrier Bruxelles, jamais d'instant brut).
+  const { startDate: start, endDate, totalDays, currentDay, state } = getProgramState(
+    clientProgram,
+    clientProgram.program,
+  );
 
   // Find current phase
   let dayCounter = 0;
@@ -62,18 +65,14 @@ export async function GET() {
   const nextPhase = phaseIndex + 1 < activeModules.length ? activeModules[phaseIndex + 1] : null;
   const daysUntilNext = currentPhase.duration - dayInPhase + 1;
 
-  // End date
-  const endDate = new Date(start);
-  endDate.setDate(endDate.getDate() + totalDays - 1);
-
   return NextResponse.json({
     clientProgram: {
       id: clientProgram.id,
       programName: clientProgram.program.nameFr,
-      startDate: clientProgram.startDate,
+      startDate: start,
       endDate,
       totalDays,
-      currentDay: Math.min(currentDay, totalDays),
+      currentDay,
       progress: Math.round(Math.min(currentDay / totalDays, 1) * 100),
       currentPhase: {
         name: currentPhase.nameFr,
@@ -88,7 +87,7 @@ export async function GET() {
         startsIn: daysUntilNext,
       } : null,
       modules: activeModules.map((m) => ({ name: m.name, nameFr: m.nameFr, duration: m.duration })),
-      status: currentDay > totalDays ? "completed" : "active",
+      state, // pending | active | completed | paused — calculé
     },
   });
 }

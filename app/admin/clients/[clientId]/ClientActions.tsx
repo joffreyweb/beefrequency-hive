@@ -22,6 +22,7 @@ export default function ClientActions({
   const [status, setStatus] = useState(clientStatus);
   const [loading, setLoading] = useState("");
   const [emailStatus, setEmailStatus] = useState("");
+  const [copied, setCopied] = useState(false);
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deleteMotif, setDeleteMotif] = useState("");
@@ -64,6 +65,18 @@ export default function ClientActions({
       }
     } finally {
       setLoading("");
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard indisponible (contexte non sécurisé) — sélection manuelle via prompt
+      window.prompt("Copie le lien d'invitation :", inviteLink);
     }
   }
 
@@ -175,6 +188,16 @@ export default function ClientActions({
         )}
         {emailStatus && emailStatus !== "sent" && (
           <span className="text-xs font-ui text-red-600">{emailStatus}</span>
+        )}
+
+        {/* Copier le lien d'invitation — fonctionne sans SMTP (indispensable en local) */}
+        {inviteLink && (
+          <button
+            onClick={handleCopyLink}
+            className="px-3 py-1.5 border border-or-pale text-brun-mid text-xs font-ui uppercase tracking-wider rounded-sharp hover:border-or-sacre hover:text-or-sacre transition-colors"
+          >
+            {copied ? "Lien copié ✓" : "Copier le lien d'invitation"}
+          </button>
         )}
 
         {/* Niveau 3 — Supprimer definitivement */}
