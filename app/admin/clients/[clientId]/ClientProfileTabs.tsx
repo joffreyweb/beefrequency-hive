@@ -630,7 +630,16 @@ function ParcoursTab({ client }: { client: any }) {
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
           Parcours 3 mois
         </h2>
-        <ParcoursSection clientId={client.id} />
+        {(client.requiresProgramTimeline ?? true) ? (
+          <ParcoursSection clientId={client.id} />
+        ) : (
+          <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-6 text-center">
+            <p className="text-sm font-ui text-brun-mid/70">
+              Pas de parcours à phases pour ce client (timeline désactivée). Active « Timeline
+              programme jour-par-jour » dans les modules pour générer un parcours 103 jours.
+            </p>
+          </div>
+        )}
       </div>
       <StackedProgramsSection clientId={client.id} clientName={client.user.name || "Client"} />
     </div>

@@ -39,6 +39,16 @@ export default async function ClientHomePage() {
     }
   }
 
+  // Clarity by Beefrequency : activé (DRAFT/IN_PROGRESS) et pas encore soumis ?
+  let clarityToFill = false;
+  if (clientForCheck) {
+    const cs = await prisma.claritySubmission.findUnique({
+      where: { clientId: clientForCheck.id },
+      select: { status: true },
+    });
+    clarityToFill = !!cs && (cs.status === "DRAFT" || cs.status === "IN_PROGRESS");
+  }
+
   const client = await prisma.client.findUnique({
     where: { userId: session.userId },
     include: {
@@ -147,8 +157,21 @@ export default async function ClientHomePage() {
     CEREMONY: { EN: "Ceremony", FR: "C\u00e9r\u00e9monie" },
   };
 
+  // Bandeau Clarity — rendu identique quel que soit l'écran (attente ou principal)
+  const clarityBanner = clarityToFill ? (
+    <div className="bg-or-sacre/10 border-2 border-or-sacre rounded-sm p-5 text-center">
+      <p className="font-display text-lg text-brun-chaud mb-2">Ton espace Clarity t'attend</p>
+      <Link
+        href="/client/clarity"
+        className="inline-block mt-2 px-6 py-2.5 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
+      >
+        Ouvrir Clarity
+      </Link>
+    </div>
+  ) : null;
+
   // ── PAGE "EN ATTENTE" — affichée tant que le programme n'a pas démarré ──
-  if (!pendingQuestionnaire && !programHasStarted) {
+  if (!pendingQuestionnaire && !programHasStarted && client.requiresProgramTimeline) {
     // 3 sous-états :
     //   A. Colis pas envoyé          → "En préparation"
     //   B. Colis envoyé, pas reçu    → "En route" + bouton (via ElixirReceivedBanner)
@@ -177,6 +200,7 @@ export default async function ClientHomePage() {
     return (
       // Centrage vertical dans le main flex-1 du layout client
       <div className="min-h-[calc(100vh-10rem)] flex flex-col justify-center items-center gap-8 py-8">
+        {clarityBanner}
         {/* Indicateur de progression */}
         <div className="flex items-center justify-center gap-1">
           {STAGES.map((s, i) => {
@@ -349,6 +373,8 @@ export default async function ClientHomePage() {
           </Link>
         </div>
       )}
+
+      {clarityBanner}
 
       {/* Élixirs reçus banner */}
       <ElixirReceivedBanner />

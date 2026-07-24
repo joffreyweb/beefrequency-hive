@@ -74,50 +74,50 @@ enum SessionStatus {
 }
 
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  password       String
-  role           Role
-  name           String
-  blocked        Boolean   @default(false)
-  lastLoginAt    DateTime? // Dernier login formulaire (POST /api/auth/login)
-  lastSeenAt     DateTime? // Dernière activité authentifiée (update throttled 1h dans /api/auth/me)
-  dailyRecapTime String    @default("18:00") // Heure du récapitulatif de journée (HH:mm)
-  morningReminderEnabled Boolean @default(false)
-  morningReminderTime    String  @default("07:00")
-  eveningReminderEnabled Boolean @default(false)
-  eveningReminderTime    String  @default("20:00")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  password               String
+  role                   Role
+  name                   String
+  blocked                Boolean   @default(false)
+  lastLoginAt            DateTime? // Dernier login formulaire (POST /api/auth/login)
+  lastSeenAt             DateTime? // Dernière activité authentifiée (update throttled 1h dans /api/auth/me)
+  dailyRecapTime         String    @default("18:00") // Heure du récapitulatif de journée (HH:mm)
+  morningReminderEnabled Boolean   @default(false)
+  morningReminderTime    String    @default("07:00")
+  eveningReminderEnabled Boolean   @default(false)
+  eveningReminderTime    String    @default("20:00")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   client           Client?
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
   pendingActions   PendingAction[]
   passwordResets   PasswordReset[]
 }
 
 model Client {
-  id                    String       @id @default(uuid())
-  userId                String       @unique
-  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status                ClientStatus @default(ACTIVE)
-  offerType             OfferType
-  charteSignee          Boolean      @default(false)
-  charteSignature       String?
-  charteSignedAt        DateTime?
-  language              String       @default("FR")
-  hdData                String?
-  startDate             DateTime     @default(now())
-  nextSessionDate       DateTime?
-  notes                 String?      // ADMIN ONLY — Notes internes Joffrey — jamais exposé côté client
-  onboardingCompleted   Boolean      @default(false) // Onboarding formulaire rempli
-  pwaEmailSent          Boolean      @default(false)
-  hdType                String?      // Type Human Design (GENERATOR, MANIFESTOR, etc.)
-  videoSeuil1Url        String?      // URL vidéo Seuil 1A — Point de départ
-  videoSeuil1BUrl       String?      // URL vidéo Seuil 1B — Et si tout était possible
-  timezone              String?      @default("Europe/Paris") // Fuseau horaire référence admin
-  isLegacy              Boolean      @default(false) // Client Legacy — admin only, skip onboarding
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status              ClientStatus @default(ACTIVE)
+  offerType           OfferType
+  charteSignee        Boolean      @default(false)
+  charteSignature     String?
+  charteSignedAt      DateTime?
+  language            String       @default("FR")
+  hdData              String?
+  startDate           DateTime     @default(now())
+  nextSessionDate     DateTime?
+  notes               String? // ADMIN ONLY — Notes internes Joffrey — jamais exposé côté client
+  onboardingCompleted Boolean      @default(false) // Onboarding formulaire rempli
+  pwaEmailSent        Boolean      @default(false)
+  hdType              String? // Type Human Design (GENERATOR, MANIFESTOR, etc.)
+  videoSeuil1Url      String? // URL vidéo Seuil 1A — Point de départ
+  videoSeuil1BUrl     String? // URL vidéo Seuil 1B — Et si tout était possible
+  timezone            String?      @default("Europe/Paris") // Fuseau horaire référence admin
+  isLegacy            Boolean      @default(false) // Client Legacy — admin only, skip onboarding
 
   // Parcours modulable — type + 9 flags de gating UX
   parcoursType            ParcoursType @default(LE_PASSAGE)
@@ -132,36 +132,36 @@ model Client {
   requiresElixirs         Boolean      @default(true)
 
   // Cadre d'engagement Monitoring Passage
-  fixedDay              String?
-  reportsUsed           Int          @default(0)
-  engagementAcceptedAt  DateTime?
-  engagementText        String?      @db.Text
+  fixedDay             String?
+  reportsUsed          Int       @default(0)
+  engagementAcceptedAt DateTime?
+  engagementText       String?   @db.Text
 
   // Abonnement / séances
-  totalSessions         Int?     @default(0)
-  usedSessionsManual    Int?     @map("usedSessions") // null = auto (count past appointments)
-  subscriptionNotes     String?
-  rescheduleUsed        Boolean  @default(false) // A utilisé son unique changement programme
+  totalSessions      Int?    @default(0)
+  usedSessionsManual Int?    @map("usedSessions") // null = auto (count past appointments)
+  subscriptionNotes  String?
+  rescheduleUsed     Boolean @default(false) // A utilisé son unique changement programme
 
   // kDrive archivage
-  kdriveRootFolderId     String?  // ID du dossier racine client sur kDrive
-  kdriveConventionUrl    String?  // Chemin kDrive convention PDF
-  kdriveQuestionnaireUrl String?  // Chemin kDrive questionnaire PDF
+  kdriveRootFolderId     String? // ID du dossier racine client sur kDrive
+  kdriveConventionUrl    String? // Chemin kDrive convention PDF
+  kdriveQuestionnaireUrl String? // Chemin kDrive questionnaire PDF
 
   // Source & attribution
-  acquisitionSource     String?  // website, referral, instagram, etc.
-  acquisitionCampaign   String?  // UTM campaign
-  acquisitionMedium     String?  // UTM medium
-  referredBy            String?  // Nom du référent
-  prospectId            String?  // Lien vers Prospect d'origine
-  visitorProfileId      String?  // Lien vers VisitorProfile
+  acquisitionSource   String? // website, referral, instagram, etc.
+  acquisitionCampaign String? // UTM campaign
+  acquisitionMedium   String? // UTM medium
+  referredBy          String? // Nom du référent
+  prospectId          String? // Lien vers Prospect d'origine
+  visitorProfileId    String? // Lien vers VisitorProfile
 
   // Suivi parcours — étapes
-  colisEnvoye           Boolean      @default(false)
-  colisEnvoyeAt         DateTime?
-  produitsRecus         Boolean      @default(false)
-  produitsRecusAt       DateTime?
-  detoxStartDate        DateTime?    // Début détox (10 jours) — SOURCE DE DATE CANONIQUE du parcours
+  colisEnvoye     Boolean   @default(false)
+  colisEnvoyeAt   DateTime?
+  produitsRecus   Boolean   @default(false)
+  produitsRecusAt DateTime?
+  detoxStartDate  DateTime? // Début détox (10 jours) — SOURCE DE DATE CANONIQUE du parcours
 
   // Suivi de continuité (parcoursType FIL_RUCHE)
   followUpActive            Boolean   @default(false)
@@ -169,45 +169,46 @@ model Client {
   followUpStartedAt         DateTime?
 
   // Données de naissance étendues
-  birthTime             String?      // Format HH:MM
-  birthCity             String?
-  birthCountry          String?
-  birthLat              Float?
-  birthLng              Float?
+  birthTime    String? // Format HH:MM
+  birthCity    String?
+  birthCountry String?
+  birthLat     Float?
+  birthLng     Float?
 
   // ADMIN ONLY — Cartes générées (JSON) — jamais exposées côté client
-  hdFullData            Json?        // Human Design complet
-  astroData             Json?        // Astrologie Kaypacha
-  baziData              Json?        // BaZi chinois
-  numerologyData        Json?        // Numérologie
-  cartesGeneratedAt     DateTime?
+  hdFullData        Json? // Human Design complet
+  astroData         Json? // Astrologie Kaypacha
+  baziData          Json? // BaZi chinois
+  numerologyData    Json? // Numérologie
+  cartesGeneratedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  journalEntries        JournalEntry[]
-  protocols             Protocol[]
-  sessions              Session[]
-  supports              Support[]
-  dailyRecommendations  DailyRecommendation[]
-  dailyFocuses          DailyFocus[]
-  clientRecommendations ClientRecommendation[]
-  pendingActions        PendingAction[]
-  documents             ClientDocument[]
-  intake                ClientIntake?
-  analysis              ClientAnalysis?
-  journeyMessageLogs    JourneyMessageLog[]
-  clientPractices       ClientPractice[]
-  seenMessages          ClientMessageSeen[]
-  clientPhases          ClientPhase[]
-  dailyCheckins         DailyCheckin[]
-  openWebuiQueue        OpenWebuiQueue[]
+  journalEntries         JournalEntry[]
+  protocols              Protocol[]
+  sessions               Session[]
+  supports               Support[]
+  dailyRecommendations   DailyRecommendation[]
+  dailyFocuses           DailyFocus[]
+  clientRecommendations  ClientRecommendation[]
+  pendingActions         PendingAction[]
+  documents              ClientDocument[]
+  intake                 ClientIntake?
+  analysis               ClientAnalysis?
+  journeyMessageLogs     JourneyMessageLog[]
+  clientPractices        ClientPractice[]
+  seenMessages           ClientMessageSeen[]
+  clientPhases           ClientPhase[]
+  dailyCheckins          DailyCheckin[]
+  openWebuiQueue         OpenWebuiQueue[]
   sessionChangeRequests  SessionChangeRequest[]
   questionnaireResponses QuestionnaireResponse[]
   appointments           Appointment[]
   sessionPacks           SessionPack[]
   detoxDays              DetoxDay[]
   questionnaireEntry     QuestionnaireEntry?
+  claritySubmission      ClaritySubmission?
   tasks                  Task[]
   sessionFollowups       SessionFollowup[]
   clientPrograms         ClientProgram[]
@@ -222,12 +223,12 @@ model Client {
 // Bibliothèque de sections réutilisables (identity, postal_address, ...).
 // Chaque parcoursType inclut une liste de slugs (cf. lib/offer-parcours-binding.ts).
 model QuestionnaireSection {
-  id        String   @id @default(uuid())
-  slug      String   @unique // "identity", "postal_address", "hd_astro", ...
+  id        String  @id @default(uuid())
+  slug      String  @unique // "identity", "postal_address", "hd_astro", ...
   title     String
-  order     Int      @default(0) // ordre d'affichage par défaut
-  questions Json     @default("[]") // [{id, type, question, questionFr, options?, required}]
-  isActive  Boolean  @default(true)
+  order     Int     @default(0) // ordre d'affichage par défaut
+  questions Json    @default("[]") // [{id, type, question, questionFr, options?, required}]
+  isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -284,25 +285,25 @@ model Session {
   clientId       String
   client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   scheduledAt    DateTime
-  duration       Int           // en minutes
+  duration       Int // en minutes
   type           SessionType
   status         SessionStatus @default(SCHEDULED)
-  zoomLink       String?       // Lien Zoom pour les sessions en ligne
-  notes          String?       // Notes privées — Joffrey uniquement
-  checklistItems String?       // JSON array de checklist items [{text, done}]
-  recapDone          Boolean       @default(false) // Récap de fin de journée fait
-  fixedSlotDay       Int?          // Jour fixe de la semaine (0-6) choisi à l'inscription
-  fixedSlotTime      String?       // Heure fixe "HH:mm"
-  changesUsed        Int           @default(0) // Nombre de changements utilisés (max 1)
+  zoomLink       String? // Lien Zoom pour les sessions en ligne
+  notes          String? // Notes privées — Joffrey uniquement
+  checklistItems String? // JSON array de checklist items [{text, done}]
+  recapDone      Boolean       @default(false) // Récap de fin de journée fait
+  fixedSlotDay   Int? // Jour fixe de la semaine (0-6) choisi à l'inscription
+  fixedSlotTime  String? // Heure fixe "HH:mm"
+  changesUsed    Int           @default(0) // Nombre de changements utilisés (max 1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  changeRequests  SessionChangeRequest[]
-  reminders       SessionReminder[]
-  sessionNotes    SessionNote[]
-  tasks           Task[]
-  followups       SessionFollowup[]
+  changeRequests SessionChangeRequest[]
+  reminders      SessionReminder[]
+  sessionNotes   SessionNote[]
+  tasks          Task[]
+  followups      SessionFollowup[]
 }
 
 model Message {
@@ -312,7 +313,7 @@ model Message {
   receiverId String
   receiver   User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   content    String
-  tag        String?   // "SYMPTOM" pour les rapports symptômes prioritaires
+  tag        String? // "SYMPTOM" pour les rapports symptômes prioritaires
   readAt     DateTime?
 
   createdAt DateTime @default(now())
@@ -357,7 +358,7 @@ model Support {
   client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   title       String
   type        SupportType
-  url         String      // URL vers la ressource
+  url         String // URL vers la ressource
   description String?
 
   createdAt DateTime @default(now())
@@ -366,14 +367,14 @@ model Support {
 
 // Recommandations quotidiennes par client (matin / soir) configurables par Joffrey
 model DailyRecommendation {
-  id        String @id @default(uuid())
-  clientId  String
-  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  dayFrom   Int    // Jour de début dans le programme (inclus)
-  dayTo     Int    // Jour de fin dans le programme (inclus)
-  slot      String // "MORNING" ou "EVENING"
-  title     String
-  content   String // Consignes / recommandations
+  id       String @id @default(uuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  dayFrom  Int // Jour de début dans le programme (inclus)
+  dayTo    Int // Jour de fin dans le programme (inclus)
+  slot     String // "MORNING" ou "EVENING"
+  title    String
+  content  String // Consignes / recommandations
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -384,8 +385,8 @@ model DailyFocus {
   id       String @id @default(uuid())
   clientId String
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  dayFrom  Int    // Jour de début (inclus)
-  dayTo    Int    // Jour de fin (inclus)
+  dayFrom  Int // Jour de début (inclus)
+  dayTo    Int // Jour de fin (inclus)
   title    String
   message  String // Message d'intention / focus du jour
 
@@ -407,7 +408,7 @@ model Recommendation {
   id          String                 @id @default(uuid())
   title       String
   description String
-  url         String                 // Lien affilié
+  url         String // Lien affilié
   category    RecommendationCategory
   imageUrl    String?
   isGlobal    Boolean                @default(false) // Visible par tous les clients
@@ -425,7 +426,7 @@ model ClientRecommendation {
   client           Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
   recommendationId String
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  note             String?        // Note personnalisée de Joffrey pour ce client
+  note             String? // Note personnalisée de Joffrey pour ce client
 
   createdAt DateTime @default(now())
 
@@ -453,7 +454,7 @@ model PendingAction {
   title       String
   description String?
   urgency     String            @default("green") // "red" | "amber" | "green"
-  completedAt DateTime?         // null = visible · set = invisible
+  completedAt DateTime? // null = visible · set = invisible
 
   createdAt DateTime @default(now())
 }
@@ -473,10 +474,10 @@ model ClientDocument {
   id          String           @id @default(uuid())
   clientId    String
   client      Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  uploadedBy  String           // "CLIENT" ou "ADMIN"
+  uploadedBy  String // "CLIENT" ou "ADMIN"
   fileName    String
   fileUrl     String
-  fileSize    Int              // en bytes
+  fileSize    Int // en bytes
   mimeType    String
   category    DocumentCategory @default(AUTRE)
   readByAdmin Boolean          @default(false)
@@ -495,16 +496,16 @@ model ClientIntake {
   firstName     String
   lastName      String
   birthDate     DateTime
-  birthTime     String?  // "HH:MM" ou null si inconnu
+  birthTime     String? // "HH:MM" ou null si inconnu
   birthPlace    String
   birthCountry  String
-  postalAddress  String
-  addressLine2   String?  // Complement d'adresse
-  city           String
-  postalCode     String
-  phoneNumber    String?  // Telephone livraison
-  country        String
-  intention      String   // Ce qui amène le client
+  postalAddress String
+  addressLine2  String? // Complement d'adresse
+  city          String
+  postalCode    String
+  phoneNumber   String? // Telephone livraison
+  country       String
+  intention     String // Ce qui amène le client
 
   submittedAt DateTime @default(now())
 }
@@ -520,16 +521,16 @@ model ClientAnalysis {
   id                String         @id @default(uuid())
   clientId          String         @unique
   client            Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  astroWestern      String?        // JSON
-  humanDesign       String?        // JSON
-  numerology        String?        // JSON
-  bazi              String?        // JSON
-  synthesisMarkdown String?        // Synthèse narrative en markdown
+  astroWestern      String? // JSON
+  humanDesign       String? // JSON
+  numerology        String? // JSON
+  bazi              String? // JSON
+  synthesisMarkdown String? // Synthèse narrative en markdown
   status            AnalysisStatus @default(PENDING)
 
   generatedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // ═══════════════════════════════════════
@@ -545,9 +546,9 @@ enum JourneyTriggerType {
 model JourneyMessageTemplate {
   id          String             @id @default(uuid())
   title       String
-  dayTrigger  Int                // Jour du parcours (1, 3, 7, etc.) ou 0 pour BIRTHDAY
+  dayTrigger  Int // Jour du parcours (1, 3, 7, etc.) ou 0 pour BIRTHDAY
   triggerType JourneyTriggerType @default(JOURNEY_DAY)
-  hdVariants  String             // JSON : { GENERATOR: {subject, body}, PROJECTOR: {...}, ... DEFAULT: {...} }
+  hdVariants  String // JSON : { GENERATOR: {subject, body}, PROJECTOR: {...}, ... DEFAULT: {...} }
   isActive    Boolean            @default(true)
 
   createdAt DateTime @default(now())
@@ -557,15 +558,15 @@ model JourneyMessageTemplate {
 }
 
 model JourneyMessageLog {
-  id          String                @id @default(uuid())
+  id          String                 @id @default(uuid())
   clientId    String
-  client      Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client      Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
   templateId  String
   template    JourneyMessageTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  sentAt      DateTime              @default(now())
+  sentAt      DateTime               @default(now())
   dayNumber   Int
-  hdType      String                // Type HD utilisé pour le variant
-  variantUsed String                // Clé du variant utilisé (GENERATOR, DEFAULT, etc.)
+  hdType      String // Type HD utilisé pour le variant
+  variantUsed String // Clé du variant utilisé (GENERATOR, DEFAULT, etc.)
 }
 
 // ═══════════════════════════════════════
@@ -590,10 +591,10 @@ model Practice {
   title       String
   description String
   type        PracticeType
-  content     String           // JSON — structure dépend du type
+  content     String // JSON — structure dépend du type
   category    PracticeCategory
   isGlobal    Boolean          @default(false)
-  dayTrigger  Int?             // Jour du parcours pour auto-assign (null = manuel)
+  dayTrigger  Int? // Jour du parcours pour auto-assign (null = manuel)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -611,7 +612,7 @@ model ClientPractice {
   assignedByAdmin Boolean   @default(false)
   completedCount  Int       @default(0)
   lastCompletedAt DateTime?
-  note            String?   // Note personnelle de Joffrey
+  note            String? // Note personnelle de Joffrey
   isActive        Boolean   @default(true)
 
   @@unique([clientId, practiceId])
@@ -644,7 +645,7 @@ model Elixir {
   id          String         @id @default(uuid())
   name        String
   description String
-  dosage      String         // ex: "20 gouttes"
+  dosage      String // ex: "20 gouttes"
   unit        ElixirUnit
   category    ElixirCategory
   timing      ElixirTiming   @default(FLEXIBLE)
@@ -674,23 +675,23 @@ model ClientPhase {
   clientId    String
   client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   phaseType   PhaseType
-  phaseNumber Int         // 0 (detox) ou 1-3
+  phaseNumber Int // 0 (detox) ou 1-3
   startDate   DateTime
   endDate     DateTime
   status      PhaseStatus @default(UPCOMING)
 
   // Personnalisation par phase
-  customName              String?   // Nom affiché personnalisé (ex: "Repos & Ancrage")
-  instructions            String?   // Instructions texte visibles par le client
-  morningCheckinEnabled   Boolean   @default(true)
-  eveningCheckinEnabled   Boolean   @default(true)
-  checkinMode             String    @default("full") // full | light
+  customName            String? // Nom affiché personnalisé (ex: "Repos & Ancrage")
+  instructions          String? // Instructions texte visibles par le client
+  morningCheckinEnabled Boolean @default(true)
+  eveningCheckinEnabled Boolean @default(true)
+  checkinMode           String  @default("full") // full | light
 
   createdAt DateTime @default(now())
 
-  phaseElixirs       PhaseElixir[]
-  phasePractices     PhasePractice[]
-  checkinConfigs     PhaseCheckinConfig[]
+  phaseElixirs   PhaseElixir[]
+  phasePractices PhasePractice[]
+  checkinConfigs PhaseCheckinConfig[]
 
   @@unique([clientId, phaseType, phaseNumber])
 }
@@ -700,8 +701,8 @@ model PhaseCheckinConfig {
   id            String      @id @default(uuid())
   clientPhaseId String
   clientPhase   ClientPhase @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
-  type          String      // "morning" | "evening"
-  questions     Json        // [{text, type, enabled, order}]
+  type          String // "morning" | "evening"
+  questions     Json // [{text, type, enabled, order}]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -727,7 +728,7 @@ model PhaseElixir {
   clientPhase     ClientPhase    @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
   elixirLibraryId String
   elixirLibrary   Elixir         @relation(fields: [elixirLibraryId], references: [id], onDelete: Cascade)
-  dose            String?        // Override du dosage par defaut
+  dose            String? // Override du dosage par defaut
   frequency       PhaseFrequency @default(DAILY)
   timing          ElixirTiming   @default(FLEXIBLE)
   notes           String?
@@ -750,14 +751,14 @@ enum PhasePracticeFrequency {
 }
 
 model PhasePractice {
-  id          String                @id @default(uuid())
+  id            String                 @id @default(uuid())
   clientPhaseId String
-  clientPhase ClientPhase           @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
-  type        PhasePracticeType
-  title       String
-  description String?
-  duration    Int?                  // en minutes
-  frequency   PhasePracticeFrequency @default(DAILY)
+  clientPhase   ClientPhase            @relation(fields: [clientPhaseId], references: [id], onDelete: Cascade)
+  type          PhasePracticeType
+  title         String
+  description   String?
+  duration      Int? // en minutes
+  frequency     PhasePracticeFrequency @default(DAILY)
 
   createdAt DateTime @default(now())
 }
@@ -769,42 +770,42 @@ enum DreamAnswer {
 }
 
 model DailyCheckin {
-  id        String    @id @default(uuid())
-  clientId  String
-  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  date      DateTime  @db.Date
-  phase     PhaseType
+  id       String    @id @default(uuid())
+  clientId String
+  client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  date     DateTime  @db.Date
+  phase    PhaseType
 
   // --- MATIN ---
-  energyLevel       Int?      // 1-10
-  sleepQuality      Int?      // 1-10
-  sleepType         String?   // JSON array: ["leger","profond","reves","reveils","endormissement_long","nuit_continue"]
-  dreamed           DreamAnswer?
-  dreamNotes        String?
-  morningGratitude  String?
+  energyLevel      Int? // 1-10
+  sleepQuality     Int? // 1-10
+  sleepType        String? // JSON array: ["leger","profond","reves","reveils","endormissement_long","nuit_continue"]
+  dreamed          DreamAnswer?
+  dreamNotes       String?
+  morningGratitude String?
 
   // --- SOIR ---
-  freeFeeling       String?
-  pride1            String?
-  pride2            String?
-  pride3            String?
-  gratitudeMoment   String?
+  freeFeeling        String?
+  pride1             String?
+  pride2             String?
+  pride3             String?
+  gratitudeMoment    String?
   gratitudeSensation String?
-  gratitudeRecu     String?
-  gratitudeSoi      String?
-  selfQuality       String?
-  closingSentence   String?
+  gratitudeRecu      String?
+  gratitudeSoi       String?
+  selfQuality        String?
+  closingSentence    String?
 
   // Refonte page check-in SOIR (08/06/2026) — nouveau format structuré.
   // Shape JSON : { microMoments:{a1,a2,a3}, piments:{b1,b2,b3,b4}, reconnaissance, cloture }
   // Les colonnes SOIR legacy ci-dessus restent intactes (historique préservé).
   eveningReflection Json?
 
-  elixirTaken       Boolean   @default(false)
+  elixirTaken Boolean @default(false)
 
   // Photos check-in (optionnelles · séparées matin/soir car 1 row/jour contient les 2 phases)
-  morningPhotoPath  String?
-  eveningPhotoPath  String?
+  morningPhotoPath String?
+  eveningPhotoPath String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -816,21 +817,21 @@ model DailyCheckin {
 
 // Messages aléatoires du matin — gérés depuis l'admin
 model DayMessage {
-  id        String   @id @default(uuid())
+  id        String              @id @default(uuid())
   text      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
   seenBy    ClientMessageSeen[]
 }
 
 // Anti-répétition : messages déjà vus par client
 model ClientMessageSeen {
-  id         String     @id @default(uuid())
-  clientId   String
-  messageId  String
-  seenAt     DateTime   @default(now())
-  client     Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  message    DayMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id        String     @id @default(uuid())
+  clientId  String
+  messageId String
+  seenAt    DateTime   @default(now())
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  message   DayMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, messageId])
 }
@@ -852,12 +853,12 @@ model OpenWebuiQueue {
 // ═══════════════════════════════════════
 
 model CheckinElixir {
-  id                   String             @id @default(uuid())
-  dailyCheckinId       String
-  dailyCheckin         DailyCheckin       @relation(fields: [dailyCheckinId], references: [id], onDelete: Cascade)
-  phaseElixirId        String
-  phaseElixir          PhaseElixir        @relation(fields: [phaseElixirId], references: [id], onDelete: Cascade)
-  taken                Boolean            @default(false)
+  id             String       @id @default(uuid())
+  dailyCheckinId String
+  dailyCheckin   DailyCheckin @relation(fields: [dailyCheckinId], references: [id], onDelete: Cascade)
+  phaseElixirId  String
+  phaseElixir    PhaseElixir  @relation(fields: [phaseElixirId], references: [id], onDelete: Cascade)
+  taken          Boolean      @default(false)
 
   createdAt DateTime @default(now())
 
@@ -870,11 +871,11 @@ model CheckinElixir {
 
 // Créneaux disponibles de l'admin
 model AdminSlot {
-  id          String   @id @default(uuid())
-  dayOfWeek   Int      // 0=Dimanche, 1=Lundi, ... 6=Samedi
-  startTime   String   // "HH:mm"
-  endTime     String   // "HH:mm"
-  isActive    Boolean  @default(true)
+  id        String  @id @default(uuid())
+  dayOfWeek Int // 0=Dimanche, 1=Lundi, ... 6=Samedi
+  startTime String // "HH:mm"
+  endTime   String // "HH:mm"
+  isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -888,16 +889,16 @@ enum ChangeRequestStatus {
 }
 
 model SessionChangeRequest {
-  id              String              @id @default(uuid())
-  clientId        String
-  client          Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  sessionId       String
-  session         Session             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  requestedDate   DateTime            // Nouvelle date souhaitée
-  reason          String?
-  status          ChangeRequestStatus @default(PENDING)
-  adminResponse   String?
-  resolvedAt      DateTime?
+  id            String              @id @default(uuid())
+  clientId      String
+  client        Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sessionId     String
+  session       Session             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  requestedDate DateTime // Nouvelle date souhaitée
+  reason        String?
+  status        ChangeRequestStatus @default(PENDING)
+  adminResponse String?
+  resolvedAt    DateTime?
 
   createdAt DateTime @default(now())
 }
@@ -907,14 +908,14 @@ model SessionReminder {
   id        String   @id @default(uuid())
   sessionId String
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  type      String   // "EMAIL" | "PWA"
+  type      String // "EMAIL" | "PWA"
   sentAt    DateTime @default(now())
 }
 
 // 360 Symboles Sabiens (Dane Rudhyar)
 model SabianSymbol {
   id      Int    @id
-  degree  Int    // 1 à 360
+  degree  Int // 1 à 360
   sign    String
   symbol  String
   keynote String
@@ -925,17 +926,17 @@ model SabianSymbol {
 // ═══════════════════════════════════════
 
 model GdprDeletionLog {
-  id                String   @id @default(uuid())
-  clientId          String   // ID original du client (plus en DB après suppression)
-  clientName        String
-  clientEmail       String
-  dateInscription   DateTime
-  dateSuppression   DateTime @default(now())
-  adminId           String
-  adminName         String
-  motif             String   // Raison de la suppression (texte libre)
+  id              String   @id @default(uuid())
+  clientId        String // ID original du client (plus en DB après suppression)
+  clientName      String
+  clientEmail     String
+  dateInscription DateTime
+  dateSuppression DateTime @default(now())
+  adminId         String
+  adminName       String
+  motif           String // Raison de la suppression (texte libre)
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 // ═══════════════════════════════════════
@@ -943,11 +944,11 @@ model GdprDeletionLog {
 // ═══════════════════════════════════════
 
 model Questionnaire {
-  id        String   @id @default(cuid())
-  type      String   // "PRE_START" | "FOLLOW_UP"
+  id        String  @id @default(cuid())
+  type      String // "PRE_START" | "FOLLOW_UP"
   title     String
-  questions Json     // Array: [{id, type, question, questionFr, options?, required}]
-  isActive  Boolean  @default(true)
+  questions Json // Array: [{id, type, question, questionFr, options?, required}]
+  isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -956,14 +957,14 @@ model Questionnaire {
 }
 
 model QuestionnaireResponse {
-  id              String         @id @default(cuid())
+  id              String        @id @default(cuid())
   questionnaireId String
-  questionnaire   Questionnaire  @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
   clientId        String
-  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  answers         Json?          // Réponses du client — null tant que PENDING
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  answers         Json? // Réponses du client — null tant que PENDING
   submittedAt     DateTime?
-  status          String         @default("PENDING") // PENDING | SUBMITTED
+  status          String        @default("PENDING") // PENDING | SUBMITTED
 
   createdAt DateTime @default(now())
 
@@ -975,19 +976,19 @@ model QuestionnaireResponse {
 // ═══════════════════════════════════════
 
 model Appointment {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   clientId      String
-  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  title         String   @default("Session BeeFrequency")
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title         String       @default("Session BeeFrequency")
   scheduledAt   DateTime
-  durationMin   Int      @default(60)
+  durationMin   Int          @default(60)
   zoomMeetingId String?
   zoomJoinUrl   String?
-  zoomStartUrl  String?  // ADMIN ONLY — jamais expose cote client
-  meetingType   String   @default("zoom") // zoom | presentiel
-  status        String   @default("CONFIRMED") // CONFIRMED | CANCELLED | RESCHEDULED
-  notes         String?  @db.Text // ADMIN ONLY
-  reminderSent  Boolean  @default(false)
+  zoomStartUrl  String? // ADMIN ONLY — jamais expose cote client
+  meetingType   String       @default("zoom") // zoom | presentiel
+  status        String       @default("CONFIRMED") // CONFIRMED | CANCELLED | RESCHEDULED
+  notes         String?      @db.Text // ADMIN ONLY
+  reminderSent  Boolean      @default(false)
   kdriveFileId  String?
   sessionPackId String?
   sessionPack   SessionPack? @relation(fields: [sessionPackId], references: [id])
@@ -1001,9 +1002,9 @@ model Appointment {
   cancelReason          String?
   sessionDeducted       Boolean   @default(false)
 
-  sessionNotes  SessionNote[]
-  tasks         Task[]
-  followups     SessionFollowup[]
+  sessionNotes SessionNote[]
+  tasks        Task[]
+  followups    SessionFollowup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1014,10 +1015,10 @@ model SessionPack {
   id            String   @id @default(cuid())
   clientId      String
   client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  totalSessions Int      // Nombre de seances prepayees
+  totalSessions Int // Nombre de seances prepayees
   paidAt        DateTime // Date du paiement
-  amount        Float?   // Montant — JAMAIS expose cote client
-  notes         String?  // Notes internes admin
+  amount        Float? // Montant — JAMAIS expose cote client
+  notes         String? // Notes internes admin
   createdAt     DateTime @default(now())
 
   appointments Appointment[]
@@ -1025,9 +1026,9 @@ model SessionPack {
 
 // Token pour auto-booking client (lien unique sans login)
 model BookingToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   clientId  String
-  token     String   @unique @default(uuid())
+  token     String    @unique @default(uuid())
   expiresAt DateTime
   usedAt    DateTime?
 
@@ -1040,15 +1041,15 @@ model BookingToken {
 // ═══════════════════════════════════════
 
 model DetoxDay {
-  id            String   @id @default(cuid())
-  clientId      String
-  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  dayNumber     Int      // 1 à 10
-  date          DateTime @db.Date // Date calendrier du jour
-  elixirDone    Boolean  @default(false)
-  protocolDone  Boolean  @default(false)
-  pratiqueDone  Boolean  @default(false)
-  notes         String?  @db.Text
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  dayNumber    Int // 1 à 10
+  date         DateTime @db.Date // Date calendrier du jour
+  elixirDone   Boolean  @default(false)
+  protocolDone Boolean  @default(false)
+  pratiqueDone Boolean  @default(false)
+  notes        String?  @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1066,7 +1067,7 @@ model QuestionnaireEntry {
   client       Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   status       String    @default("PENDING") // PENDING | IN_PROGRESS | SUBMITTED
   sectionsDone Int       @default(0) // 0 à 8
-  responses    Json?     // Toutes les réponses { section1: {...}, section2: {...}, ... }
+  responses    Json? // Toutes les réponses { section1: {...}, section2: {...}, ... }
   submittedAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -1130,7 +1131,7 @@ model SessionFollowup {
   appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   clientId      String
   client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  resources     Json         // [{type: 'elixir', id: '...'}, {type: 'protocol', id: '...'}]
+  resources     Json // [{type: 'elixir', id: '...'}, {type: 'protocol', id: '...'}]
   message       String?      @db.Text
   sentAt        DateTime     @default(now())
 }
@@ -1140,24 +1141,24 @@ model SessionFollowup {
 // ═══════════════════════════════════════
 
 model Module {
-  id             String           @id @default(cuid())
-  name           String           @unique
-  nameFr         String
-  nameEn         String
-  duration       Int              // en jours
-  description    String?
-  isStandalone   Boolean          @default(false)
+  id           String  @id @default(cuid())
+  name         String  @unique
+  nameFr       String
+  nameEn       String
+  duration     Int // en jours
+  description  String?
+  isStandalone Boolean @default(false)
 
   accessMode     ModuleAccessMode @default(LIBRE)
   navigationMode ModuleNavMode    @default(LIBRE)
-  priceStub      Int?             // centimes · prévu pour shop V2 · jamais affiché côté client
+  priceStub      Int? // centimes · prévu pour shop V2 · jamais affiché côté client
 
   days           ModuleDay[]
   programModules ProgramModule[]
   clientModules  ClientModule[]
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ModuleAccessMode {
@@ -1176,69 +1177,69 @@ model ClientModule {
   clientId    String
   moduleId    String
   unlockedAt  DateTime  @default(now())
-  unlockedBy  String    // userId admin · ou "PURCHASE" pour shop V2
+  unlockedBy  String // userId admin · ou "PURCHASE" pour shop V2
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, moduleId])
   @@index([clientId])
 }
 
 model ModuleDay {
-  id         String   @id @default(cuid())
-  moduleId   String
-  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  dayNumber  Int
+  id        String @id @default(cuid())
+  moduleId  String
+  module    Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  dayNumber Int
 
-  elixirs    Json?    // [{elixirId, dosage, moment}]
-  practices  Json?    // [{practiceId, duration}]
+  elixirs      Json? // [{elixirId, dosage, moment}]
+  practices    Json? // [{practiceId, duration}]
   notification String?
 
   @@unique([moduleId, dayNumber])
 }
 
 model Program {
-  id             String          @id @default(cuid())
-  name           String          @unique
-  nameFr         String
-  nameEn         String
-  description    String?
+  id          String  @id @default(cuid())
+  name        String  @unique
+  nameFr      String
+  nameEn      String
+  description String?
 
   modules        ProgramModule[]
   clientPrograms ClientProgram[]
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ProgramModule {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   programId String
-  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
   moduleId  String
-  module    Module   @relation(fields: [moduleId], references: [id])
+  module    Module  @relation(fields: [moduleId], references: [id])
   order     Int
 
   @@unique([programId, order])
 }
 
 model ClientProgram {
-  id             String   @id @default(cuid())
-  clientId       String
-  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  programId      String
-  program        Program  @relation(fields: [programId], references: [id])
+  id        String  @id @default(cuid())
+  clientId  String
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
 
-  startDate      DateTime
-  currentDay     Int      @default(1)
-  status         String   @default("active") // active, paused, completed
+  startDate  DateTime
+  currentDay Int      @default(1)
+  status     String   @default("active") // active, paused, completed
 
-  skippedModules Json?    // ["moduleId1", "moduleId2"]
+  skippedModules Json? // ["moduleId1", "moduleId2"]
   customNotes    String?
 
   // Empilage de parcours (V1/3)
@@ -1247,11 +1248,11 @@ model ClientProgram {
   startAfterProgramId String?
   isCustom            Boolean           @default(false)
 
-  startAfterProgram   ClientProgram?    @relation("ProgramSequence", fields: [startAfterProgramId], references: [id])
-  followedBy          ClientProgram[]   @relation("ProgramSequence")
+  startAfterProgram ClientProgram?  @relation("ProgramSequence", fields: [startAfterProgramId], references: [id])
+  followedBy        ClientProgram[] @relation("ProgramSequence")
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([clientId, programId])
 }
@@ -1270,43 +1271,43 @@ enum ClientProgramMode {
 // ═══════════════════════════════════════
 
 model NewsletterSubscriber {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  firstName      String?
-  lastName       String?
+  id        String  @id @default(cuid())
+  email     String  @unique
+  firstName String?
+  lastName  String?
 
   // Source tracking — extensible
-  source         String   @default("website") // website, hive, sales, instagram, referral, manual, api
-  sourceDetail   String?  // Ex: "landing-page-may2026", "checkout-upsell"
+  source       String  @default("website") // website, hive, sales, instagram, referral, manual, api
+  sourceDetail String? // Ex: "landing-page-may2026", "checkout-upsell"
 
   // Segmentation — extensible
-  tags           String[] @default([]) // ["vip", "buyer", "lead", "cold"]
-  segments       String[] @default([]) // ["english", "french", "executive", "therapist"]
+  tags     String[] @default([]) // ["vip", "buyer", "lead", "cold"]
+  segments String[] @default([]) // ["english", "french", "executive", "therapist"]
 
   // Status & dates
-  status         String   @default("active") // active, unsubscribed, bounced, cleaned
-  subscribedAt   DateTime @default(now())
+  status         String    @default("active") // active, unsubscribed, bounced, cleaned
+  subscribedAt   DateTime  @default(now())
   unsubscribedAt DateTime?
   lastEmailAt    DateTime?
 
   // Tracking engagement
-  emailsSent     Int      @default(0)
-  emailsOpened   Int      @default(0)
-  emailsClicked  Int      @default(0)
+  emailsSent    Int @default(0)
+  emailsOpened  Int @default(0)
+  emailsClicked Int @default(0)
 
   // Métadonnées extensibles
-  metadata       Json?
+  metadata Json?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model NewsletterCampaign {
-  id             String   @id @default(cuid())
-  name           String
-  subject        String
-  previewText    String?
-  content        String   @db.Text
+  id          String  @id @default(cuid())
+  name        String
+  subject     String
+  previewText String?
+  content     String  @db.Text
 
   // Ciblage
   targetTags     String[] @default([])
@@ -1314,18 +1315,18 @@ model NewsletterCampaign {
   excludeTags    String[] @default([])
 
   // Tracking
-  status         String   @default("draft") // draft, scheduled, sending, sent, failed
-  scheduledAt    DateTime?
-  sentAt         DateTime?
-  sentCount      Int      @default(0)
-  openCount      Int      @default(0)
-  clickCount     Int      @default(0)
+  status      String    @default("draft") // draft, scheduled, sending, sent, failed
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  sentCount   Int       @default(0)
+  openCount   Int       @default(0)
+  clickCount  Int       @default(0)
 
   // Source
-  source         String   @default("admin") // admin, automation, api
+  source String @default("admin") // admin, automation, api
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ═══════════════════════════════════════
@@ -1333,64 +1334,64 @@ model NewsletterCampaign {
 // ═══════════════════════════════════════
 
 model Prospect {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Identité
-  email           String   @unique
-  firstName       String?
-  lastName        String?
-  phone           String?
-  company         String?
-  role            String?  // CEO, Founder, etc.
+  email     String  @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  company   String?
+  role      String? // CEO, Founder, etc.
 
   // Source & tracking
-  source          String   @default("manual") // manual, referral, website, instagram, linkedin, event, newsletter
-  sourceDetail    String?
-  referredBy      String?
+  source       String  @default("manual") // manual, referral, website, instagram, linkedin, event, newsletter
+  sourceDetail String?
+  referredBy   String?
 
   // Pipeline
-  status          String   @default("new") // new, contacted, qualified, negotiation, won, lost, nurturing
-  temperature     String   @default("cold") // cold, warm, hot
-  score           Int      @default(0)      // 0-100, pour future IA scoring
+  status      String @default("new") // new, contacted, qualified, negotiation, won, lost, nurturing
+  temperature String @default("cold") // cold, warm, hot
+  score       Int    @default(0) // 0-100, pour future IA scoring
 
   // Qualification
-  budget          String?  // unknown, low, mid, high, premium
-  timeline        String?  // immediate, 1-3months, 6months+, unknown
-  needs           String[] @default([])
-  painPoints      String[] @default([])
+  budget     String? // unknown, low, mid, high, premium
+  timeline   String? // immediate, 1-3months, 6months+, unknown
+  needs      String[] @default([])
+  painPoints String[] @default([])
 
   // Suivi
-  lastContactAt   DateTime?
-  nextFollowUpAt  DateTime?
-  touchpoints     Int      @default(0)
+  lastContactAt  DateTime?
+  nextFollowUpAt DateTime?
+  touchpoints    Int       @default(0)
 
   // Notes & historique
-  notes           String?  @db.Text
-  history         Json?    // [{date, type, content, by}, ...]
-  aiInsights      Json?    // Future: suggestions IA
+  notes      String? @db.Text
+  history    Json? // [{date, type, content, by}, ...]
+  aiInsights Json? // Future: suggestions IA
 
   // Métadonnées
-  tags            String[] @default([])
-  metadata        Json?
+  tags     String[] @default([])
+  metadata Json?
 
   // Conversion
-  convertedAt     DateTime?
-  clientId        String?
+  convertedAt DateTime?
+  clientId    String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  activities      ProspectActivity[]
+  activities ProspectActivity[]
 }
 
 model ProspectActivity {
-  id          String   @id @default(cuid())
-  prospectId  String
-  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  type        String   // email_sent, call, meeting, note, status_change, linkedin, whatsapp
-  content     String?  @db.Text
-  outcome     String?  // positive, neutral, negative, no_response
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  type       String // email_sent, call, meeting, note, status_change, linkedin, whatsapp
+  content    String?  @db.Text
+  outcome    String? // positive, neutral, negative, no_response
+  createdAt  DateTime @default(now())
 
   @@index([prospectId])
 }
@@ -1400,30 +1401,30 @@ model ProspectActivity {
 // ═══════════════════════════════════════
 
 model FunnelEvent {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Identification
-  sessionId   String
-  visitorId   String?
-  email       String?
+  sessionId String
+  visitorId String?
+  email     String?
 
   // Événement
-  step        String   // landing, form_start, form_email, form_submit, onboarding_1..5, completed
-  page        String?
-  source      String?
-  medium      String?
-  campaign    String?
-  referrer    String?
+  step     String // landing, form_start, form_email, form_submit, onboarding_1..5, completed
+  page     String?
+  source   String?
+  medium   String?
+  campaign String?
+  referrer String?
 
   // Contexte
-  device      String?
-  browser     String?
-  country     String?
-  language    String?
+  device   String?
+  browser  String?
+  country  String?
+  language String?
 
   // Timing
-  duration    Int?
-  createdAt   DateTime @default(now())
+  duration  Int?
+  createdAt DateTime @default(now())
 
   @@index([sessionId])
   @@index([email])
@@ -1431,11 +1432,11 @@ model FunnelEvent {
 }
 
 model VisitorProfile {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Identification
-  sessionId   String   @unique
-  email       String?  @unique
+  sessionId String  @unique
+  email     String? @unique
 
   // Parcours
   firstSeen   DateTime @default(now())
@@ -1444,15 +1445,15 @@ model VisitorProfile {
   pagesViewed String[] @default([])
 
   // Funnel progress
-  funnelStep  String   @default("landing")
-  stoppedAt   String?
-  completed   Boolean  @default(false)
+  funnelStep String  @default("landing")
+  stoppedAt  String?
+  completed  Boolean @default(false)
 
   // Attribution
-  source      String?
-  medium      String?
-  campaign    String?
-  referrer    String?
+  source   String?
+  medium   String?
+  campaign String?
+  referrer String?
 
   // Conversion
   prospectId  String?
@@ -1462,8 +1463,8 @@ model VisitorProfile {
   // Données collectées
   collectedData Json?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PasswordReset {
@@ -1476,25 +1477,74 @@ model PasswordReset {
 }
 
 model AdminSettings {
-  id                     String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Notifications
-  emailReminderSession   Boolean  @default(true)
-  emailNewMessage        Boolean  @default(true)
-  notifyOverdueTask      Boolean  @default(true)
+  emailReminderSession Boolean @default(true)
+  emailNewMessage      Boolean @default(true)
+  notifyOverdueTask    Boolean @default(true)
 
   // Séances
-  defaultSessionDuration Int      @default(60)
-  sessionBuffer          Int      @default(15)
+  defaultSessionDuration Int @default(60)
+  sessionBuffer          Int @default(15)
 
   // Emails
-  senderEmail            String?
-  emailSignature         String?
+  senderEmail    String?
+  emailSignature String?
 
   // App
-  timezone               String   @default("Europe/Brussels")
-  language               String   @default("fr")
+  timezone String @default("Europe/Brussels")
+  language String @default("fr")
 
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════
+// MODULE — CLARITY BY BEEFREQUENCY
+// Questionnaire guidé (5 cartes / 27 sections / 81 questions)
+// Activé par client · réponses privées · rapport rédigé séparé
+// Doctrine : réponses jamais exposées côté /r · génération Ollama VPS
+// ═══════════════════════════════════════
+
+enum ClarityStatus {
+  DRAFT // activée par l'admin, pas encore commencée par le client
+  IN_PROGRESS // le client a commencé à répondre
+  SUBMITTED // soumise par le client — en attente de génération
+  GENERATING // génération Ollama (VPS) en cours
+  READY // rapport généré, retravaillé par l'admin, PAS encore publié
+  PUBLISHED // rapport publié — visible via /r/[reportToken]
+}
+
+model ClaritySubmission {
+  id String @id @default(uuid())
+
+  // Client activé (existant ou nouveau). Une session Clarity par client (@unique).
+  clientId String @unique
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Deux tokens séparés (remplissage / rapport), non devinables
+  fillToken   String @unique @default(uuid())
+  reportToken String @unique @default(uuid())
+
+  status ClarityStatus @default(DRAFT)
+
+  // Réponses brutes : clé "mapIdx-secIdx-qIdx" -> texte.
+  // ⚠️ CONFIDENTIALITÉ : ce champ n'est JAMAIS renvoyé par la route publique /r.
+  answers      Json @default("{}")
+  sectionsDone Int  @default(0)
+
+  // Rapport rédigé (markdown) — SEULE donnée exposée publiquement une fois PUBLISHED.
+  reportMd String? @db.Text
+
+  // Consentement analyse transversale entre clients (RGPD) — OFF par défaut.
+  consentCrossAnalysis Boolean @default(false)
+
+  createdAt   DateTime  @default(now())
+  submittedAt DateTime?
+  generatedAt DateTime?
+  publishedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
 }

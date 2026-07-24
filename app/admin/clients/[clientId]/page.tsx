@@ -8,6 +8,7 @@ import ClientModulesSection from "@/components/admin/ClientModulesSection";
 import ClientProgramSection from "@/components/admin/ClientProgramSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
+import ClientClaritySection from "@/components/admin/ClientClaritySection";
 import { OFFER_LABELS } from "@/lib/offer-labels";
 
 // Labels lisibles pour les statuts
@@ -101,6 +102,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       intake: true,
       // Questionnaire d'entrée
       questionnaireEntry: { select: { status: true } },
+      // Clarity by Beefrequency (activation par client)
+      claritySubmission: { select: { id: true, status: true, sectionsDone: true } },
       // RDV
       appointments: {
         where: { status: { not: "CANCELLED" } },
@@ -252,7 +255,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         </div>
       </div>
 
-      {/* Bandeau parcours */}
+      {/* Bandeau parcours — uniquement pour les parcours à phases (timeline) */}
+      {client.requiresProgramTimeline && (
       <ParcoursStatusBanner
         clientId={clientId}
         onboardingCompleted={client.onboardingCompleted}
@@ -263,6 +267,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
       />
+      )}
 
       {/* Modules actifs — 9 toggles éditables */}
       <ClientModulesSection
@@ -278,6 +283,12 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           requiresProgramTimeline: client.requiresProgramTimeline,
           requiresElixirs: client.requiresElixirs,
         }}
+      />
+
+      {/* Clarity by Beefrequency */}
+      <ClientClaritySection
+        clientId={clientId}
+        initialSubmission={client.claritySubmission}
       />
 
       {/* Actions requises */}

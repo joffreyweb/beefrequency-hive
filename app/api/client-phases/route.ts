@@ -60,6 +60,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
   }
 
+  // Garde-fou serveur : pas de parcours à phases (103j) pour un client sans timeline
+  // (parcours non-Passage / CUSTOM). La case « Timeline programme jour-par-jour » pilote ça.
+  // Filet de sécurité même si l'UI est contournée ou périmée.
+  if (!client.requiresProgramTimeline) {
+    return NextResponse.json(
+      {
+        error:
+          "Ce client n'a pas de parcours à phases (timeline désactivée). Active « Timeline programme jour-par-jour » avant de générer un parcours 103 jours.",
+      },
+      { status: 409 }
+    );
+  }
+
   // Date de départ : override > detoxStartDate > lundi suivant
   const programStart = overrideStart
     ? new Date(overrideStart)

@@ -24,11 +24,13 @@ export type EnsurePhasesResult = {
 export async function ensureClientPhases(clientId: string): Promise<EnsurePhasesResult> {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
-    select: { id: true, parcoursType: true, detoxStartDate: true },
+    select: { id: true, parcoursType: true, detoxStartDate: true, requiresProgramTimeline: true },
   });
 
   if (!client) return { created: 0, reason: "client_introuvable" };
-  if (!getConfigForParcours(client.parcoursType).hasPhases) {
+  // Aligné sur le flag admin `requiresProgramTimeline` (source de vérité unique) :
+  // pas de phases si le type n'en prévoit pas OU si l'admin a coupé la timeline.
+  if (!getConfigForParcours(client.parcoursType).hasPhases || !client.requiresProgramTimeline) {
     return { created: 0, reason: "parcours_sans_phases" };
   }
   if (!client.detoxStartDate) return { created: 0, reason: "pas_de_detox" };
