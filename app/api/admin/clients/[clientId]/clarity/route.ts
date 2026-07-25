@@ -62,22 +62,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Le client doit d'abord soumettre son questionnaire." }, { status: 409 });
     }
     await prisma.claritySubmission.update({ where: { clientId }, data: { status: "GENERATING" } });
-    try {
-      const md = await generateClarityReport((sub.answers as Record<string, string>) || {});
-      const updated = await prisma.claritySubmission.update({
-        where: { clientId },
-        data: { reportMd: md, status: "READY", generatedAt: new Date() },
-        select: { status: true, reportMd: true, generatedAt: true },
-      });
-      return NextResponse.json({ submission: updated });
-    } catch (e) {
-      // Rollback du statut si la génération échoue (Ollama injoignable, timeout…).
-      await prisma.claritySubmission
-        .update({ where: { clientId }, data: { status: sub.reportMd ? "READY" : "SUBMITTED" } })
-        .catch(() => {});
-      const msg = e instanceof Error ? e.message : "Ollama injoignable";
-      return NextResponse.json({ error: "Génération échouée : " + msg }, { status: 502 });
-    }
+    // Génération EN FOND : Ollama (CPU) peut prendre plusieurs minutes ; on NE bloque PAS la
+    // requête (sinon timeout proxy → statut coincé). Le front rafraîchit tout seul jusqu'à READY.
+    const clarityAnswers = (sub.answers as Record<string, string>) || {};
+    const hadReport = !!sub.reportMd;
+    void generateClarityReport(clarityAnswers)
+      .then((md) =>
+        prisma.claritySubmission.update({
+          where: { clientId },
+          data: { reportMd: md, status: "READY", generatedAt: new Date() },
+        }),
+      )
+      .catch(() =>
+        prisma.claritySubmission
+          .update({ where: { clientId }, data: { status: hadReport ? "READY" : "SUBMITTED" } })
+          .catch(() => {}),
+      );
+    return NextResponse.json({ submission: { status: "GENERATING" } });
   }
 
   // --- Enregistrer les retouches admin du rapport ---

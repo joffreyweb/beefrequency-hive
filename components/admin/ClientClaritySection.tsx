@@ -91,6 +91,50 @@ export default function ClientClaritySection({
     } catch (e) { flash(e instanceof Error ? e.message : "Erreur", 6000); } finally { setBusy(""); }
   }
 
+  const pollGeneration = useCallback(async () => {
+    setBusy("generate");
+    setMsg("Génération en cours… (elle continue même si tu changes d'écran)");
+    try {
+      for (let i = 0; i < 90; i++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        const res = await fetch(`/api/admin/clients/${clientId}/clarity`);
+        const d = await res.json();
+        const st = d.submission?.status;
+        if (st && st !== "GENERATING") {
+          setSubmission((prev) => (prev ? { ...prev, status: st } : prev));
+          setDetail(d.submission);
+          setReportMd(d.submission.reportMd || "");
+          setMsg(st === "READY" || st === "PUBLISHED" ? "Rapport généré ✓" : "Génération échouée — réessaie.");
+          setTimeout(() => setMsg(""), 5000);
+          return;
+        }
+      }
+      setMsg("Toujours en génération — patiente puis recharge la page.");
+      setTimeout(() => setMsg(""), 6000);
+    } finally {
+      setBusy("");
+    }
+  }, [clientId]);
+
+  async function handleGenerate() {
+    setMsg("");
+    setBusy("generate");
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/clarity`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setSubmission((prev) => (prev ? { ...prev, status: "GENERATING" } : prev));
+      await pollGeneration();
+    } catch (e) {
+      setBusy("");
+      flash(e instanceof Error ? e.message : "Erreur", 6000);
+    }
+  }
+
   const reportUrl = detail ? `${typeof window !== "undefined" ? window.location.origin : ""}/r/${detail.reportToken}` : "";
   function copyLink() {
     if (!reportUrl) return;
@@ -168,11 +212,11 @@ export default function ClientClaritySection({
           {/* Générer / Régénérer */}
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => patch("generate")}
-              disabled={!!busy || status === "GENERATING"}
+              onClick={handleGenerate}
+              disabled={!!busy}
               className="px-4 py-2 rounded-[8px] bg-or-sacre text-white text-sm font-ui disabled:opacity-50"
             >
-              {busy === "generate" || status === "GENERATING" ? "Génération en cours… (~1-2 min)" : (detail?.reportMd ? "Régénérer la synthèse" : "Générer la synthèse")}
+              {busy === "generate" ? "Génération en cours… (~1-3 min)" : (detail?.reportMd ? "Régénérer la synthèse" : "Générer la synthèse")}
             </button>
             <span className="text-[11px] font-ui text-brun-mid/50">Rédigée localement par ton cerveau souverain (Ollama · VPS).</span>
           </div>
