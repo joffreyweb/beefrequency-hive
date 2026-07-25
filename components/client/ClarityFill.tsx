@@ -57,6 +57,14 @@ export default function ClarityFill({
     (v) => typeof v === "string" && v.trim().length > 0,
   ).length;
 
+  // Toutes les questions de la carte courante doivent être remplies pour continuer.
+  const currentCardComplete = card.sections.every((section, secIdx) =>
+    section.questions.every((_q, qIdx) => {
+      const v = answers[answerKey(cardIdx, secIdx, qIdx)];
+      return typeof v === "string" && v.trim().length > 0;
+    }),
+  );
+
   const sectionsUpTo = (idx: number) =>
     CLARITY_MAPS.slice(0, idx + 1).reduce((n, m) => n + m.sections.length, 0);
 
@@ -99,6 +107,10 @@ export default function ClarityFill({
   }
 
   async function goNext() {
+    if (!currentCardComplete) {
+      setMsg("Réponds à toutes les questions de cette carte pour continuer.");
+      return;
+    }
     const ok = await saveCard();
     if (ok) {
       setCardIdx((i) => Math.min(i + 1, totalCards - 1));
@@ -112,6 +124,10 @@ export default function ClarityFill({
   }
 
   async function submit() {
+    if (!currentCardComplete) {
+      setMsg("Réponds à toutes les questions pour soumettre.");
+      return;
+    }
     const ok = await saveCard();
     if (!ok) return;
     setSaving(true);
@@ -195,6 +211,11 @@ export default function ClarityFill({
       </div>
 
       {msg && <p className="mt-5 text-center font-ui text-sm text-red-600">{msg}</p>}
+      {!currentCardComplete && !msg && (
+        <p className="mt-5 text-center font-ui text-xs text-brun-mid/60">
+          Réponds à toutes les questions de cette carte pour continuer.
+        </p>
+      )}
 
       <div className="mt-8 flex items-center justify-between gap-4">
         <button
@@ -212,7 +233,7 @@ export default function ClarityFill({
         {isLast ? (
           <button
             onClick={submit}
-            disabled={saving}
+            disabled={saving || !currentCardComplete}
             className="px-6 py-2.5 rounded-sharp bg-or-sacre text-white font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
             {saving ? "…" : "Soumettre mon Clarity"}
@@ -220,7 +241,7 @@ export default function ClarityFill({
         ) : (
           <button
             onClick={goNext}
-            disabled={saving}
+            disabled={saving || !currentCardComplete}
             className="px-6 py-2.5 rounded-sharp bg-or-sacre text-white font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
             {saving ? "…" : "Enregistrer et continuer →"}
