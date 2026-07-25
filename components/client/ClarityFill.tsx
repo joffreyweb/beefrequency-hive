@@ -53,7 +53,9 @@ export default function ClarityFill({
   const totalCards = CLARITY_MAPS.length;
   const isLast = cardIdx === totalCards - 1;
 
-  const answeredCount = Object.values(answers).filter((v) => v && v.trim().length > 0).length;
+  const answeredCount = Object.values(answers).filter(
+    (v) => typeof v === "string" && v.trim().length > 0,
+  ).length;
 
   const sectionsUpTo = (idx: number) =>
     CLARITY_MAPS.slice(0, idx + 1).reduce((n, m) => n + m.sections.length, 0);
@@ -68,7 +70,7 @@ export default function ClarityFill({
       s.questions.forEach((_q, qIdx) => {
         const k = answerKey(idx, secIdx, qIdx);
         const v = answers[k];
-        if (v != null && v.trim().length > 0) out[k] = v;
+        if (typeof v === "string" && v.trim().length > 0) out[k] = v;
       })
     );
     return out;
@@ -178,7 +180,7 @@ export default function ClarityFill({
                       <span className="block font-ui text-sm text-brun-chaud mt-1">{q.text}</span>
                     </label>
                     <textarea
-                      value={answers[key] ?? ""}
+                      value={typeof answers[key] === "string" ? answers[key] : ""}
                       onChange={(e) => setAnswer(key, e.target.value)}
                       rows={3}
                       className="w-full rounded-[8px] border border-or-pale bg-creme-sacree px-3 py-2 font-ui text-sm text-brun-chaud placeholder:text-brun-mid/40 focus:outline-none focus:border-or-sacre resize-y"
