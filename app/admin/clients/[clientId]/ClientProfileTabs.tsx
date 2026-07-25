@@ -9,6 +9,7 @@ import DailyFocusSection from "@/components/admin/DailyFocusSection";
 import ClientRecommendationsSection from "@/components/admin/ClientRecommendationsSection";
 import DocumentsSection from "@/components/admin/DocumentsSection";
 import AnalysisSection from "@/components/admin/AnalysisSection";
+import { renderMarkdownToHtml } from "@/lib/clarity/markdown";
 import HdTypeSelector from "@/components/admin/HdTypeSelector";
 import TimezoneSelector from "@/components/admin/TimezoneSelector";
 import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
@@ -88,7 +89,6 @@ export default function ClientProfileTabs({
     { key: "parcours", label: "Parcours", badge: 0 },
     { key: "sessions", label: "Sessions", badge: 0 },
     { key: "seances", label: "Seances", badge: 0 },
-    { key: "analysis", label: "Analyse", badge: 0 },
     { key: "documents", label: "Documents", badge: unreadDocCount },
     { key: "messages", label: "Messages", badge: unreadMsgCount },
     { key: "recommendations", label: "Recommandations", badge: 0 },
@@ -1035,16 +1035,17 @@ function CartesTab({ client }: { client: any }) {
   const astro = client.astroData;
   const bazi = client.baziData;
   const num = client.numerologyData;
+  const transversal = client.cartesSynthesis;
   const generated = client.cartesGeneratedAt;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-ui text-brun-chaud font-medium">Client Cards</h3>
+          <h3 className="text-sm font-ui text-brun-chaud font-medium">Cartes du client</h3>
           {generated && (
             <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
-              Generated {new Date(generated).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
+              Généré le {new Date(generated).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
             </p>
           )}
         </div>
@@ -1055,14 +1056,21 @@ function CartesTab({ client }: { client: any }) {
             disabled={regenerating}
             className="px-4 py-2 bg-or-sacre text-white rounded-sharp text-xs font-ui hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
-            {regenerating ? "..." : "Regenerate"}
+            {regenerating ? "…" : "Régénérer"}
           </button>
         </div>
       </div>
 
+      {transversal && (
+        <section className="bg-cire-chaude border-2 border-or-sacre/40 rounded-sm p-5 space-y-2">
+          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">Synthèse transversale — rapport intégré</h4>
+          <Markdown md={transversal} />
+        </section>
+      )}
+
       {!generated && !status && (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-          <p className="font-ui text-sm text-brun-mid">No cards generated yet. Click Regenerate to start.</p>
+          <p className="font-ui text-sm text-brun-mid">Aucune carte générée. Clique sur « Régénérer » pour lancer.</p>
         </div>
       )}
 
@@ -1094,8 +1102,8 @@ function CartesTab({ client }: { client: any }) {
           )}
           {hd.synthesis && (
             <div className="border-t border-or-pale pt-3 mt-3">
-              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthesis</p>
-              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap leading-relaxed">{hd.synthesis}</p>
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthèse</p>
+              <Markdown md={hd.synthesis} />
             </div>
           )}
         </section>
@@ -1117,8 +1125,8 @@ function CartesTab({ client }: { client: any }) {
           )}
           {astro.synthesis && (
             <div className="border-t border-or-pale pt-3 mt-3">
-              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthesis</p>
-              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap leading-relaxed">{astro.synthesis}</p>
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthèse</p>
+              <Markdown md={astro.synthesis} />
             </div>
           )}
         </section>
@@ -1143,8 +1151,8 @@ function CartesTab({ client }: { client: any }) {
           </div>
           {bazi.synthesis && (
             <div className="border-t border-or-pale pt-3 mt-3">
-              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthesis</p>
-              <p className="text-sm font-ui text-brun-chaud whitespace-pre-wrap leading-relaxed">{bazi.synthesis}</p>
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthèse</p>
+              <Markdown md={bazi.synthesis} />
             </div>
           )}
         </section>
@@ -1153,7 +1161,7 @@ function CartesTab({ client }: { client: any }) {
       {/* Numerology */}
       {num && (
         <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-3">
-          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">Numerology</h4>
+          <h4 className="font-caps text-xs text-or-sacre uppercase tracking-wider">Numérologie</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <Stat label="Life Path" value={num.lifePath} />
             <Stat label="Expression" value={num.expression} />
@@ -1162,9 +1170,25 @@ function CartesTab({ client }: { client: any }) {
             <Stat label="Birthday" value={num.birthday} />
             <Stat label="Maturity" value={num.maturity} />
           </div>
+          {num.synthesis && (
+            <div className="border-t border-or-pale pt-3 mt-3">
+              <p className="text-xs font-ui text-brun-mid/60 mb-1">Synthèse</p>
+              <Markdown md={num.synthesis} />
+            </div>
+          )}
         </section>
       )}
     </div>
+  );
+}
+
+function Markdown({ md }: { md: string }) {
+  if (!md) return null;
+  return (
+    <div
+      className="text-sm font-ui text-brun-chaud leading-relaxed [&_h2]:font-caps [&_h2]:text-or-sacre [&_h2]:uppercase [&_h2]:tracking-wider [&_h2]:text-[11px] [&_h2]:mt-4 [&_h2]:mb-1 [&_h3]:font-medium [&_h3]:text-brun-chaud [&_h3]:mt-3 [&_h3]:mb-0.5 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ul]:mb-2 [&_li]:text-brun-chaud [&_strong]:text-brun-chaud [&_strong]:font-semibold"
+      dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(md) }}
+    />
   );
 }
 

@@ -12,6 +12,8 @@ import {
   generateHDSynthesis,
   generateAstroSynthesis,
   generateBaziSynthesis,
+  generateNumerologySynthesis,
+  generateTransversalSynthesis,
 } from "./synthesis";
 import { prisma } from "./prisma";
 
@@ -61,19 +63,38 @@ export async function generateAllCartes(clientId: string) {
 
     console.log(`Calculations done for ${client.user.name}: HD type=${hdRaw.type}`);
 
-    // 4. Claude API syntheses
+    // 4. Claude API syntheses — rapport interne approfondi (4 cartes + transversale)
     let hdSynthesis = "";
     let astroSynthesis = "";
     let baziSynthesis = "";
+    let numerologySynthesis = "";
+    let transversalSynthesis = "";
 
     if (process.env.ANTHROPIC_API_KEY) {
-      hdSynthesis = await generateHDSynthesis(hdRaw, client.user.name || "");
-      astroSynthesis = await generateAstroSynthesis(
-        { natalChart, progressions, solarReturn, transits },
-        client.user.name || ""
+      const clientName = client.user.name || "";
+      const astroBundle = { natalChart, progressions, solarReturn, transits };
+
+      // Les 4 synthèses de carte en parallèle.
+      [hdSynthesis, astroSynthesis, baziSynthesis, numerologySynthesis] = await Promise.all([
+        generateHDSynthesis(hdRaw, clientName),
+        generateAstroSynthesis(astroBundle, clientName),
+        generateBaziSynthesis(baziRaw, clientName),
+        generateNumerologySynthesis(numerologyRaw, clientName),
+      ]);
+
+      // La synthèse transversale s'appuie sur les 4 précédentes.
+      transversalSynthesis = await generateTransversalSynthesis(
+        {
+          hd: { ...hdRaw, synthesis: hdSynthesis },
+          astro: astroSynthesis,
+          bazi: { ...baziRaw, synthesis: baziSynthesis },
+          numerology: { ...numerologyRaw, synthesis: numerologySynthesis },
+        },
+        clientName,
+        client.intake?.intention || "",
       );
-      baziSynthesis = await generateBaziSynthesis(baziRaw, client.user.name || "");
-      console.log("Syntheses generated via Claude API");
+
+      console.log("Syntheses (4 cartes + transversale) generated via Claude API");
     } else {
       console.log("ANTHROPIC_API_KEY not set — skipping syntheses");
     }
@@ -97,7 +118,8 @@ export async function generateAllCartes(clientId: string) {
           synthesis: astroSynthesis,
         } as any,
         baziData: { ...baziRaw, synthesis: baziSynthesis } as any,
-        numerologyData: numerologyRaw as any,
+        numerologyData: { ...numerologyRaw, synthesis: numerologySynthesis } as any,
+        cartesSynthesis: transversalSynthesis || null,
         cartesGeneratedAt: new Date(),
       },
     });
@@ -107,7 +129,8 @@ export async function generateAllCartes(clientId: string) {
       hd: { ...hdRaw, synthesis: hdSynthesis },
       astro: { synthesis: astroSynthesis },
       bazi: { ...baziRaw, synthesis: baziSynthesis },
-      numerology: numerologyRaw,
+      numerology: { ...numerologyRaw, synthesis: numerologySynthesis },
+      transversal: transversalSynthesis,
     });
 
     await prisma.openWebuiQueue.create({

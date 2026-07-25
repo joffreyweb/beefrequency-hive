@@ -182,6 +182,7 @@ model Client {
   baziData          Json? // BaZi chinois
   numerologyData    Json? // Numérologie
   cartesGeneratedAt DateTime?
+  cartesSynthesis   String?   // Synthèse transversale des cartes (interne)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
