@@ -42,12 +42,14 @@ export default async function ClientHomePage() {
 
   // Clarity by Beefrequency : activé (DRAFT/IN_PROGRESS) et pas encore soumis ?
   let clarityToFill = false;
+  let clarityReportToken: string | null = null;
   if (clientForCheck) {
     const cs = await prisma.claritySubmission.findUnique({
       where: { clientId: clientForCheck.id },
-      select: { status: true },
+      select: { status: true, reportToken: true },
     });
     clarityToFill = !!cs && (cs.status === "DRAFT" || cs.status === "IN_PROGRESS");
+    if (cs && cs.status === "PUBLISHED") clarityReportToken = cs.reportToken;
   }
 
   const client = await prisma.client.findUnique({
@@ -171,6 +173,19 @@ export default async function ClientHomePage() {
     </div>
   ) : null;
 
+  // Bandeau "rapport prêt" — visible UNIQUEMENT après publication par l'admin (statut PUBLISHED)
+  const clarityReportBanner = clarityReportToken ? (
+    <div className="bg-foret/10 border-2 border-foret rounded-sm p-5 text-center">
+      <p className="font-display text-lg text-brun-chaud mb-2">Ton rapport Clarity est prêt 🐝</p>
+      <a
+        href={`/r/${clarityReportToken}`}
+        className="inline-block mt-2 px-6 py-2.5 bg-foret text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:opacity-90 transition-opacity"
+      >
+        Voir mon rapport
+      </a>
+    </div>
+  ) : null;
+
   // ── PAGE "EN ATTENTE" — affichée tant que le programme n'a pas démarré ──
   if (!pendingQuestionnaire && !programHasStarted && client.requiresProgramTimeline) {
     // 3 sous-états :
@@ -202,6 +217,7 @@ export default async function ClientHomePage() {
       // Centrage vertical dans le main flex-1 du layout client
       <div className="min-h-[calc(100vh-10rem)] flex flex-col justify-center items-center gap-8 py-8">
         {clarityBanner}
+      {clarityReportBanner}
         {/* Indicateur de progression */}
         <div className="flex items-center justify-center gap-1">
           {STAGES.map((s, i) => {
@@ -376,6 +392,7 @@ export default async function ClientHomePage() {
       )}
 
       {clarityBanner}
+      {clarityReportBanner}
 
       {/* Élixirs reçus banner */}
       <ElixirReceivedBanner />
