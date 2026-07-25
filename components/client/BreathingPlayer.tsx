@@ -75,7 +75,7 @@ export default function BreathingPlayer({
   try {
     content = JSON.parse(practice.content);
   } catch {
-    content = { pattern: [], cycles: 0 } as BreathingContent;
+    content = { pattern: [4, 4, 4, 4], cycles: 0 } as BreathingContent;
   }
   const pattern = content.pattern;
   const totalCycles = content.cycles;
