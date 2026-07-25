@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
-import type { ParcoursType } from "@prisma/client";
+import { ParcoursType } from "@prisma/client";
 
-const VALID_PARCOURS_TYPES: readonly ParcoursType[] = [
-  "LE_PASSAGE",
-  "NECTAR_CYCLE",
-  "SEANCE_UNIQUE",
-  "RESET_6",
-  "CUSTOM",
-];
+// Dérivé de l'enum Prisma — tous les parcoursType valides (fini la liste figée obsolète).
+const VALID_PARCOURS_TYPES: readonly ParcoursType[] = Object.values(ParcoursType);
 
 // PATCH /api/admin/clients/[clientId] — Mise à jour ciblée (parcoursType + 8 flags)
 export async function PATCH(

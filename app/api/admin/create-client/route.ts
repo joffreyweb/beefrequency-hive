@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     parcoursType,
     requiresConvention, requiresQuestionnaire,
     requiresPhaseVideos, requiresMorningCheckin, requiresEveningCheckin,
-    requiresJournal, requiresProgramTimeline, requiresElixirs,
+    requiresJournal, requiresProgramTimeline, requiresElixirs, requiresModules,
   } = await request.json();
 
   if (!firstName || !lastName || !email) {
@@ -63,6 +63,21 @@ export async function POST(request: NextRequest) {
       : getParcoursTypeForOffer(resolvedOffer);
   const parcoursDefaults = getDefaultsForParcoursType(resolvedParcours);
 
+  // Flags effectifs = défauts du parcours surchargés par les cases de l'admin.
+  // Écrits sur le Client ET sur l'InviteToken (sinon l'activation réécrit les défauts).
+  const effectiveFlags = {
+    ...parcoursDefaults,
+    ...(requiresConvention !== undefined ? { requiresConvention } : {}),
+    ...(requiresQuestionnaire !== undefined ? { requiresQuestionnaire } : {}),
+    ...(requiresPhaseVideos !== undefined ? { requiresPhaseVideos } : {}),
+    ...(requiresMorningCheckin !== undefined ? { requiresMorningCheckin } : {}),
+    ...(requiresEveningCheckin !== undefined ? { requiresEveningCheckin } : {}),
+    ...(requiresJournal !== undefined ? { requiresJournal } : {}),
+    ...(requiresProgramTimeline !== undefined ? { requiresProgramTimeline } : {}),
+    ...(requiresElixirs !== undefined ? { requiresElixirs } : {}),
+    ...(requiresModules !== undefined ? { requiresModules } : {}),
+  };
+
   // Create user + client in transaction
   const user = await prisma.user.create({
     data: {
@@ -100,6 +115,7 @@ export async function POST(request: NextRequest) {
       ...(requiresJournal !== undefined ? { requiresJournal } : {}),
       ...(requiresProgramTimeline !== undefined ? { requiresProgramTimeline } : {}),
       ...(requiresElixirs !== undefined ? { requiresElixirs } : {}),
+      ...(requiresModules !== undefined ? { requiresModules } : {}),
       ...(isLegacy ? {
         charteSignee: true,
         charteSignedAt: new Date(),
@@ -122,6 +138,18 @@ export async function POST(request: NextRequest) {
       offerType: offerType || "CONVERSATION_EXPLORATOIRE",
       language: language || "FR",
       role: "CLIENT",
+      // Porte la config résolue pour que l'activation ne réécrive pas les défauts (bug C1).
+      parcoursType: resolvedParcours,
+      requiresWelcomeVideo: welcomeVideoForOffer(resolvedOffer),
+      requiresConvention: effectiveFlags.requiresConvention,
+      requiresQuestionnaire: effectiveFlags.requiresQuestionnaire,
+      requiresPhaseVideos: effectiveFlags.requiresPhaseVideos,
+      requiresMorningCheckin: effectiveFlags.requiresMorningCheckin,
+      requiresEveningCheckin: effectiveFlags.requiresEveningCheckin,
+      requiresJournal: effectiveFlags.requiresJournal,
+      requiresProgramTimeline: effectiveFlags.requiresProgramTimeline,
+      requiresElixirs: effectiveFlags.requiresElixirs,
+      requiresModules: effectiveFlags.requiresModules,
       expiresAt,
     },
   });

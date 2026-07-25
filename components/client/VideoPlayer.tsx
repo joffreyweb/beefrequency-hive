@@ -28,7 +28,12 @@ export default function VideoPlayer({
   onComplete,
   onClose,
 }: VideoPlayerProps) {
-  const content: VideoContent = JSON.parse(practice.content);
+  let content: VideoContent;
+  try {
+    content = JSON.parse(practice.content);
+  } catch {
+    content = {} as VideoContent;
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">

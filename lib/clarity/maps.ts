@@ -343,10 +343,10 @@ export const CLARITY_MAPS: ClarityMap[] = [
       {
         icon: "🚪",
         title: "Entry Point Offering",
-        sub: "La porte d'entrée gratuite ou à faible coût",
+        sub: "La porte d'entrée à faible coût ou en accès libre",
         questions: [
           { layer: "SURFACE", text: `Quelle est l'étape la plus naturelle que quelqu'un pourrait franchir pour s'engager avec toi — sans coût ni engagement — qui lui donne quand même un avant-goût de transformation ?` },
-          { layer: "EXPANSION", text: `Quel format te semble le plus aligné pour ce premier contact ? (Call découverte, audio guidé, méditation, newsletter, événement live, contenu gratuit) Facile à dire 'oui' pour eux, puissant pour toi ?` },
+          { layer: "EXPANSION", text: `Quel format te semble le plus aligné pour ce premier contact ? (Call découverte, audio guidé, méditation, newsletter, événement live, contenu en accès libre) Facile à dire 'oui' pour eux, puissant pour toi ?` },
           { layer: "VALIDATION", text: `Comment cet entry point crée-t-il naturellement l'envie d'aller plus loin ? Quel est le 'mini-éveil' ou la 'petite victoire' qu'il délivre — et le pont naturel vers l'offre suivante ?` },
         ],
       },

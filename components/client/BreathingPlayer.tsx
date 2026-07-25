@@ -71,7 +71,12 @@ export default function BreathingPlayer({
   onClose,
 }: BreathingPlayerProps) {
   // Parse le contenu JSON de la pratique
-  const content: BreathingContent = JSON.parse(practice.content);
+  let content: BreathingContent;
+  try {
+    content = JSON.parse(practice.content);
+  } catch {
+    content = { pattern: [], cycles: 0 } as BreathingContent;
+  }
   const pattern = content.pattern;
   const totalCycles = content.cycles;
 

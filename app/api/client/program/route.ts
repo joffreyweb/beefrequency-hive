@@ -39,6 +39,11 @@ export async function GET() {
     .filter((pm) => !skipped.includes(pm.module.id))
     .map((pm) => pm.module);
 
+  // Programme sans module actif (vide ou tout skippé) → rien à afficher, évite un 500.
+  if (activeModules.length === 0) {
+    return NextResponse.json({ clientProgram: null });
+  }
+
   // Cycle de vie calculé (jour-calendrier Bruxelles, jamais d'instant brut).
   const { startDate: start, endDate, totalDays, currentDay, state } = getProgramState(
     clientProgram,
