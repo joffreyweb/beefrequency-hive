@@ -186,8 +186,12 @@ export default async function ClientHomePage() {
     </div>
   ) : null;
 
+  // Un client CUSTOM n'utilise JAMAIS la machinerie Passage (colis/élixir/timeline),
+  // quels que soient ses flags — il a sa propre section « Mon parcours ».
+  const isCustom = client.parcoursType === "CUSTOM";
+
   // ── PAGE "EN ATTENTE" — affichée tant que le programme n'a pas démarré ──
-  if (!pendingQuestionnaire && !programHasStarted && client.requiresProgramTimeline) {
+  if (!pendingQuestionnaire && !programHasStarted && client.requiresProgramTimeline && !isCustom) {
     // 3 sous-états :
     //   A. Colis pas envoyé          → "En préparation"
     //   B. Colis envoyé, pas reçu    → "En route" + bouton (via ElixirReceivedBanner)
@@ -460,7 +464,7 @@ export default async function ClientHomePage() {
       </div>
 
       {/* Timeline widget — masqué si parcours sans timeline */}
-      {client.requiresProgramTimeline && <TimelineWidget />}
+      {client.requiresProgramTimeline && !isCustom && <TimelineWidget />}
 
       {/* Parcours sur-mesure (CUSTOM) — timeline indépendante, jamais pour Le Passage.
           ProgramProgress rend null si aucun ClientProgram n'est assigné. */}
