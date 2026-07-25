@@ -40,5 +40,5 @@ jobs:
             npx prisma generate
             npx prisma db push
             npm run build
-            pm2 restart hive --update-env
+            pm2 restart hive --update-env || pm2 start npm --name hive -- start
             pm2 save
