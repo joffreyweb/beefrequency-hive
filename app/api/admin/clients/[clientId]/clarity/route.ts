@@ -1,64 +1,141 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import { generateClarityReport } from "@/lib/clarity/ollama";
 
-// POST /api/admin/clients/[clientId]/clarity
-// Active Clarity pour le client : upsert d'une ClaritySubmission en DRAFT (idempotent).
-// Ré-appeler ne touche PAS une submission existante (réponses/rapport préservés — L104 upsert).
+// POST — Active Clarity (upsert DRAFT idempotent, ne touche pas une submission existante).
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
-
   const { clientId } = await params;
 
-  const client = await prisma.client.findUnique({
-    where: { id: clientId },
-    select: { id: true },
-  });
-  if (!client) {
-    return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
-  }
+  const client = await prisma.client.findUnique({ where: { id: clientId }, select: { id: true } });
+  if (!client) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
 
   const submission = await prisma.claritySubmission.upsert({
     where: { clientId },
     create: { clientId, status: "DRAFT" },
-    update: {}, // no-op : ne jamais écraser une submission déjà en place
+    update: {},
     select: { id: true, status: true, sectionsDone: true, createdAt: true },
   });
-
   return NextResponse.json({ submission });
 }
 
-// DELETE /api/admin/clients/[clientId]/clarity
-// Désactive Clarity — UNIQUEMENT si le client n'a encore rien rempli (garde-fou anti-perte).
+// GET — Détail complet (admin) : réponses brutes + rapport + token. Jamais exposé côté client.
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  const auth = await requireAdmin();
+  if (isErrorResponse(auth)) return auth;
+  const { clientId } = await params;
+
+  const submission = await prisma.claritySubmission.findUnique({
+    where: { clientId },
+    select: {
+      id: true, status: true, sectionsDone: true, answers: true, reportMd: true,
+      reportToken: true, submittedAt: true, generatedAt: true, publishedAt: true,
+    },
+  });
+  return NextResponse.json({ submission: submission ?? null });
+}
+
+// PATCH — Actions rapport : generate | save | publish | unpublish
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> }
+) {
+  const auth = await requireAdmin();
+  if (isErrorResponse(auth)) return auth;
+  const { clientId } = await params;
+  const { action, reportMd } = await request.json();
+
+  const sub = await prisma.claritySubmission.findUnique({ where: { clientId } });
+  if (!sub) return NextResponse.json({ error: "Clarity non activé pour ce client" }, { status: 404 });
+
+  // --- Générer la synthèse via Ollama (VPS) ---
+  if (action === "generate") {
+    if (!["SUBMITTED", "READY", "GENERATING", "PUBLISHED"].includes(sub.status)) {
+      return NextResponse.json({ error: "Le client doit d'abord soumettre son questionnaire." }, { status: 409 });
+    }
+    await prisma.claritySubmission.update({ where: { clientId }, data: { status: "GENERATING" } });
+    try {
+      const md = await generateClarityReport((sub.answers as Record<string, string>) || {});
+      const updated = await prisma.claritySubmission.update({
+        where: { clientId },
+        data: { reportMd: md, status: "READY", generatedAt: new Date() },
+        select: { status: true, reportMd: true, generatedAt: true },
+      });
+      return NextResponse.json({ submission: updated });
+    } catch (e) {
+      // Rollback du statut si la génération échoue (Ollama injoignable, timeout…).
+      await prisma.claritySubmission
+        .update({ where: { clientId }, data: { status: sub.reportMd ? "READY" : "SUBMITTED" } })
+        .catch(() => {});
+      const msg = e instanceof Error ? e.message : "Ollama injoignable";
+      return NextResponse.json({ error: "Génération échouée : " + msg }, { status: 502 });
+    }
+  }
+
+  // --- Enregistrer les retouches admin du rapport ---
+  if (action === "save") {
+    const updated = await prisma.claritySubmission.update({
+      where: { clientId },
+      data: {
+        reportMd: typeof reportMd === "string" ? reportMd : sub.reportMd,
+        status: sub.status === "PUBLISHED" ? "PUBLISHED" : "READY",
+      },
+      select: { status: true, reportMd: true },
+    });
+    return NextResponse.json({ submission: updated });
+  }
+
+  // --- Publier (rend le rapport visible via /r/[reportToken]) ---
+  if (action === "publish") {
+    if (!sub.reportMd || !sub.reportMd.trim()) {
+      return NextResponse.json({ error: "Aucun rapport à publier." }, { status: 409 });
+    }
+    const updated = await prisma.claritySubmission.update({
+      where: { clientId },
+      data: { status: "PUBLISHED", publishedAt: new Date() },
+      select: { status: true, reportToken: true, publishedAt: true },
+    });
+    return NextResponse.json({ submission: updated });
+  }
+
+  // --- Dépublier (repasse en READY, le lien /r n'affiche plus le rapport) ---
+  if (action === "unpublish") {
+    const updated = await prisma.claritySubmission.update({
+      where: { clientId }, data: { status: "READY" }, select: { status: true },
+    });
+    return NextResponse.json({ submission: updated });
+  }
+
+  return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
+}
+
+// DELETE — Désactive Clarity, uniquement si rien n'a été rempli (garde-fou anti-perte).
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
-
   const { clientId } = await params;
 
   const existing = await prisma.claritySubmission.findUnique({
     where: { clientId },
     select: { id: true, status: true, sectionsDone: true, answers: true },
   });
-
-  if (!existing) {
-    // Déjà inactif → succès idempotent
-    return NextResponse.json({ ok: true, alreadyInactive: true });
-  }
+  if (!existing) return NextResponse.json({ ok: true, alreadyInactive: true });
 
   const answersObj = existing.answers as Record<string, unknown> | null;
   const hasAnswers =
     existing.sectionsDone > 0 ||
-    (answersObj != null &&
-      typeof answersObj === "object" &&
-      Object.keys(answersObj).length > 0);
+    (answersObj != null && typeof answersObj === "object" && Object.keys(answersObj).length > 0);
 
   if (existing.status !== "DRAFT" || hasAnswers) {
     return NextResponse.json(
