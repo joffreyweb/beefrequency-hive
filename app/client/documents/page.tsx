@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 // Labels français pour les catégories
 const CATEGORY_LABELS: Record<string, string> = {
-  ANALYSE: "Analysis",
-  IDENTITE: "Identity",
-  MEDICAL: "Medical",
-  AUTRE: "Other",
+  ANALYSE: "Analyse",
+  IDENTITE: "Identité",
+  MEDICAL: "Médical",
+  AUTRE: "Autre",
 };
 
 // Icône selon le type MIME
@@ -133,10 +133,10 @@ export default function ClientDocumentsPage() {
         await fetchDocuments();
       } else {
         const data = await res.json();
-        setError(data.error || "Upload failed");
+        setError(data.error || "Échec de l'envoi");
       }
     } catch {
-      setError("File upload failed");
+      setError("Échec de l'envoi du fichier");
     } finally {
       setUploading(false);
     }
@@ -144,7 +144,7 @@ export default function ClientDocumentsPage() {
 
   // Suppression d'un document
   async function handleDelete(id: string) {
-    if (!confirm("Delete this document?")) return;
+    if (!confirm("Supprimer ce document ?")) return;
 
     try {
       const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
@@ -161,10 +161,10 @@ export default function ClientDocumentsPage() {
       {/* En-tête */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          My documents
+          Mes documents
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Share your analyses, medical documents, and other files
+          Partage ici les analyses, documents médicaux et autres fichiers à me transmettre
         </p>
       </div>
 
@@ -206,7 +206,7 @@ export default function ClientDocumentsPage() {
                 disabled={uploading}
                 className="bg-or-sacre text-white rounded-sharp px-5 py-2 text-sm font-ui hover:bg-ambre-vif transition-colors disabled:opacity-50"
               >
-                {uploading ? "Uploading..." : "Send"}
+                {uploading ? "Envoi…" : "Envoyer"}
               </button>
 
               <button
@@ -216,16 +216,16 @@ export default function ClientDocumentsPage() {
                 }}
                 className="text-brun-mid text-sm font-ui hover:text-brun-chaud transition-colors"
               >
-                Cancel
+                Annuler
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             <p className="text-brun-mid font-ui">
-              Drag and drop a file here
+              Glisse-dépose un fichier ici
             </p>
-            <p className="text-brun-mid/60 text-sm font-ui">or</p>
+            <p className="text-brun-mid/60 text-sm font-ui">ou</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -237,10 +237,10 @@ export default function ClientDocumentsPage() {
               onClick={() => fileInputRef.current?.click()}
               className="bg-or-sacre text-white rounded-sharp px-5 py-2 text-sm font-ui hover:bg-ambre-vif transition-colors"
             >
-              Choose a file
+              Choisir un fichier
             </button>
             <p className="text-brun-mid/50 text-xs font-ui mt-2">
-              PDF, images or Word — 10 MB maximum
+              PDF, images ou Word — 10 Mo maximum
             </p>
           </div>
         )}
@@ -253,11 +253,11 @@ export default function ClientDocumentsPage() {
       {/* Liste des documents */}
       {loading ? (
         <p className="text-brun-mid font-ui text-sm">
-          Loading documents...
+          Chargement…
         </p>
       ) : documents.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-          <p className="text-brun-mid font-ui">No documents yet</p>
+          <p className="text-brun-mid font-ui">Aucun document pour l'instant</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -296,13 +296,13 @@ export default function ClientDocumentsPage() {
                   download={doc.fileName}
                   className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors"
                 >
-                  Download
+                  Télécharger
                 </a>
                 <button
                   onClick={() => handleDelete(doc.id)}
                   className="text-brun-mid/60 text-sm font-ui hover:text-red-600 transition-colors"
                 >
-                  Delete
+                  Supprimer
                 </button>
               </div>
             </div>

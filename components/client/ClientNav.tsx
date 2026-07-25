@@ -56,6 +56,7 @@ export default function ClientNav() {
     isActive("/client/from-joffrey") ||
     isActive("/client/supports") ||
     isActive("/client/recommendations");
+  const isDocuments = isActive("/client/documents");
 
   const items = [
     { href: "/client/home", label: T(t.nav.home), active: isHome, icon: HomeIcon, badge: 0 },
@@ -64,6 +65,7 @@ export default function ClientNav() {
       : []),
     { href: "/client/mes-modules", label: T(t.nav.myModules), active: isMyModules, icon: MyModulesIcon, badge: 0 },
     { href: "/client/messages", label: T(t.nav.messages), active: isMessages, icon: MessagesIcon, badge: unreadCount },
+    { href: "/client/documents", label: T({ EN: "Documents", FR: "Documents" }), active: isDocuments, icon: DocumentsIcon, badge: 0 },
     { href: "/client/from-joffrey", label: T(t.nav.fromJoffrey), active: isFromJoffrey, icon: FromJoffreyIcon, badge: 0 },
   ];
 
@@ -149,6 +151,16 @@ function MessagesIcon({ color }: { color: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 4h16v12H7l-4 4V4z" />
+    </svg>
+  );
+}
+
+function DocumentsIcon({ color }: { color: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3H7a1 1 0 00-1 1v16a1 1 0 001 1h10a1 1 0 001-1V7l-4-4z" />
+      <path d="M14 3v4h4" />
+      <path d="M9 13h6M9 17h4" />
     </svg>
   );
 }
