@@ -29,11 +29,11 @@ export function buildClarityPrompt(answers: Answers): { system: string; prompt: 
       const qs: string[] = [];
       sec.questions.forEach((q, qIdx) => {
         const a = (answers[answerKey(mapIdx, secIdx, qIdx)] || "").trim();
-        if (a) qs.push(`- ${q.text}\n  → ${a}`);
+        if (a) qs.push(`- ${q.text.FR}\n  → ${a}`);
       });
-      if (qs.length) parts.push(`**${sec.title} — ${sec.sub}**\n${qs.join("\n")}`);
+      if (qs.length) parts.push(`**${sec.title.FR} — ${sec.sub.FR}**\n${qs.join("\n")}`);
     });
-    if (parts.length) body += `\n### ${BLUEPRINT_SECTIONS[map.id]} (${map.label})\n${parts.join("\n\n")}\n`;
+    if (parts.length) body += `\n### ${BLUEPRINT_SECTIONS[map.id]} (${map.label.FR})\n${parts.join("\n\n")}\n`;
   });
 
   const prompt = `${body}\n---\nRédige maintenant le rapport de synthèse complet en markdown, structuré selon les 5 sections du Blueprint ci-dessus (reprends leurs intitulés en titres ##). Commence par un court paragraphe d'accueil personnel, puis les 5 sections, puis une conclusion douce qui ouvre vers la suite. N'inclus AUCUNE question ni réponse brute — uniquement ta synthèse rédigée.`;

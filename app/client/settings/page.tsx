@@ -571,7 +571,7 @@ export default function ClientSettingsPage() {
         </Link>
       </div>
 
-      <MySessionsSection lang={lang} />
+      <MySessionsSection />
     </div>
   );
 }

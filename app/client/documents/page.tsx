@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 // Labels français pour les catégories
-const CATEGORY_LABELS: Record<string, string> = {
-  ANALYSE: "Analyse",
-  IDENTITE: "Identité",
-  MEDICAL: "Médical",
-  AUTRE: "Autre",
+const CATEGORY_LABELS: Record<string, { EN: string; FR: string }> = {
+  ANALYSE: { EN: "Analysis", FR: "Analyse" },
+  IDENTITE: { EN: "Identity", FR: "Identité" },
+  MEDICAL: { EN: "Medical", FR: "Médical" },
+  AUTRE: { EN: "Other", FR: "Autre" },
 };
 
 // Icône selon le type MIME
@@ -53,6 +54,8 @@ interface ClientDocument {
 }
 
 export default function ClientDocumentsPage() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -133,10 +136,10 @@ export default function ClientDocumentsPage() {
         await fetchDocuments();
       } else {
         const data = await res.json();
-        setError(data.error || "Échec de l'envoi");
+        setError(data.error || T({ EN: "Upload failed", FR: "Échec de l'envoi" }));
       }
     } catch {
-      setError("Échec de l'envoi du fichier");
+      setError(T({ EN: "File upload failed", FR: "Échec de l'envoi du fichier" }));
     } finally {
       setUploading(false);
     }
@@ -144,7 +147,7 @@ export default function ClientDocumentsPage() {
 
   // Suppression d'un document
   async function handleDelete(id: string) {
-    if (!confirm("Supprimer ce document ?")) return;
+    if (!confirm(T({ EN: "Delete this document?", FR: "Supprimer ce document ?" }))) return;
 
     try {
       const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
@@ -161,10 +164,10 @@ export default function ClientDocumentsPage() {
       {/* En-tête */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Mes documents
+          {T({ EN: "My documents", FR: "Mes documents" })}
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Partage ici les analyses, documents médicaux et autres fichiers à me transmettre
+          {T({ EN: "Share the analyses, medical documents and other files you need to send me here", FR: "Partage ici les analyses, documents médicaux et autres fichiers à me transmettre" })}
         </p>
       </div>
 
@@ -196,7 +199,7 @@ export default function ClientDocumentsPage() {
               >
                 {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {T(label)}
                   </option>
                 ))}
               </select>
@@ -206,7 +209,7 @@ export default function ClientDocumentsPage() {
                 disabled={uploading}
                 className="bg-or-sacre text-white rounded-sharp px-5 py-2 text-sm font-ui hover:bg-ambre-vif transition-colors disabled:opacity-50"
               >
-                {uploading ? "Envoi…" : "Envoyer"}
+                {uploading ? T({ EN: "Uploading…", FR: "Envoi…" }) : T({ EN: "Send", FR: "Envoyer" })}
               </button>
 
               <button
@@ -216,16 +219,16 @@ export default function ClientDocumentsPage() {
                 }}
                 className="text-brun-mid text-sm font-ui hover:text-brun-chaud transition-colors"
               >
-                Annuler
+                {T({ EN: "Cancel", FR: "Annuler" })}
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             <p className="text-brun-mid font-ui">
-              Glisse-dépose un fichier ici
+              {T({ EN: "Drag and drop a file here", FR: "Glisse-dépose un fichier ici" })}
             </p>
-            <p className="text-brun-mid/60 text-sm font-ui">ou</p>
+            <p className="text-brun-mid/60 text-sm font-ui">{T({ EN: "or", FR: "ou" })}</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -237,10 +240,10 @@ export default function ClientDocumentsPage() {
               onClick={() => fileInputRef.current?.click()}
               className="bg-or-sacre text-white rounded-sharp px-5 py-2 text-sm font-ui hover:bg-ambre-vif transition-colors"
             >
-              Choisir un fichier
+              {T({ EN: "Choose a file", FR: "Choisir un fichier" })}
             </button>
             <p className="text-brun-mid/50 text-xs font-ui mt-2">
-              PDF, images ou Word — 10 Mo maximum
+              {T({ EN: "PDF, images or Word — 10 MB max", FR: "PDF, images ou Word — 10 Mo maximum" })}
             </p>
           </div>
         )}
@@ -253,11 +256,11 @@ export default function ClientDocumentsPage() {
       {/* Liste des documents */}
       {loading ? (
         <p className="text-brun-mid font-ui text-sm">
-          Chargement…
+          {T({ EN: "Loading…", FR: "Chargement…" })}
         </p>
       ) : documents.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
-          <p className="text-brun-mid font-ui">Aucun document pour l'instant</p>
+          <p className="text-brun-mid font-ui">{T({ EN: "No documents yet", FR: "Aucun document pour l\u2019instant" })}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -284,7 +287,7 @@ export default function ClientDocumentsPage() {
                     </span>
                     <span className="text-brun-mid/40 text-xs">·</span>
                     <span className="bg-creme-sacree text-brun-chaud text-xs font-ui px-2 py-0.5 rounded-sharp">
-                      {CATEGORY_LABELS[doc.category] || doc.category}
+                      {CATEGORY_LABELS[doc.category] ? T(CATEGORY_LABELS[doc.category]) : doc.category}
                     </span>
                   </div>
                 </div>
@@ -296,13 +299,13 @@ export default function ClientDocumentsPage() {
                   download={doc.fileName}
                   className="text-or-sacre text-sm font-ui hover:text-ambre-vif transition-colors"
                 >
-                  Télécharger
+                  {T({ EN: "Download", FR: "Télécharger" })}
                 </a>
                 <button
                   onClick={() => handleDelete(doc.id)}
                   className="text-brun-mid/60 text-sm font-ui hover:text-red-600 transition-colors"
                 >
-                  Supprimer
+                  {T({ EN: "Delete", FR: "Supprimer" })}
                 </button>
               </div>
             </div>

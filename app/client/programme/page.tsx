@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProgramProgress from "@/components/client/ProgramProgress";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface PhaseInfo {
   phaseType: "CYCLE" | "BREAK";
@@ -69,15 +70,20 @@ interface CheckinData {
 type ViewTab = "aujourdhui" | "calendrier";
 
 const TIMING_ORDER: Record<string, number> = { MATIN: 0, JOURNEE: 1, SOIR: 2, FLEXIBLE: 3 };
-const TIMING_LABELS: Record<string, string> = { MATIN: "Morning", SOIR: "Evening", JOURNEE: "Daytime", FLEXIBLE: "Flexible" };
+const TIMING_LABELS: Record<string, { EN: string; FR: string }> = {
+  MATIN: { EN: "Morning", FR: "Matin" },
+  SOIR: { EN: "Evening", FR: "Soir" },
+  JOURNEE: { EN: "Daytime", FR: "Journée" },
+  FLEXIBLE: { EN: "Flexible", FR: "Flexible" },
+};
 
 const SLEEP_OPTIONS = [
-  { key: "leger", label: "Light" },
-  { key: "profond", label: "Deep" },
-  { key: "reves", label: "Dreams" },
-  { key: "reveils", label: "Awakenings" },
-  { key: "endormissement_long", label: "Slow onset" },
-  { key: "nuit_continue", label: "Continuous night" },
+  { key: "leger", label: { EN: "Light", FR: "Léger" } },
+  { key: "profond", label: { EN: "Deep", FR: "Profond" } },
+  { key: "reves", label: { EN: "Dreams", FR: "Rêves" } },
+  { key: "reveils", label: { EN: "Awakenings", FR: "Réveils" } },
+  { key: "endormissement_long", label: { EN: "Slow onset", FR: "Endormissement long" } },
+  { key: "nuit_continue", label: { EN: "Continuous night", FR: "Nuit continue" } },
 ];
 
 const slideVariants = {
@@ -108,6 +114,8 @@ function formatISODate(date: Date): string {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function ProgrammePage() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [loading, setLoading] = useState(true);
   const [activeInfo, setActiveInfo] = useState<ActiveInfo | null>(null);
   const [todayElixirs, setTodayElixirs] = useState<TodayElixir[]>([]);
@@ -187,13 +195,13 @@ export default function ProgrammePage() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <p className="text-sm font-ui text-brun-mid/60">Loading...</p>
+      <p className="text-sm font-ui text-brun-mid/60">{T({ EN: "Loading...", FR: "Chargement..." })}</p>
     </div>
   );
 
   if (!activeInfo) return (
     <div className="space-y-4 pb-24">
-      <h1 className="font-display text-2xl text-brun-chaud">Mon Parcours</h1>
+      <h1 className="font-display text-2xl text-brun-chaud">{T({ EN: "My Journey", FR: "Mon Parcours" })}</h1>
       <ProgramProgress />
     </div>
   );
@@ -209,10 +217,10 @@ export default function ProgrammePage() {
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-or-sacre/10 text-or-sacre text-sm font-ui">
             <span className="w-2 h-2 rounded-full bg-or-sacre" />
-            {activeInfo.phase.label} · Day {activeInfo.dayInPhase}
+            {activeInfo.phase.label} · {T({ EN: "Day", FR: "Jour" })} {activeInfo.dayInPhase}
           </span>
         </div>
-        <ProgressBar label="Overall progress" value={activeInfo.dayInProgram} total={activeInfo.totalDays} thin />
+        <ProgressBar label={T({ EN: "Overall progress", FR: "Progression globale" })} value={activeInfo.dayInProgram} total={activeInfo.totalDays} thin />
         <ProgressBar label={activeInfo.phase.label} value={activeInfo.dayInPhase} total={activeInfo.phase.durationDays} />
       </div>
 
@@ -221,7 +229,7 @@ export default function ProgrammePage() {
         {(["aujourdhui", "calendrier"] as ViewTab[]).map(tab => (
           <button key={tab} onClick={() => setViewTab(tab)}
             className={`px-4 py-2.5 text-sm font-ui transition-colors border-b-2 -mb-px ${viewTab === tab ? "text-or-sacre border-or-sacre" : "text-brun-mid border-transparent"}`}>
-            {tab === "aujourdhui" ? "Today" : "Calendar"}
+            {tab === "aujourdhui" ? T({ EN: "Today", FR: "Aujourd'hui" }) : T({ EN: "Calendar", FR: "Calendrier" })}
           </button>
         ))}
       </div>
@@ -233,7 +241,7 @@ export default function ProgrammePage() {
           {todayElixirs.length > 0 && (
             <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
               <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">
-                {isCycle ? "My elixirs today" : "Today's support"}
+                {isCycle ? T({ EN: "My elixirs today", FR: "Mes élixirs du jour" }) : T({ EN: "Today's support", FR: "Soutien du jour" })}
               </h3>
               <div className="space-y-2.5">
                 {[...todayElixirs]
@@ -241,7 +249,7 @@ export default function ProgrammePage() {
                   .map(e => (
                     <div key={e.id} className="flex items-baseline justify-between">
                       <div>
-                        <span className="text-xs font-ui text-brun-mid/60 mr-2">{TIMING_LABELS[e.timing]}</span>
+                        <span className="text-xs font-ui text-brun-mid/60 mr-2">{T(TIMING_LABELS[e.timing])}</span>
                         <span className="text-sm font-ui text-brun-chaud">{e.name}</span>
                       </div>
                       <span className="text-sm font-ui text-brun-mid">{e.dose}</span>
@@ -252,7 +260,7 @@ export default function ProgrammePage() {
                 <ChipBtn
                   selected={checkin.elixirTaken}
                   onClick={() => setCheckin(prev => ({ ...prev, elixirTaken: !prev.elixirTaken }))}
-                  label={checkin.elixirTaken ? "✓ Elixirs taken" : "I took my elixirs"}
+                  label={checkin.elixirTaken ? T({ EN: "✓ Elixirs taken", FR: "✓ Élixirs pris" }) : T({ EN: "I took my elixirs", FR: "J'ai pris mes élixirs" })}
                 />
               </div>
             </section>
@@ -261,7 +269,7 @@ export default function ProgrammePage() {
           {/* Practices */}
           {todayPractices.length > 0 && (
             <section className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-              <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">My practice</h3>
+              <h3 className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-3">{T({ EN: "My practice", FR: "Ma pratique" })}</h3>
               {todayPractices.map(p => (
                 <div key={p.id} className="mb-2 last:mb-0">
                   <p className="text-sm font-ui text-brun-chaud">{p.title}</p>
@@ -303,7 +311,7 @@ export default function ProgrammePage() {
           <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-creme-sacree/90 backdrop-blur-sm z-40 border-t border-or-pale/50">
             <motion.button whileTap={{ scale: 0.97 }} onClick={handleSave} disabled={saving}
               className="w-full py-3.5 text-sm font-ui uppercase tracking-[0.08em] bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50">
-              {saving ? "Saving..." : saved ? "Moment saved ✓" : "Save this moment"}
+              {saving ? T({ EN: "Saving...", FR: "Enregistrement..." }) : saved ? T({ EN: "Moment saved ✓", FR: "Moment enregistré ✓" }) : T({ EN: "Save this moment", FR: "Enregistrer ce moment" })}
             </motion.button>
           </div>
         </div>
@@ -323,6 +331,8 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
   setStep: (n: number) => void;
   onComplete: () => void;
 }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const TOTAL_STEPS = 6;
   const next = () => step < TOTAL_STEPS ? setStep(step + 1) : onComplete();
   const sleepTypes = parseSleepType(checkin.sleepType);
@@ -337,38 +347,38 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
     // 0 ·Intro
     <div key="intro" className="text-center space-y-10 py-8">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-        <p className="font-caps text-xs text-brun-mid/50 uppercase tracking-widest mb-6">My morning</p>
-        <h2 className="font-display text-3xl text-brun-chaud leading-snug">Start where you are.</h2>
+        <p className="font-caps text-xs text-brun-mid/50 uppercase tracking-widest mb-6">{T({ EN: "My morning", FR: "Mon matin" })}</p>
+        <h2 className="font-display text-3xl text-brun-chaud leading-snug">{T({ EN: "Start where you are.", FR: "Commence là où tu es." })}</h2>
       </motion.div>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }}>
         <motion.button whileTap={{ scale: 0.96 }} onClick={next}
           className="bg-or-sacre text-white px-8 py-3 rounded-sharp font-ui text-sm uppercase tracking-wider">
-          Start
+          {T({ EN: "Start", FR: "Commencer" })}
         </motion.button>
       </motion.div>
     </div>,
 
     // 1 ·Energy
     <div key="energie" className="space-y-8 py-4">
-      <StepHeader label="Energy" question="How is your energy this morning?" />
-      <SliderStep value={checkin.energyLevel ?? 5} onChange={v => setCheckin(prev => ({ ...prev, energyLevel: v }))} guidance="Without analyzing." />
+      <StepHeader label={T({ EN: "Energy", FR: "Énergie" })} question={T({ EN: "How is your energy this morning?", FR: "Comment est ton énergie ce matin ?" })} />
+      <SliderStep value={checkin.energyLevel ?? 5} onChange={v => setCheckin(prev => ({ ...prev, energyLevel: v }))} guidance={T({ EN: "Without analyzing.", FR: "Sans analyser." })} />
       <ContinueBtn onClick={next} />
     </div>,
 
     // 2 ·Sleep
     <div key="sommeil" className="space-y-8 py-4">
-      <StepHeader label="Sleep" question="How did you sleep?" />
-      <SliderStep value={checkin.sleepQuality ?? 5} onChange={v => setCheckin(prev => ({ ...prev, sleepQuality: v }))} guidance="Just feel." />
+      <StepHeader label={T({ EN: "Sleep", FR: "Sommeil" })} question={T({ EN: "How did you sleep?", FR: "Comment as-tu dormi ?" })} />
+      <SliderStep value={checkin.sleepQuality ?? 5} onChange={v => setCheckin(prev => ({ ...prev, sleepQuality: v }))} guidance={T({ EN: "Just feel.", FR: "Ressens, simplement." })} />
       <ContinueBtn onClick={next} />
     </div>,
 
     // 3 ·Sleep type
     <div key="sleep-type" className="space-y-8 py-4">
-      <StepHeader label="Sleep type" question="What describes your night?" />
+      <StepHeader label={T({ EN: "Sleep type", FR: "Type de nuit" })} question={T({ EN: "What describes your night?", FR: "Qu'est-ce qui décrit ta nuit ?" })} />
       <div className="flex flex-wrap gap-2">
         {SLEEP_OPTIONS.map(opt => (
           <ChipBtn key={opt.key} selected={sleepTypes.includes(opt.key)}
-            onClick={() => toggleSleep(opt.key)} label={opt.label} />
+            onClick={() => toggleSleep(opt.key)} label={T(opt.label)} />
         ))}
       </div>
       <ContinueBtn onClick={next} />
@@ -376,12 +386,12 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
 
     // 4 ·Dreams
     <div key="reves" className="space-y-6 py-4">
-      <StepHeader label="Dreams" question="Did anything stay with you?" />
+      <StepHeader label={T({ EN: "Dreams", FR: "Rêves" })} question={T({ EN: "Did anything stay with you?", FR: "Quelque chose est-il resté avec toi ?" })} />
       <div className="flex gap-3">
-        {[{ key: "OUI", label: "Yes" }, { key: "NON", label: "No" }, { key: "SAIS_PAS", label: "Hazy" }].map(opt => (
+        {[{ key: "OUI", label: { EN: "Yes", FR: "Oui" } }, { key: "NON", label: { EN: "No", FR: "Non" } }, { key: "SAIS_PAS", label: { EN: "Hazy", FR: "Flou" } }].map(opt => (
           <ChipBtn key={opt.key} selected={checkin.dreamed === opt.key}
             onClick={() => setCheckin(prev => ({ ...prev, dreamed: opt.key }))}
-            label={opt.label} flex />
+            label={T(opt.label)} flex />
         ))}
       </div>
       <AnimatePresence>
@@ -391,7 +401,7 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
             <VoiceTextarea
               value={checkin.dreamNotes ?? ""}
               onChange={v => setCheckin(prev => ({ ...prev, dreamNotes: v }))}
-              placeholder="A few words are enough..."
+              placeholder={T({ EN: "A few words are enough...", FR: "Quelques mots suffisent..." })}
               rows={3}
             />
           </motion.div>
@@ -402,11 +412,11 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
 
     // 5 ·Morning feeling
     <div key="ressenti" className="space-y-6 py-4">
-      <StepHeader label="Feeling" question="What I feel this morning." />
+      <StepHeader label={T({ EN: "Feeling", FR: "Ressenti" })} question={T({ EN: "What I feel this morning.", FR: "Ce que je ressens ce matin." })} />
       <VoiceTextarea
         value={checkin.morningGratitude ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, morningGratitude: v }))}
-        placeholder="No expectations. Just what is here."
+        placeholder={T({ EN: "No expectations. Just what is here.", FR: "Aucune attente. Juste ce qui est là." })}
         rows={4}
       />
       <ContinueBtn onClick={next} />
@@ -415,13 +425,13 @@ function MorningWizard({ checkin, setCheckin, step, setStep, onComplete }: {
     // 6 ·Morning validation
     <div key="done-matin" className="text-center space-y-8 py-12">
       <motion.h2 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}
-        className="font-display text-3xl text-brun-chaud">Noted.</motion.h2>
+        className="font-display text-3xl text-brun-chaud">{T({ EN: "Noted.", FR: "C'est noté." })}</motion.h2>
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }}
-        className="text-sm font-ui text-brun-mid/50 italic">Nothing to add.</motion.p>
+        className="text-sm font-ui text-brun-mid/50 italic">{T({ EN: "Nothing to add.", FR: "Rien à ajouter." })}</motion.p>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0, duration: 0.4 }}>
         <motion.button whileTap={{ scale: 0.96 }} onClick={next}
           className="bg-or-sacre text-white px-8 py-3 rounded-sharp font-ui text-sm uppercase tracking-wider">
-          Continue to evening →
+          {T({ EN: "Continue to evening →", FR: "Continuer vers le soir →" })}
         </motion.button>
       </motion.div>
     </div>,
@@ -456,27 +466,29 @@ function EveningCheckin({ checkin, setCheckin }: {
   checkin: CheckinData;
   setCheckin: (fn: (prev: CheckinData) => CheckinData) => void;
 }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   return (
     <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
-      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">My evening</h3>
+      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">{T({ EN: "My evening", FR: "Mon soir" })}</h3>
 
       <VoiceTextarea value={checkin.freeFeeling ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, freeFeeling: v }))}
-        placeholder="What I went through today..." rows={3} />
+        placeholder={T({ EN: "What I went through today...", FR: "Ce que j'ai traversé aujourd'hui..." })} rows={3} />
 
       <div>
-        <p className="text-xs font-ui text-brun-mid mb-1">4 true moments</p>
-        <p className="text-xs font-ui text-brun-mid/40 italic mb-3">Light and shadow hold equal value here.</p>
+        <p className="text-xs font-ui text-brun-mid mb-1">{T({ EN: "4 true moments", FR: "4 moments vrais" })}</p>
+        <p className="text-xs font-ui text-brun-mid/40 italic mb-3">{T({ EN: "Light and shadow hold equal value here.", FR: "La lumière et l'ombre ont ici la même valeur." })}</p>
         <div className="space-y-2">
           {[
-            { field: "gratitudeMoment" as const, ph: "A moment that touched me..." },
-            { field: "gratitudeSensation" as const, ph: "Something I received..." },
-            { field: "gratitudeRecu" as const, ph: "What emerged ·joy, anger, doubt, lightness..." },
-            { field: "gratitudeSoi" as const, ph: "What I observe in myself tonight..." },
+            { field: "gratitudeMoment" as const, ph: { EN: "A moment that touched me...", FR: "Un moment qui m'a touché..." } },
+            { field: "gratitudeSensation" as const, ph: { EN: "Something I received...", FR: "Quelque chose que j'ai reçu..." } },
+            { field: "gratitudeRecu" as const, ph: { EN: "What emerged ·joy, anger, doubt, lightness...", FR: "Ce qui a émergé ·joie, colère, doute, légèreté..." } },
+            { field: "gratitudeSoi" as const, ph: { EN: "What I observe in myself tonight...", FR: "Ce que j'observe en moi ce soir..." } },
           ].map(({ field, ph }) => (
             <input key={field} type="text" value={checkin[field] ?? ""}
               onChange={e => setCheckin(prev => ({ ...prev, [field]: e.target.value }))}
-              placeholder={ph}
+              placeholder={T(ph)}
               className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic" />
           ))}
         </div>
@@ -484,11 +496,11 @@ function EveningCheckin({ checkin, setCheckin }: {
 
       <VoiceTextarea value={checkin.selfQuality ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, selfQuality: v }))}
-        placeholder="What I recognize in myself tonight..." rows={2} />
+        placeholder={T({ EN: "What I recognize in myself tonight...", FR: "Ce que je reconnais en moi ce soir..." })} rows={2} />
 
       <input type="text" value={checkin.closingSentence ?? ""}
         onChange={e => setCheckin(prev => ({ ...prev, closingSentence: e.target.value }))}
-        placeholder="One sentence to close this day..."
+        placeholder={T({ EN: "One sentence to close this day...", FR: "Une phrase pour clore cette journée..." })}
         className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic" />
     </section>
   );
@@ -497,6 +509,8 @@ function EveningCheckin({ checkin, setCheckin }: {
 // ─── Weekly Ritual J7 ─────────────────────────────────────────────────────────
 
 function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [started, setStarted] = useState(false);
 
   return (
@@ -505,14 +519,14 @@ function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }
       className="bg-cire-chaude border border-or-sacre/30 rounded-sm p-5 space-y-4">
       <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-or-sacre animate-pulse" />
-        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">Day {day} ritual</p>
+        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">{T({ EN: "Day", FR: "Jour" })} {day} {T({ EN: "ritual", FR: "rituel" })}</p>
       </div>
-      <p className="font-display text-xl text-brun-chaud">A different moment tonight.</p>
+      <p className="font-display text-xl text-brun-chaud">{T({ EN: "A different moment tonight.", FR: "Un moment différent ce soir." })}</p>
       <p className="text-sm font-ui text-brun-mid leading-relaxed">
-        Take your elixir.<br />
-        Play this sound.<br />
-        Observe what passes.<br />
-        <span className="italic text-brun-mid/60">21 minutes. Nothing else.</span>
+        {T({ EN: "Take your elixir.", FR: "Prends ton élixir." })}<br />
+        {T({ EN: "Play this sound.", FR: "Lance ce son." })}<br />
+        {T({ EN: "Observe what passes.", FR: "Observe ce qui passe." })}<br />
+        <span className="italic text-brun-mid/60">{T({ EN: "21 minutes. Nothing else.", FR: "21 minutes. Rien d'autre." })}</span>
       </p>
 
       {music ? (
@@ -520,7 +534,7 @@ function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }
           {!started ? (
             <motion.button whileTap={{ scale: 0.96 }} onClick={() => setStarted(true)}
               className="w-full py-3 bg-or-sacre text-white rounded-sharp font-ui text-sm uppercase tracking-wider">
-              Start · {music.title}
+              {T({ EN: "Start", FR: "Commencer" })} · {music.title}
             </motion.button>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
@@ -528,12 +542,12 @@ function WeeklyRitual({ music, day }: { music: WeeklyMusic | null; day: number }
               {music.description && (
                 <p className="text-xs font-ui text-brun-mid/60 italic">{music.description}</p>
               )}
-              <p className="text-center text-xs font-ui text-brun-mid/40 italic">Close your eyes when you are ready.</p>
+              <p className="text-center text-xs font-ui text-brun-mid/40 italic">{T({ EN: "Close your eyes when you are ready.", FR: "Ferme les yeux quand tu es prêt." })}</p>
             </motion.div>
           )}
         </div>
       ) : (
-        <p className="text-xs font-ui text-brun-mid/40 italic">No music assigned this week.</p>
+        <p className="text-xs font-ui text-brun-mid/40 italic">{T({ EN: "No music assigned this week.", FR: "Aucune musique assignée cette semaine." })}</p>
       )}
     </motion.section>
   );
@@ -545,15 +559,17 @@ function BreakCheckin({ checkin, setCheckin }: {
   checkin: CheckinData;
   setCheckin: (fn: (prev: CheckinData) => CheckinData) => void;
 }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   return (
     <section className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-5">
-      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">My feeling</h3>
+      <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider border-b border-or-pale/50 pb-2">{T({ EN: "My feeling", FR: "Mon ressenti" })}</h3>
       <VoiceTextarea value={checkin.freeFeeling ?? ""}
         onChange={v => setCheckin(prev => ({ ...prev, freeFeeling: v }))}
-        placeholder="Free writing ·what is moving through me right now..." rows={5} />
+        placeholder={T({ EN: "Free writing ·what is moving through me right now...", FR: "Écriture libre ·ce qui me traverse en ce moment..." })} rows={5} />
       <input type="text" value={checkin.closingSentence ?? ""}
         onChange={e => setCheckin(prev => ({ ...prev, closingSentence: e.target.value }))}
-        placeholder="Closing ·1 sentence..."
+        placeholder={T({ EN: "Closing ·1 sentence...", FR: "Clôture ·1 phrase..." })}
         className="w-full px-3 py-2.5 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre placeholder:text-brun-mid/30 placeholder:italic" />
     </section>
   );
@@ -562,15 +578,17 @@ function BreakCheckin({ checkin, setCheckin }: {
 // ─── Morning Done Card ────────────────────────────────────────────────────────
 
 function MorningDoneCard({ checkin, onEdit }: { checkin: CheckinData; onEdit: () => void }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   return (
     <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">My morning · completed</p>
-        <button onClick={onEdit} className="text-xs font-ui text-brun-mid/40 hover:text-brun-mid">Edit</button>
+        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider">{T({ EN: "My morning · completed", FR: "Mon matin · complété" })}</p>
+        <button onClick={onEdit} className="text-xs font-ui text-brun-mid/40 hover:text-brun-mid">{T({ EN: "Edit", FR: "Modifier" })}</button>
       </div>
       <div className="flex gap-6">
-        {checkin.energyLevel && <div><p className="text-xs font-ui text-brun-mid/50">Energy</p><p className="font-display text-2xl text-brun-chaud">{checkin.energyLevel}/10</p></div>}
-        {checkin.sleepQuality && <div><p className="text-xs font-ui text-brun-mid/50">Sleep</p><p className="font-display text-2xl text-brun-chaud">{checkin.sleepQuality}/10</p></div>}
+        {checkin.energyLevel && <div><p className="text-xs font-ui text-brun-mid/50">{T({ EN: "Energy", FR: "Énergie" })}</p><p className="font-display text-2xl text-brun-chaud">{checkin.energyLevel}/10</p></div>}
+        {checkin.sleepQuality && <div><p className="text-xs font-ui text-brun-mid/50">{T({ EN: "Sleep", FR: "Sommeil" })}</p><p className="font-display text-2xl text-brun-chaud">{checkin.sleepQuality}/10</p></div>}
       </div>
       {checkin.morningGratitude && (
         <p className="text-sm font-ui text-brun-mid/70 italic mt-3 border-l-2 border-or-pale pl-3 leading-relaxed">
@@ -584,6 +602,8 @@ function MorningDoneCard({ checkin, onEdit }: { checkin: CheckinData; onEdit: ()
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo; calendarCheckins: Record<string, boolean> }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const { phase } = activeInfo;
   const start = new Date(phase.startDate);
   const days: Date[] = [];
@@ -609,7 +629,7 @@ function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo
   return (
     <div className="space-y-4">
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{phase.label} ·{phase.durationDays} days</h3>
+        <h3 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{phase.label} ·{phase.durationDays} {T({ EN: "days", FR: "jours" })}</h3>
         <div className="grid grid-cols-7 gap-2">
           {days.map(d => {
             const dateStr = formatISODate(d);
@@ -628,23 +648,23 @@ function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo
       {selectedDay && (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
           <h4 className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">
-            {new Date(selectedDay).toLocaleDateString("en-US", { day: "numeric", month: "long" })}
+            {new Date(selectedDay).toLocaleDateString(lang === "EN" ? "en-US" : "fr-FR", { day: "numeric", month: "long" })}
           </h4>
-          {loadingDay ? <p className="text-sm font-ui text-brun-mid/60">Loading...</p> :
-            !viewCheckin ? <p className="text-sm font-ui text-brun-mid/50">No check-in this day.</p> :
+          {loadingDay ? <p className="text-sm font-ui text-brun-mid/60">{T({ EN: "Loading...", FR: "Chargement..." })}</p> :
+            !viewCheckin ? <p className="text-sm font-ui text-brun-mid/50">{T({ EN: "No check-in this day.", FR: "Aucun check-in ce jour-là." })}</p> :
             <div className="space-y-2">
-              {([["Energy", viewCheckin.energyLevel ? `${viewCheckin.energyLevel}/10` : null],
-                ["Sleep", viewCheckin.sleepQuality ? `${viewCheckin.sleepQuality}/10` : null],
-                ["Morning feeling", viewCheckin.morningGratitude],
-                ["Evening feeling", viewCheckin.freeFeeling],
-                ["Closing", viewCheckin.closingSentence],
-              ] as [string, string | null][]).filter(([, v]) => v).map(([label, value]) => (
-                <div key={label}>
-                  <span className="text-xs font-caps text-brun-mid/60 uppercase tracking-wider">{label}</span>
+              {([[{ EN: "Energy", FR: "Énergie" }, viewCheckin.energyLevel ? `${viewCheckin.energyLevel}/10` : null],
+                [{ EN: "Sleep", FR: "Sommeil" }, viewCheckin.sleepQuality ? `${viewCheckin.sleepQuality}/10` : null],
+                [{ EN: "Morning feeling", FR: "Ressenti du matin" }, viewCheckin.morningGratitude],
+                [{ EN: "Evening feeling", FR: "Ressenti du soir" }, viewCheckin.freeFeeling],
+                [{ EN: "Closing", FR: "Clôture" }, viewCheckin.closingSentence],
+              ] as [{ EN: string; FR: string }, string | null][]).filter(([, v]) => v).map(([label, value]) => (
+                <div key={label.EN}>
+                  <span className="text-xs font-caps text-brun-mid/60 uppercase tracking-wider">{T(label)}</span>
                   <p className="text-sm font-ui text-brun-chaud mt-0.5">{value}</p>
                 </div>
               ))}
-              {viewCheckin.elixirTaken && <p className="text-xs font-ui text-foret mt-2">Elixirs taken ✓</p>}
+              {viewCheckin.elixirTaken && <p className="text-xs font-ui text-foret mt-2">{T({ EN: "Elixirs taken ✓", FR: "Élixirs pris ✓" })}</p>}
             </div>
           }
         </div>
@@ -656,11 +676,13 @@ function CalendarView({ activeInfo, calendarCheckins }: { activeInfo: ActiveInfo
 // ─── Shared Components ────────────────────────────────────────────────────────
 
 function ProgressBar({ label, value, total, thin }: { label: string; value: number; total: number; thin?: boolean }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   return (
     <div>
       <div className="flex justify-between mb-1">
         <span className="text-xs font-ui text-brun-mid/50">{label}</span>
-        <span className="text-xs font-ui text-brun-mid/50">Day {value} / {total}</span>
+        <span className="text-xs font-ui text-brun-mid/50">{T({ EN: "Day", FR: "Jour" })} {value} / {total}</span>
       </div>
       <div className={`${thin ? "h-1.5" : "h-2"} bg-or-pale/30 rounded-full`}>
         <div className={`h-full rounded-full ${thin ? "bg-or-sacre/40" : "bg-or-sacre"} transition-all`}
@@ -708,11 +730,13 @@ function ChipBtn({ selected, onClick, label, flex }: { selected: boolean; onClic
 }
 
 function ContinueBtn({ onClick }: { onClick: () => void }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   return (
     <div className="flex justify-end pt-2">
       <motion.button whileTap={{ scale: 0.96 }} onClick={onClick}
         className="text-sm font-ui text-or-sacre hover:text-ambre-vif transition-colors">
-        Continue →
+        {T({ EN: "Continue →", FR: "Continuer →" })}
       </motion.button>
     </div>
   );
@@ -721,6 +745,8 @@ function ContinueBtn({ onClick }: { onClick: () => void }) {
 function VoiceTextarea({ value, onChange, placeholder, rows = 3 }: {
   value: string; onChange: (v: string) => void; placeholder: string; rows?: number;
 }) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<unknown>(null);
 
@@ -729,7 +755,7 @@ function VoiceTextarea({ value, onChange, placeholder, rows = 3 }: {
       || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     const recognition = new (SpeechRecognition as new () => { lang: string; continuous: boolean; interimResults: boolean; onresult: (e: unknown) => void; onend: () => void; start: () => void; stop: () => void })();
-    recognition.lang = "en-US";
+    recognition.lang = lang === "EN" ? "en-US" : "fr-FR";
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.onresult = (e: unknown) => {
@@ -758,7 +784,7 @@ function VoiceTextarea({ value, onChange, placeholder, rows = 3 }: {
         animate={{ color: listening ? "#B8821E" : "#B4B2A9" }}
         onClick={listening ? stopListening : startListening}
         className="absolute right-3 top-3"
-        title={listening ? "Stop" : "Dictate"}>
+        title={listening ? T({ EN: "Stop", FR: "Arrêter" }) : T({ EN: "Dictate", FR: "Dicter" })}>
         {listening ? (
           <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
             <MicIcon active />

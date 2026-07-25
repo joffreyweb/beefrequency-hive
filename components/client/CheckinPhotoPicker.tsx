@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface Props {
   type: "morning" | "evening";
@@ -14,9 +15,13 @@ export default function CheckinPhotoPicker({
   type,
   value,
   onChange,
-  labelAdd = "📷 Ajouter une photo",
-  labelRemove = "Retirer",
+  labelAdd,
+  labelRemove,
 }: Props) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
+  const resolvedLabelAdd = labelAdd ?? T({ EN: "📷 Add a photo", FR: "📷 Ajouter une photo" });
+  const resolvedLabelRemove = labelRemove ?? T({ EN: "Remove", FR: "Retirer" });
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -42,14 +47,14 @@ export default function CheckinPhotoPicker({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Erreur upload");
+        setError(data.error || T({ EN: "Upload error", FR: "Erreur upload" }));
         setPreviewUrl(null);
         return;
       }
       const data = await res.json();
       onChange(data.path);
     } catch {
-      setError("Erreur réseau");
+      setError(T({ EN: "Network error", FR: "Erreur réseau" }));
       setPreviewUrl(null);
     } finally {
       setUploading(false);
@@ -77,7 +82,7 @@ export default function CheckinPhotoPicker({
       {displayUrl ? (
         <div className="space-y-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={displayUrl} alt="Photo du check-in" className="max-w-full max-h-64 rounded-sm border border-or-pale" />
+          <img src={displayUrl} alt={T({ EN: "Check-in photo", FR: "Photo du check-in" })} className="max-w-full max-h-64 rounded-sm border border-or-pale" />
           <div className="flex gap-2">
             <button
               type="button"
@@ -85,9 +90,9 @@ export default function CheckinPhotoPicker({
               disabled={uploading}
               className="text-xs font-ui text-brun-mid/70 hover:text-red-600 underline"
             >
-              {labelRemove}
+              {resolvedLabelRemove}
             </button>
-            {uploading && <span className="text-xs font-ui text-brun-mid/50">Envoi…</span>}
+            {uploading && <span className="text-xs font-ui text-brun-mid/50">{T({ EN: "Sending…", FR: "Envoi…" })}</span>}
           </div>
         </div>
       ) : (
@@ -97,7 +102,7 @@ export default function CheckinPhotoPicker({
           disabled={uploading}
           className="text-xs font-ui text-or-sacre hover:text-ambre-vif underline underline-offset-4 disabled:opacity-50"
         >
-          {uploading ? "Envoi…" : labelAdd}
+          {uploading ? T({ EN: "Sending…", FR: "Envoi…" }) : resolvedLabelAdd}
         </button>
       )}
       {error && <p className="text-xs font-ui text-red-600">{error}</p>}

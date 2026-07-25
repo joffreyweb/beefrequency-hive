@@ -35,6 +35,7 @@ function formatDate(iso: string, lang: "EN" | "FR"): string {
 }
 
 export default function PhotoLightbox({ photos, index, onClose, onNavigate, lang }: Props) {
+  const T = (k: { EN: string; FR: string }) => k[lang];
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -62,7 +63,7 @@ export default function PhotoLightbox({ photos, index, onClose, onNavigate, lang
           type="button"
           onClick={(e) => { e.stopPropagation(); onClose(); }}
           className="text-white/70 hover:text-white text-2xl w-10 h-10 flex items-center justify-center"
-          aria-label="Close"
+          aria-label={T({ EN: "Close", FR: "Fermer" })}
         >
           ✕
         </button>
@@ -78,7 +79,7 @@ export default function PhotoLightbox({ photos, index, onClose, onNavigate, lang
             type="button"
             onClick={() => onNavigate(index - 1)}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-3xl w-10 h-10 flex items-center justify-center"
-            aria-label="Previous"
+            aria-label={T({ EN: "Previous", FR: "Précédent" })}
           >
             ‹
           </button>
@@ -94,7 +95,7 @@ export default function PhotoLightbox({ photos, index, onClose, onNavigate, lang
             type="button"
             onClick={() => onNavigate(index + 1)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-3xl w-10 h-10 flex items-center justify-center"
-            aria-label="Next"
+            aria-label={T({ EN: "Next", FR: "Suivant" })}
           >
             ›
           </button>

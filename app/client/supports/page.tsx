@@ -11,11 +11,11 @@ const TYPE_ICONS: Record<string, string> = {
   LINK: "\uD83D\uDD17",
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  MUSIC: "Music",
-  VIDEO: "Video",
-  PDF: "PDF",
-  LINK: "Link",
+const TYPE_LABELS: Record<string, { EN: string; FR: string }> = {
+  MUSIC: { EN: "Music", FR: "Musique" },
+  VIDEO: { EN: "Video", FR: "Vidéo" },
+  PDF: { EN: "PDF", FR: "PDF" },
+  LINK: { EN: "Link", FR: "Lien" },
 };
 
 // Page supports côté client — server component
@@ -32,6 +32,9 @@ export default async function ClientSupportsPage() {
 
   if (!client) redirect("/login");
 
+  const lang = client.language === "EN" ? "EN" : "FR";
+  const T = (k: { EN: string; FR: string }) => k[lang];
+
   // Charger les supports du client
   const supports = await prisma.support.findMany({
     where: { clientId: client.id },
@@ -42,17 +45,17 @@ export default async function ClientSupportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          My resources
+          {T({ EN: "My resources", FR: "Mes ressources" })}
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Resources shared with you
+          {T({ EN: "Resources shared with you", FR: "Les ressources partagées avec vous" })}
         </p>
       </div>
 
       {supports.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
           <p className="text-sm font-ui text-brun-mid/60">
-            No resources shared yet
+            {T({ EN: "No resources shared yet", FR: "Aucune ressource partagée pour le moment" })}
           </p>
         </div>
       ) : (
@@ -72,7 +75,7 @@ export default async function ClientSupportsPage() {
                     {support.title}
                   </h3>
                   <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
-                    {TYPE_LABELS[support.type] || support.type}
+                    {TYPE_LABELS[support.type] ? T(TYPE_LABELS[support.type]) : support.type}
                   </p>
                 </div>
               </div>
@@ -91,7 +94,7 @@ export default async function ClientSupportsPage() {
                 rel="noopener noreferrer"
                 className="mt-auto inline-flex items-center gap-1.5 px-3 py-2 bg-or-sacre text-creme-sacree rounded-sharp text-sm font-ui hover:bg-ambre-vif transition-colors text-center justify-center"
               >
-                Access
+                {T({ EN: "Access", FR: "Accéder" })}
                 <svg
                   className="w-3.5 h-3.5"
                   fill="none"

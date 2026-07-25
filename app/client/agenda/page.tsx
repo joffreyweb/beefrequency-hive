@@ -16,6 +16,9 @@ export default async function AgendaPage() {
 
   if (!client) redirect("/login");
 
+  const lang = client.language === "EN" ? "EN" : "FR";
+  const T = (k: { EN: string; FR: string }) => k[lang];
+
   // Calcul du jour dans le parcours
   const dayNumber =
     Math.floor(
@@ -51,14 +54,17 @@ export default async function AgendaPage() {
       {/* Titre */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Jour {dayNumber} de votre parcours
+          {T({
+            EN: `Day ${dayNumber} of your journey`,
+            FR: `Jour ${dayNumber} de votre parcours`,
+          })}
         </h1>
       </div>
 
       {/* Focus du jour */}
       <section className="border border-or-sacre bg-cire-chaude rounded-sm p-5">
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          Focus du jour
+          {T({ EN: "Today's focus", FR: "Focus du jour" })}
         </h2>
         {focus ? (
           <>
@@ -69,7 +75,10 @@ export default async function AgendaPage() {
           </>
         ) : (
           <p className="font-ui text-sm text-brun-mid">
-            Continuez votre chemin avec confiance.
+            {T({
+              EN: "Keep walking your path with confidence.",
+              FR: "Continuez votre chemin avec confiance.",
+            })}
           </p>
         )}
       </section>
@@ -77,12 +86,15 @@ export default async function AgendaPage() {
       {/* Recommandations matin */}
       <section>
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          Recommandations matin
+          {T({ EN: "Morning recommendations", FR: "Recommandations matin" })}
         </h2>
         {morningRecos.length === 0 ? (
           <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
             <p className="text-sm text-brun-mid/60 font-ui">
-              Pas de recommandation pour ce matin.
+              {T({
+                EN: "No recommendation for this morning.",
+                FR: "Pas de recommandation pour ce matin.",
+              })}
             </p>
           </div>
         ) : (
@@ -107,12 +119,15 @@ export default async function AgendaPage() {
       {/* Recommandations soir */}
       <section>
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          Recommandations soir
+          {T({ EN: "Evening recommendations", FR: "Recommandations soir" })}
         </h2>
         {eveningRecos.length === 0 ? (
           <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
             <p className="text-sm text-brun-mid/60 font-ui">
-              Pas de recommandation pour ce soir.
+              {T({
+                EN: "No recommendation for this evening.",
+                FR: "Pas de recommandation pour ce soir.",
+              })}
             </p>
           </div>
         ) : (

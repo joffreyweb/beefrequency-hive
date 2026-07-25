@@ -5,16 +5,16 @@ import { requireOnboarding } from "@/lib/onboarding-guard";
 import SessionChangeButton from "@/components/client/SessionChangeButton";
 
 // Labels lisibles pour les types de session
-const TYPE_LABELS: Record<string, string> = {
-  ONLINE: "Online",
-  PRESENTIAL: "In-person",
-  CEREMONY: "Ceremony",
+const TYPE_LABELS: Record<string, { EN: string; FR: string }> = {
+  ONLINE: { EN: "Online", FR: "En ligne" },
+  PRESENTIAL: { EN: "In-person", FR: "En présentiel" },
+  CEREMONY: { EN: "Ceremony", FR: "Cérémonie" },
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: "Scheduled",
-  COMPLETED: "Completed",
-  CANCELLED: "Cancelled",
+const STATUS_LABELS: Record<string, { EN: string; FR: string }> = {
+  SCHEDULED: { EN: "Scheduled", FR: "Planifiée" },
+  COMPLETED: { EN: "Completed", FR: "Terminée" },
+  CANCELLED: { EN: "Cancelled", FR: "Annulée" },
 };
 
 // Sessions + Agenda client — server component, N'affiche PAS les notes privées
@@ -52,6 +52,13 @@ export default async function ClientSessionsPage() {
   });
 
   if (!client) redirect("/login");
+
+  // Langue du client + helpers de traduction
+  const lang = client.language === "EN" ? "EN" : "FR";
+  const T = (k: { EN: string; FR: string }) => k[lang];
+  const dateLocale = lang === "EN" ? "en-US" : "fr-FR";
+  const typeLabel = (t: string) => (TYPE_LABELS[t] ? T(TYPE_LABELS[t]) : t);
+  const statusLabel = (s: string) => (STATUS_LABELS[s] ? T(STATUS_LABELS[s]) : s);
 
   // Calcul du jour dans le parcours
   const dayNumber =
@@ -97,10 +104,13 @@ export default async function ClientSessionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          My sessions
+          {T({ EN: "My sessions", FR: "Mes séances" })}
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Day {dayNumber} of your journey
+          {T({
+            EN: `Day ${dayNumber} of your journey`,
+            FR: `Jour ${dayNumber} de ton parcours`,
+          })}
         </p>
       </div>
 
@@ -108,7 +118,10 @@ export default async function ClientSessionsPage() {
       {hasRecos && (
         <div>
           <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-            Day {dayNumber} — Recommendations
+            {T({
+              EN: `Day ${dayNumber} — Recommendations`,
+              FR: `Jour ${dayNumber} — Recommandations`,
+            })}
           </h2>
 
           <div className="space-y-3">
@@ -116,7 +129,7 @@ export default async function ClientSessionsPage() {
             {focus && (
               <div className="border border-or-sacre bg-cire-chaude rounded-sm p-5">
                 <p className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-2">
-                  Focus of the day
+                  {T({ EN: "Focus of the day", FR: "Focus du jour" })}
                 </p>
                 <p className="font-display text-lg text-brun-chaud mb-1">
                   {focus.title}
@@ -129,7 +142,7 @@ export default async function ClientSessionsPage() {
             {morningRecos.length > 0 && (
               <div className="bg-cire-chaude border-l-4 border-or-sacre rounded-sm p-5">
                 <p className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-                  Morning
+                  {T({ EN: "Morning", FR: "Matin" })}
                 </p>
                 <div className="space-y-3">
                   {morningRecos.map((reco) => (
@@ -150,7 +163,7 @@ export default async function ClientSessionsPage() {
             {eveningRecos.length > 0 && (
               <div className="bg-cire-chaude border-l-4 border-ambre-vif rounded-sm p-5">
                 <p className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-                  Evening
+                  {T({ EN: "Evening", FR: "Soir" })}
                 </p>
                 <div className="space-y-3">
                   {eveningRecos.map((reco) => (
@@ -174,10 +187,10 @@ export default async function ClientSessionsPage() {
       {nextSession ? (
         <div className="bg-cire-chaude border-2 border-or-sacre rounded-sm p-6">
           <p className="font-caps text-xs text-or-sacre uppercase tracking-widest mb-2">
-            Next session
+            {T({ EN: "Next session", FR: "Prochaine séance" })}
           </p>
           <p className="font-display text-2xl text-brun-chaud">
-            {new Date(nextSession.scheduledAt).toLocaleDateString("en-US", {
+            {new Date(nextSession.scheduledAt).toLocaleDateString(dateLocale, {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -185,17 +198,16 @@ export default async function ClientSessionsPage() {
             })}
           </p>
           <p className="text-sm font-ui text-brun-mid mt-1">
-            {new Date(nextSession.scheduledAt).toLocaleTimeString("en-US", {
+            {new Date(nextSession.scheduledAt).toLocaleTimeString(dateLocale, {
               hour: "2-digit",
               minute: "2-digit",
             })}{" "}
-            — {TYPE_LABELS[nextSession.type] || nextSession.type} ·{" "}
+            — {typeLabel(nextSession.type)} ·{" "}
             {nextSession.duration} min
           </p>
           <SessionChangeButton
             sessionId={nextSession.id}
             changesUsed={nextSession.changesUsed}
-            lang={client.language}
           />
           {/* Bouton Zoom — visible 30 min avant jusqu'à 2h après le début */}
           {nextSession.zoomLink && (() => {
@@ -211,7 +223,7 @@ export default async function ClientSessionsPage() {
                 rel="noopener noreferrer"
                 className="inline-block mt-3 px-4 py-2 text-sm font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
               >
-                Join session
+                {T({ EN: "Join session", FR: "Rejoindre la séance" })}
               </a>
             ) : null;
           })()}
@@ -219,7 +231,7 @@ export default async function ClientSessionsPage() {
       ) : (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
           <p className="text-sm font-ui text-brun-mid/60">
-            No sessions scheduled
+            {T({ EN: "No sessions scheduled", FR: "Aucune séance planifiée" })}
           </p>
         </div>
       )}
@@ -228,7 +240,7 @@ export default async function ClientSessionsPage() {
       {upcoming.length > 0 && (
         <div>
           <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-            Upcoming ({upcoming.length})
+            {T({ EN: "Upcoming", FR: "À venir" })} ({upcoming.length})
           </h2>
           <div className="space-y-2">
             {upcoming.map((s) => (
@@ -238,14 +250,14 @@ export default async function ClientSessionsPage() {
               >
                 <div>
                   <p className="text-sm font-ui text-brun-chaud">
-                    {new Date(s.scheduledAt).toLocaleDateString("en-US", {
+                    {new Date(s.scheduledAt).toLocaleDateString(dateLocale, {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
                     })}
                   </p>
                   <p className="text-xs font-ui text-brun-mid/60 mt-0.5">
-                    {TYPE_LABELS[s.type] || s.type} · {s.duration} min
+                    {typeLabel(s.type)} · {s.duration} min
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -261,12 +273,12 @@ export default async function ClientSessionsPage() {
                         rel="noopener noreferrer"
                         className="px-3 py-1.5 text-xs font-caps uppercase tracking-wider bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150"
                       >
-                        Join session
+                        {T({ EN: "Join session", FR: "Rejoindre la séance" })}
                       </a>
                     ) : null;
                   })()}
                   <p className="text-sm font-ui text-or-sacre">
-                    {new Date(s.scheduledAt).toLocaleTimeString("en-US", {
+                    {new Date(s.scheduledAt).toLocaleTimeString(dateLocale, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -281,12 +293,12 @@ export default async function ClientSessionsPage() {
       {/* Historique */}
       <div>
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-          History ({history.length})
+          {T({ EN: "History", FR: "Historique" })} ({history.length})
         </h2>
 
         {history.length === 0 ? (
           <p className="text-sm text-brun-mid/60 font-ui">
-            No past sessions
+            {T({ EN: "No past sessions", FR: "Aucune séance passée" })}
           </p>
         ) : (
           <div className="space-y-2">
@@ -297,14 +309,14 @@ export default async function ClientSessionsPage() {
               >
                 <div>
                   <p className="text-sm font-ui text-brun-mid">
-                    {new Date(s.scheduledAt).toLocaleDateString("en-US", {
+                    {new Date(s.scheduledAt).toLocaleDateString(dateLocale, {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
                     })}
                   </p>
                   <p className="text-xs font-ui text-brun-mid/50 mt-0.5">
-                    {TYPE_LABELS[s.type] || s.type} · {s.duration} min
+                    {typeLabel(s.type)} · {s.duration} min
                   </p>
                 </div>
                 <span
@@ -316,7 +328,7 @@ export default async function ClientSessionsPage() {
                         : "bg-or-sacre/10 text-or-sacre"
                   }`}
                 >
-                  {STATUS_LABELS[s.status] || s.status}
+                  {statusLabel(s.status)}
                 </span>
               </div>
             ))}

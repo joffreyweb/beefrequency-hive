@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 // Contenu JSON parsé d'une pratique de type BREATHING
 interface BreathingContent {
@@ -27,11 +28,11 @@ interface BreathingPlayerProps {
 type Phase = "inhale" | "hold1" | "exhale" | "hold2";
 
 // Textes de guidance selon la phase en cours
-const PHASE_LABELS: Record<Phase, string> = {
-  inhale: "Inspirez...",
-  hold1: "Retenez...",
-  exhale: "Expirez...",
-  hold2: "Retenez...",
+const PHASE_LABELS: Record<Phase, { EN: string; FR: string }> = {
+  inhale: { EN: "Breathe in...", FR: "Inspirez..." },
+  hold1: { EN: "Hold...", FR: "Retenez..." },
+  exhale: { EN: "Breathe out...", FR: "Expirez..." },
+  hold2: { EN: "Hold...", FR: "Retenez..." },
 };
 
 // Ordre des phases dans un cycle complet
@@ -70,6 +71,8 @@ export default function BreathingPlayer({
   onComplete,
   onClose,
 }: BreathingPlayerProps) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   // Parse le contenu JSON de la pratique
   let content: BreathingContent;
   try {
@@ -303,17 +306,17 @@ export default function BreathingPlayer({
         />
 
         <h2 className="font-display text-2xl text-or-sacre mb-3">
-          Pratique terminée
+          {T({ EN: "Practice complete", FR: "Pratique terminée" })}
         </h2>
         <p className="font-ui text-cire-chaude mb-8">
-          {totalCycles} cycles complétés
+          {totalCycles} {T({ EN: "cycles completed", FR: "cycles complétés" })}
         </p>
 
         <button
           onClick={onClose}
           className="px-8 py-3 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity"
         >
-          Fermer
+          {T({ EN: "Close", FR: "Fermer" })}
         </button>
       </div>
     );
@@ -326,7 +329,7 @@ export default function BreathingPlayer({
       <button
         onClick={onClose}
         className="absolute top-6 right-6 text-cire-chaude/60 hover:text-cire-chaude transition-colors text-2xl font-ui"
-        aria-label="Fermer"
+        aria-label={T({ EN: "Close", FR: "Fermer" })}
       >
         ✕
       </button>
@@ -335,7 +338,7 @@ export default function BreathingPlayer({
       <button
         onClick={() => setSoundEnabled(!soundEnabled)}
         className="absolute top-6 left-6 text-cire-chaude/60 hover:text-cire-chaude transition-colors text-lg font-ui"
-        aria-label={soundEnabled ? "Couper le son" : "Activer le son"}
+        aria-label={soundEnabled ? T({ EN: "Mute sound", FR: "Couper le son" }) : T({ EN: "Enable sound", FR: "Activer le son" })}
       >
         {soundEnabled ? "🔔" : "🔕"}
       </button>
@@ -359,7 +362,7 @@ export default function BreathingPlayer({
 
       {/* Texte de guidance */}
       <p className="font-display text-lg text-cire-chaude mb-4">
-        {PHASE_LABELS[phase]}
+        {T(PHASE_LABELS[phase])}
       </p>
 
       {/* Guidance text personnalisé si fourni */}
@@ -371,7 +374,7 @@ export default function BreathingPlayer({
 
       {/* Compteur de cycles */}
       <p className="font-ui text-sm text-or-pale mb-16">
-        Cycle {currentCycle} sur {totalCycles}
+        Cycle {currentCycle} {T({ EN: "of", FR: "sur" })} {totalCycles}
       </p>
 
       {/* Barre de progression globale */}

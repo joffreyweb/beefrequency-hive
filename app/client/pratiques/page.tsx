@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import BreathingPlayer from "@/components/client/BreathingPlayer";
 import VideoPlayer from "@/components/client/VideoPlayer";
+import { useLanguage } from "@/lib/LanguageContext";
 
 // Types pour les données de l'API
 interface Practice {
@@ -47,10 +48,10 @@ interface AuthUser {
 }
 
 // Badge selon le type de pratique
-const TYPE_BADGES: Record<string, { emoji: string; label: string }> = {
-  BREATHING: { emoji: "🫁", label: "Respiration" },
-  VIDEO: { emoji: "🎬", label: "Vidéo" },
-  MEDITATION: { emoji: "🧘", label: "Méditation" },
+const TYPE_BADGES: Record<string, { emoji: string; label: { EN: string; FR: string } }> = {
+  BREATHING: { emoji: "🫁", label: { EN: "Breathing", FR: "Respiration" } },
+  VIDEO: { emoji: "🎬", label: { EN: "Video", FR: "Vidéo" } },
+  MEDITATION: { emoji: "🧘", label: { EN: "Meditation", FR: "Méditation" } },
 };
 
 /**
@@ -70,8 +71,8 @@ function isToday(dateStr: string | null): boolean {
 /**
  * Formater une date en format lisible français.
  */
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
+function formatDate(dateStr: string, lang: string): string {
+  return new Date(dateStr).toLocaleDateString(lang === "EN" ? "en-US" : "fr-FR", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -84,6 +85,8 @@ function formatDate(dateStr: string): string {
  * Permet de lancer un player (BreathingPlayer / VideoPlayer) selon le type.
  */
 export default function ClientPratiquesPage() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [practices, setPractices] = useState<ClientPractice[]>([]);
   const [phasePractices, setPhasePractices] = useState<PhasePractice[]>([]);
   const [phaseInfo, setPhaseInfo] = useState<PhaseInfo | null>(null);
@@ -187,7 +190,7 @@ export default function ClientPratiquesPage() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-brun-mid font-ui text-sm">
-          Chargement de tes pratiques...
+          {T({ EN: "Loading your practices...", FR: "Chargement de tes pratiques..." })}
         </div>
       </div>
     );
@@ -201,7 +204,7 @@ export default function ClientPratiquesPage() {
           onClick={loadData}
           className="px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity"
         >
-          Réessayer
+          {T({ EN: "Try again", FR: "Réessayer" })}
         </button>
       </div>
     );
@@ -235,13 +238,13 @@ export default function ClientPratiquesPage() {
       <div>
         {/* Titre de la page */}
         <h1 className="font-display text-2xl text-brun-chaud mb-8">
-          Pratiques
+          {T({ EN: "Practices", FR: "Pratiques" })}
         </h1>
 
         {/* Day of journey */}
         {dayNumber !== null && (
           <p className="font-ui text-sm text-brun-mid mb-6">
-            Jour {dayNumber} de ton parcours
+            {T({ EN: `Day ${dayNumber} of your journey`, FR: `Jour ${dayNumber} de ton parcours` })}
           </p>
         )}
 
@@ -249,14 +252,14 @@ export default function ClientPratiquesPage() {
         {phasePractices.length > 0 && (
           <section className="mb-10">
             <h2 className="font-display text-lg text-brun-chaud mb-1">
-              {phaseInfo?.customName || "Phase actuelle"}
+              {phaseInfo?.customName || T({ EN: "Current phase", FR: "Phase actuelle" })}
             </h2>
-            <p className="font-ui text-xs text-brun-mid/60 mb-4">Pratiques de ta phase</p>
+            <p className="font-ui text-xs text-brun-mid/60 mb-4">{T({ EN: "Practices for your phase", FR: "Pratiques de ta phase" })}</p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {phasePractices.map((pp) => (
                 <div key={pp.id} className="bg-cire-chaude border border-or-pale rounded-sm p-5 flex flex-col gap-3">
                   <span className="font-caps text-xs text-or-sacre tracking-wider uppercase">
-                    {TYPE_BADGES[pp.type]?.emoji ?? "📋"} {TYPE_BADGES[pp.type]?.label ?? pp.type}
+                    {TYPE_BADGES[pp.type]?.emoji ?? "📋"} {T(TYPE_BADGES[pp.type]?.label ?? { EN: pp.type, FR: pp.type })}
                   </span>
                   <h3 className="font-display text-lg text-brun-chaud leading-snug">{pp.title}</h3>
                   {pp.description && (
@@ -264,7 +267,7 @@ export default function ClientPratiquesPage() {
                   )}
                   <div className="font-ui text-xs text-brun-mid/70 flex items-center gap-2">
                     {pp.duration && <span>{pp.duration} min</span>}
-                    <span>{pp.frequency === "DAILY" ? "Quotidien" : "Jours spécifiques"}</span>
+                    <span>{pp.frequency === "DAILY" ? T({ EN: "Daily", FR: "Quotidien" }) : T({ EN: "Specific days", FR: "Jours spécifiques" })}</span>
                   </div>
                 </div>
               ))}
@@ -275,12 +278,12 @@ export default function ClientPratiquesPage() {
         {/* Section Aujourd'hui (pratiques individuelles) */}
         <section className="mb-10">
           <h2 className="font-display text-lg text-brun-chaud mb-4">
-            Aujourd&apos;hui
+            {T({ EN: "Today", FR: "Aujourd'hui" })}
           </h2>
 
           {todayPractices.length === 0 && phasePractices.length === 0 ? (
             <p className="font-ui text-sm text-brun-mid">
-              Aucune pratique assignée pour le moment.
+              {T({ EN: "No practice assigned yet.", FR: "Aucune pratique assignée pour le moment." })}
             </p>
           ) : todayPractices.length === 0 ? null : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -304,10 +307,10 @@ export default function ClientPratiquesPage() {
 }
 
 const LIBRARY_CATEGORIES = [
-  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: "Respiration" },
-  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: "Méditation" },
-  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: "Mouvement" },
-  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: "Rituel" },
+  { key: "RESPIRATION", emoji: "\uD83E\uDEC1", label: { EN: "Breathing", FR: "Respiration" } },
+  { key: "MEDITATION", emoji: "\uD83C\uDF3F", label: { EN: "Meditation", FR: "Méditation" } },
+  { key: "MOUVEMENT", emoji: "\uD83C\uDF2A\uFE0F", label: { EN: "Movement", FR: "Mouvement" } },
+  { key: "RITUAL", emoji: "\uD83D\uDE2E\u200D\uD83D\uDCA8", label: { EN: "Ritual", FR: "Rituel" } },
 ];
 
 interface LibPractice {
@@ -319,6 +322,8 @@ interface LibPractice {
 }
 
 function LibrarySection() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [libPractices, setLibPractices] = useState<LibPractice[]>([]);
   const [libLoading, setLibLoading] = useState(false);
@@ -345,7 +350,7 @@ function LibrarySection() {
 
   return (
     <section>
-      <h2 className="font-display text-lg text-brun-chaud mb-4">Bibliothèque</h2>
+      <h2 className="font-display text-lg text-brun-chaud mb-4">{T({ EN: "Library", FR: "Bibliothèque" })}</h2>
       <div className="grid grid-cols-2 gap-3 mb-4">
         {LIBRARY_CATEGORIES.map((cat) => (
           <button
@@ -358,7 +363,7 @@ function LibrarySection() {
             }`}
           >
             <span className="text-xl">{cat.emoji}</span>
-            <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
+            <span className="font-ui text-sm text-brun-chaud">{T(cat.label)}</span>
           </button>
         ))}
       </div>
@@ -366,9 +371,9 @@ function LibrarySection() {
       {selectedCat && (
         <div className="mt-2">
           {libLoading ? (
-            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Chargement...</p>
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">{T({ EN: "Loading...", FR: "Chargement..." })}</p>
           ) : libPractices.length === 0 ? (
-            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">Rien ici pour le moment.</p>
+            <p className="text-sm font-ui text-brun-mid/60 text-center py-4">{T({ EN: "Nothing here yet.", FR: "Rien ici pour le moment." })}</p>
           ) : (
             <div className="space-y-3">
               {libPractices.map((p) => (
@@ -393,8 +398,10 @@ interface PracticeCardProps {
 }
 
 function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const { practice, completedCount, lastCompletedAt } = clientPractice;
-  const badge = TYPE_BADGES[practice.type] ?? { emoji: "📋", label: practice.type };
+  const badge = TYPE_BADGES[practice.type] ?? { emoji: "📋", label: { EN: practice.type, FR: practice.type } };
   const completedToday = isToday(lastCompletedAt);
 
   return (
@@ -402,7 +409,7 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
       {/* Badge type + checkmark si complété aujourd'hui */}
       <div className="flex items-center justify-between">
         <span className="font-caps text-xs text-or-sacre tracking-wider uppercase">
-          {badge.emoji} {badge.label}
+          {badge.emoji} {T(badge.label)}
         </span>
         {completedToday && (
           <span className="text-foret font-ui text-sm font-semibold">✓</span>
@@ -421,11 +428,11 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
 
       {/* Stats */}
       <div className="font-ui text-xs text-brun-mid/70 flex items-center gap-2 flex-wrap">
-        <span>Complété {completedCount} fois</span>
+        <span>{T({ EN: `Completed ${completedCount} times`, FR: `Complété ${completedCount} fois` })}</span>
         {lastCompletedAt && (
           <>
             <span>·</span>
-            <span>Dernier : {formatDate(lastCompletedAt)}</span>
+            <span>{T({ EN: `Last: ${formatDate(lastCompletedAt, lang)}`, FR: `Dernier : ${formatDate(lastCompletedAt, lang)}` })}</span>
           </>
         )}
       </div>
@@ -442,7 +449,7 @@ function PracticeCard({ clientPractice, onStart }: PracticeCardProps) {
         onClick={onStart}
         className="mt-auto px-4 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity self-start"
       >
-        {completedToday ? "Refaire" : "Commencer"}
+        {completedToday ? T({ EN: "Do again", FR: "Refaire" }) : T({ EN: "Start", FR: "Commencer" })}
       </button>
     </div>
   );

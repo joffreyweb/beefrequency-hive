@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/LanguageContext";
 import {
   CLARITY_MAPS,
   LAYER_META,
@@ -25,6 +26,9 @@ export default function ClarityFill({
   initialAnswers: Record<string, string>;
   initialStatus: string;
 }) {
+  const { lang } = useLanguage();
+  const T = (key: { EN: string; FR: string }) => key[lang];
+
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [cardIdx, setCardIdx] = useState(0);
   const [status, setStatus] = useState(initialStatus);
@@ -35,15 +39,18 @@ export default function ClarityFill({
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <div className="text-4xl mb-4">🐝</div>
-        <h1 className="font-display text-3xl text-brun-chaud mb-3">Merci.</h1>
+        <h1 className="font-display text-3xl text-brun-chaud mb-3">{T({ EN: "Thank you.", FR: "Merci." })}</h1>
         <p className="font-ui text-brun-mid mb-8">
-          Ton Clarity est soumis. Joffrey va préparer ta synthèse — tu seras prévenu·e dès qu'elle est prête.
+          {T({
+            EN: "Your Clarity is submitted. Joffrey will prepare your synthesis — you'll be notified as soon as it's ready.",
+            FR: "Ton Clarity est soumis. Joffrey va préparer ta synthèse — tu seras prévenu·e dès qu'elle est prête.",
+          })}
         </p>
         <Link
           href="/client/home"
           className="inline-block px-6 py-2.5 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors"
         >
-          Retour à l'accueil
+          {T({ EN: "Back to home", FR: "Retour à l'accueil" })}
         </Link>
       </div>
     );
@@ -99,7 +106,7 @@ export default function ClarityFill({
       if (!res.ok) throw new Error();
       return true;
     } catch {
-      setMsg("Échec de la sauvegarde — vérifie ta connexion et réessaie.");
+      setMsg(T({ EN: "Save failed — check your connection and try again.", FR: "Échec de la sauvegarde — vérifie ta connexion et réessaie." }));
       return false;
     } finally {
       setSaving(false);
@@ -108,7 +115,7 @@ export default function ClarityFill({
 
   async function goNext() {
     if (!currentCardComplete) {
-      setMsg("Réponds à toutes les questions de cette carte pour continuer.");
+      setMsg(T({ EN: "Answer all the questions on this card to continue.", FR: "Réponds à toutes les questions de cette carte pour continuer." }));
       return;
     }
     const ok = await saveCard();
@@ -125,7 +132,7 @@ export default function ClarityFill({
 
   async function submit() {
     if (!currentCardComplete) {
-      setMsg("Réponds à toutes les questions pour soumettre.");
+      setMsg(T({ EN: "Answer all the questions to submit.", FR: "Réponds à toutes les questions pour soumettre." }));
       return;
     }
     const ok = await saveCard();
@@ -137,7 +144,7 @@ export default function ClarityFill({
       if (!res.ok) throw new Error();
       setStatus("SUBMITTED");
     } catch {
-      setMsg("Échec de la soumission — réessaie dans un instant.");
+      setMsg(T({ EN: "Submission failed — try again in a moment.", FR: "Échec de la soumission — réessaie dans un instant." }));
     } finally {
       setSaving(false);
     }
@@ -151,7 +158,7 @@ export default function ClarityFill({
             Clarity by Beefrequency
           </span>
           <span className="font-ui text-xs text-brun-mid/70">
-            {answeredCount}/{CLARITY_TOTAL_QUESTIONS} réponses
+            {answeredCount}/{CLARITY_TOTAL_QUESTIONS} {T({ EN: "answers", FR: "réponses" })}
           </span>
         </div>
         <div className="flex gap-1.5">
@@ -167,10 +174,10 @@ export default function ClarityFill({
       <header className="text-center mb-8">
         <div className="text-3xl mb-2">{card.emoji}</div>
         <p className="font-caps text-xs uppercase tracking-widest text-or-sacre mb-1">
-          Carte {card.num} · {card.label}
+          {T({ EN: "Card", FR: "Carte" })} {card.num} · {T(card.label)}
         </p>
-        <h1 className="font-display text-3xl text-brun-chaud mb-2">{card.subtitle}</h1>
-        <p className="font-ui text-sm text-brun-mid max-w-xl mx-auto">{card.desc}</p>
+        <h1 className="font-display text-3xl text-brun-chaud mb-2">{T(card.subtitle)}</h1>
+        <p className="font-ui text-sm text-brun-mid max-w-xl mx-auto">{T(card.desc)}</p>
       </header>
 
       <div className="space-y-8">
@@ -179,8 +186,8 @@ export default function ClarityFill({
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-lg">{section.icon}</span>
               <div>
-                <h2 className="font-display text-xl text-brun-chaud leading-tight">{section.title}</h2>
-                <p className="font-ui text-xs text-brun-mid/70">{section.sub}</p>
+                <h2 className="font-display text-xl text-brun-chaud leading-tight">{T(section.title)}</h2>
+                <p className="font-ui text-xs text-brun-mid/70">{T(section.sub)}</p>
               </div>
             </div>
 
@@ -191,16 +198,16 @@ export default function ClarityFill({
                   <div key={qIdx}>
                     <label className="block mb-1.5">
                       <span className={`font-caps text-[10px] uppercase tracking-wider ${LAYER_ACCENT[q.layer]}`}>
-                        {LAYER_META[q.layer].label}
+                        {T(LAYER_META[q.layer].label)}
                       </span>
-                      <span className="block font-ui text-sm text-brun-chaud mt-1">{q.text}</span>
+                      <span className="block font-ui text-sm text-brun-chaud mt-1">{T(q.text)}</span>
                     </label>
                     <textarea
                       value={typeof answers[key] === "string" ? answers[key] : ""}
                       onChange={(e) => setAnswer(key, e.target.value)}
                       rows={3}
                       className="w-full rounded-[8px] border border-or-pale bg-creme-sacree px-3 py-2 font-ui text-sm text-brun-chaud placeholder:text-brun-mid/40 focus:outline-none focus:border-or-sacre resize-y"
-                      placeholder="Prends le temps qu'il te faut…"
+                      placeholder={T({ EN: "Take all the time you need…", FR: "Prends le temps qu'il te faut…" })}
                     />
                   </div>
                 );
@@ -213,7 +220,7 @@ export default function ClarityFill({
       {msg && <p className="mt-5 text-center font-ui text-sm text-red-600">{msg}</p>}
       {!currentCardComplete && !msg && (
         <p className="mt-5 text-center font-ui text-xs text-brun-mid/60">
-          Réponds à toutes les questions de cette carte pour continuer.
+          {T({ EN: "Answer all the questions on this card to continue.", FR: "Réponds à toutes les questions de cette carte pour continuer." })}
         </p>
       )}
 
@@ -223,11 +230,11 @@ export default function ClarityFill({
           disabled={cardIdx === 0 || saving}
           className="px-4 py-2.5 rounded-sharp border border-or-pale text-brun-mid font-ui text-sm disabled:opacity-40"
         >
-          ← Précédent
+          ← {T({ EN: "Previous", FR: "Précédent" })}
         </button>
 
         <span className="font-ui text-xs text-brun-mid/60">
-          Carte {cardIdx + 1} / {totalCards}
+          {T({ EN: "Card", FR: "Carte" })} {cardIdx + 1} / {totalCards}
         </span>
 
         {isLast ? (
@@ -236,7 +243,7 @@ export default function ClarityFill({
             disabled={saving || !currentCardComplete}
             className="px-6 py-2.5 rounded-sharp bg-or-sacre text-white font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
-            {saving ? "…" : "Soumettre mon Clarity"}
+            {saving ? "…" : T({ EN: "Submit my Clarity", FR: "Soumettre mon Clarity" })}
           </button>
         ) : (
           <button
@@ -244,13 +251,13 @@ export default function ClarityFill({
             disabled={saving || !currentCardComplete}
             className="px-6 py-2.5 rounded-sharp bg-or-sacre text-white font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
           >
-            {saving ? "…" : "Enregistrer et continuer →"}
+            {saving ? "…" : T({ EN: "Save and continue →", FR: "Enregistrer et continuer →" })}
           </button>
         )}
       </div>
 
       <p className="mt-6 text-center font-ui text-xs text-brun-mid/50">
-        Tes réponses sont enregistrées à chaque étape. Tu peux revenir plus tard.
+        {T({ EN: "Your answers are saved at every step. You can come back later.", FR: "Tes réponses sont enregistrées à chaque étape. Tu peux revenir plus tard." })}
       </p>
     </div>
   );

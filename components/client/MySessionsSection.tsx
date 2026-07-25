@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface SessionItem {
   id: string;
@@ -9,10 +10,10 @@ interface SessionItem {
   fromPack: boolean;
 }
 
-export default function MySessionsSection({ lang }: { lang: string }) {
+export default function MySessionsSection() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [data, setData] = useState<{ totalSessions: number; usedCount: number; remaining: number; sessions: SessionItem[] } | null>(null);
-
-  const isFR = lang === "FR";
 
   useEffect(() => {
     fetch("/api/client/session-packs")
@@ -28,7 +29,7 @@ export default function MySessionsSection({ lang }: { lang: string }) {
   return (
     <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-4">
       <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid">
-        {isFR ? "Mes seances" : "My sessions"}
+        {T({ EN: "My sessions", FR: "Mes seances" })}
       </h2>
 
       {/* Counter */}
@@ -37,7 +38,7 @@ export default function MySessionsSection({ lang }: { lang: string }) {
           {data.remaining}
         </p>
         <p className="font-ui text-sm text-brun-mid mt-1">
-          {isFR ? "seances restantes" : "sessions remaining"}
+          {T({ EN: "sessions remaining", FR: "seances restantes" })}
         </p>
       </div>
 
@@ -50,18 +51,18 @@ export default function MySessionsSection({ lang }: { lang: string }) {
       </div>
 
       <div className="flex justify-between text-xs font-ui text-brun-mid/60">
-        <span>{data.usedCount} {isFR ? "utilisees" : "used"}</span>
-        <span>{data.totalSessions} {isFR ? "total prepayees" : "total prepaid"}</span>
+        <span>{data.usedCount} {T({ EN: "used", FR: "utilisees" })}</span>
+        <span>{data.totalSessions} {T({ EN: "total prepaid", FR: "total prepayees" })}</span>
       </div>
 
       {/* Session history */}
       {data.sessions.length > 0 && (
         <div className="space-y-1.5 pt-2 border-t border-or-pale/30">
-          <p className="text-xs font-ui text-brun-mid/60 mb-2">{isFR ? "Historique" : "History"}</p>
+          <p className="text-xs font-ui text-brun-mid/60 mb-2">{T({ EN: "History", FR: "Historique" })}</p>
           {data.sessions.slice(0, 10).map((s) => (
             <div key={s.id} className="flex items-center justify-between py-1.5">
               <p className="text-sm font-ui text-brun-chaud">
-                {new Date(s.scheduledAt).toLocaleDateString(isFR ? "fr-FR" : "en-US", { day: "numeric", month: "short" })}
+                {new Date(s.scheduledAt).toLocaleDateString(lang === "EN" ? "en-US" : "fr-FR", { day: "numeric", month: "short" })}
               </p>
               <p className="text-xs font-ui text-brun-mid/50">{s.durationMin} min</p>
             </div>

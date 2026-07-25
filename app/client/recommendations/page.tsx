@@ -4,13 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { requireOnboarding } from "@/lib/onboarding-guard";
 
 // Labels lisibles pour chaque catégorie
-const CATEGORY_LABELS: Record<string, string> = {
-  EAU: "Water",
-  COMPLEMENTS: "Supplements",
-  OUTILS: "Tools",
-  SOINS: "Care",
-  APITHERAPIE: "Apitherapy",
-  AUTRE: "Other",
+const CATEGORY_LABELS: Record<string, { EN: string; FR: string }> = {
+  EAU: { EN: "Water", FR: "Eau" },
+  COMPLEMENTS: { EN: "Supplements", FR: "Compléments" },
+  OUTILS: { EN: "Tools", FR: "Outils" },
+  SOINS: { EN: "Care", FR: "Soins" },
+  APITHERAPIE: { EN: "Apitherapy", FR: "Apithérapie" },
+  AUTRE: { EN: "Other", FR: "Autre" },
 };
 
 // Couleurs de badge par catégorie — nuances subtiles
@@ -36,6 +36,9 @@ export default async function ClientRecommendationsPage() {
   });
 
   if (!client) redirect("/login");
+
+  const lang = client.language === "EN" ? "EN" : "FR";
+  const T = (k: { EN: string; FR: string }) => k[lang];
 
   // Recommandations personnelles
   const personal = await prisma.clientRecommendation.findMany({
@@ -67,10 +70,13 @@ export default async function ClientRecommendationsPage() {
       {/* En-tête */}
       <div>
         <h1 className="font-display text-2xl text-brun-chaud">
-          From Joffrey
+          {T({ EN: "From Joffrey", FR: "De Joffrey" })}
         </h1>
         <p className="font-ui text-sm text-brun-mid mt-1">
-          Resources selected for your journey
+          {T({
+            EN: "Resources selected for your journey",
+            FR: "Des ressources choisies pour votre parcours",
+          })}
         </p>
       </div>
 
@@ -78,7 +84,7 @@ export default async function ClientRecommendationsPage() {
       {personal.length > 0 && (
         <section className="space-y-4">
           <h2 className="font-display text-lg text-brun-chaud">
-            Selected for you
+            {T({ EN: "Selected for you", FR: "Sélectionnées pour vous" })}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {personal.map((cr) => {
@@ -92,7 +98,7 @@ export default async function ClientRecommendationsPage() {
                   <span
                     className={`inline-block self-start text-xs font-caps uppercase tracking-wider px-2 py-0.5 rounded-sharp mb-3 ${CATEGORY_BADGE_CLASSES[reco.category] || "bg-or-sacre/10 text-or-sacre"}`}
                   >
-                    {CATEGORY_LABELS[reco.category] || reco.category}
+                    {CATEGORY_LABELS[reco.category] ? T(CATEGORY_LABELS[reco.category]) : reco.category}
                   </span>
 
                   {/* Titre */}
@@ -104,7 +110,7 @@ export default async function ClientRecommendationsPage() {
                   {cr.note && (
                     <div className="mb-3">
                       <span className="font-caps text-xs text-brun-mid tracking-wider">
-                        Note from Joffrey:
+                        {T({ EN: "Note from Joffrey:", FR: "Note de Joffrey :" })}
                       </span>
                       <p className="italic text-sm text-brun-mid mt-0.5">
                         {cr.note}
@@ -127,7 +133,7 @@ export default async function ClientRecommendationsPage() {
                       rel="noopener noreferrer"
                       className="mt-auto inline-flex items-center gap-1 text-sm text-or-sacre hover:text-ambre-vif transition-colors font-ui"
                     >
-                      Discover
+                      {T({ EN: "Discover", FR: "Découvrir" })}
                       <span aria-hidden="true">&rarr;</span>
                     </a>
                   )}
@@ -142,13 +148,13 @@ export default async function ClientRecommendationsPage() {
       {Object.keys(globalByCategory).length > 0 && (
         <section className="space-y-6">
           <h2 className="font-display text-lg text-brun-chaud">
-            General catalogue
+            {T({ EN: "General catalogue", FR: "Catalogue général" })}
           </h2>
 
           {Object.entries(globalByCategory).map(([category, recos]) => (
             <div key={category} className="space-y-3">
               <h3 className="font-caps text-xs uppercase tracking-wider text-brun-mid">
-                {CATEGORY_LABELS[category] || category}
+                {CATEGORY_LABELS[category] ? T(CATEGORY_LABELS[category]) : category}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recos.map((reco) => (
@@ -160,7 +166,7 @@ export default async function ClientRecommendationsPage() {
                     <span
                       className={`inline-block self-start text-xs font-caps uppercase tracking-wider px-2 py-0.5 rounded-sharp mb-3 ${CATEGORY_BADGE_CLASSES[reco.category] || "bg-or-sacre/10 text-or-sacre"}`}
                     >
-                      {CATEGORY_LABELS[reco.category] || reco.category}
+                      {CATEGORY_LABELS[reco.category] ? T(CATEGORY_LABELS[reco.category]) : reco.category}
                     </span>
 
                     {/* Titre */}
@@ -199,7 +205,7 @@ export default async function ClientRecommendationsPage() {
       {personal.length === 0 && global.length === 0 && (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-6 text-center">
           <p className="text-sm font-ui text-brun-mid/60">
-            No recommendations yet
+            {T({ EN: "No recommendations yet", FR: "Aucune recommandation pour le moment" })}
           </p>
         </div>
       )}

@@ -2,22 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface SessionChangeButtonProps {
   sessionId: string;
   changesUsed: number;
-  lang: string;
 }
 
-export default function SessionChangeButton({ sessionId, changesUsed, lang }: SessionChangeButtonProps) {
+export default function SessionChangeButton({ sessionId, changesUsed }: SessionChangeButtonProps) {
   const router = useRouter();
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
 
-  const isFR = lang === "FR";
   const maxReached = changesUsed >= 1;
 
   async function handleSubmit() {
@@ -43,7 +44,7 @@ export default function SessionChangeButton({ sessionId, changesUsed, lang }: Se
   if (maxReached) {
     return (
       <p className="text-xs font-ui text-brun-mid/40 mt-2">
-        {isFR ? "Changement deja utilise" : "Change already used"}
+        {T({ EN: "Change already used", FR: "Changement deja utilise" })}
       </p>
     );
   }
@@ -54,31 +55,32 @@ export default function SessionChangeButton({ sessionId, changesUsed, lang }: Se
         onClick={() => setOpen(true)}
         className="text-xs font-ui text-or-sacre hover:text-ambre-vif underline mt-2"
       >
-        {isFR ? "Demander un changement de creneau" : "Request schedule change"}
+        {T({ EN: "Request schedule change", FR: "Demander un changement de creneau" })}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-creme-sacree border border-or-pale rounded-[10px] p-6 w-full max-w-sm shadow-xl">
             <h3 className="font-display text-lg text-brun-chaud mb-3">
-              {isFR ? "Demande de changement" : "Change request"}
+              {T({ EN: "Change request", FR: "Demande de changement" })}
             </h3>
             <p className="text-xs font-ui text-brun-mid mb-4">
-              {isFR
-                ? "Tu as droit a 1 changement sur les 3 mois. Joffrey validera ta demande."
-                : "You have 1 change allowed over the 3 months. Joffrey will review your request."}
+              {T({
+                EN: "You have 1 change allowed over the 3 months. Joffrey will review your request.",
+                FR: "Tu as droit a 1 changement sur les 3 mois. Joffrey validera ta demande.",
+              })}
             </p>
 
             {result === "success" ? (
               <p className="text-sm font-ui text-foret text-center py-4">
-                {isFR ? "Demande envoyee !" : "Request sent!"}
+                {T({ EN: "Request sent!", FR: "Demande envoyee !" })}
               </p>
             ) : (
               <>
                 <div className="space-y-3 mb-4">
                   <div>
                     <label className="block text-xs font-ui text-brun-mid/60 mb-1">
-                      {isFR ? "Nouvelle date souhaitee" : "Requested new date"}
+                      {T({ EN: "Requested new date", FR: "Nouvelle date souhaitee" })}
                     </label>
                     <input
                       type="datetime-local"
@@ -89,7 +91,7 @@ export default function SessionChangeButton({ sessionId, changesUsed, lang }: Se
                   </div>
                   <div>
                     <label className="block text-xs font-ui text-brun-mid/60 mb-1">
-                      {isFR ? "Raison (optionnel)" : "Reason (optional)"}
+                      {T({ EN: "Reason (optional)", FR: "Raison (optionnel)" })}
                     </label>
                     <textarea
                       value={reason}
@@ -102,7 +104,7 @@ export default function SessionChangeButton({ sessionId, changesUsed, lang }: Se
 
                 {result === "error" && (
                   <p className="text-xs font-ui text-red-600 mb-3">
-                    {isFR ? "Erreur — changement deja utilise ou probleme serveur" : "Error — change already used or server issue"}
+                    {T({ EN: "Error — change already used or server issue", FR: "Erreur — changement deja utilise ou probleme serveur" })}
                   </p>
                 )}
 
@@ -111,14 +113,14 @@ export default function SessionChangeButton({ sessionId, changesUsed, lang }: Se
                     onClick={() => setOpen(false)}
                     className="px-4 py-2 border border-or-pale text-brun-mid text-xs font-ui uppercase rounded-sharp hover:bg-cire-chaude"
                   >
-                    {isFR ? "Annuler" : "Cancel"}
+                    {T({ EN: "Cancel", FR: "Annuler" })}
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={loading || !date}
                     className="px-4 py-2 bg-or-sacre text-white text-xs font-ui uppercase rounded-sharp hover:bg-ambre-vif disabled:opacity-50"
                   >
-                    {loading ? "..." : isFR ? "Envoyer" : "Send"}
+                    {loading ? "..." : T({ EN: "Send", FR: "Envoyer" })}
                   </button>
                 </div>
               </>

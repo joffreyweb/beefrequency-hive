@@ -190,14 +190,14 @@ export default function ClientClaritySection({
                 <div className="mt-3 max-h-72 overflow-y-auto space-y-3 bg-creme-sacree rounded-[8px] p-3">
                   {CLARITY_MAPS.map((m, mi) => (
                     <div key={m.id}>
-                      <p className="font-caps text-[11px] uppercase tracking-wider text-brun-mid">{m.emoji} {m.label}</p>
+                      <p className="font-caps text-[11px] uppercase tracking-wider text-brun-mid">{m.emoji} {m.label.FR}</p>
                       {m.sections.map((sec, si) =>
                         sec.questions.map((q, qi) => {
                           const a = (detail.answers || {})[answerKey(mi, si, qi)];
                           if (!a) return null;
                           return (
                             <p key={`${mi}-${si}-${qi}`} className="text-xs font-ui text-brun-chaud mt-1">
-                              <span className="text-brun-mid/60">{q.text}</span><br />→ {a}
+                              <span className="text-brun-mid/60">{q.text.FR}</span><br />→ {a}
                             </p>
                           );
                         })

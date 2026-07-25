@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
+import type { Lang } from "@/lib/translations";
 
 interface Phase {
   name: string;
@@ -37,8 +39,11 @@ interface ClientProgram {
   state: ProgramState;
 }
 
-const STATE_LABELS: Record<ProgramState, string> = {
-  pending: "En attente", active: "En cours", completed: "Terminé", paused: "En pause",
+const STATE_LABELS: Record<ProgramState, { EN: string; FR: string }> = {
+  pending: { EN: "Pending", FR: "En attente" },
+  active: { EN: "In progress", FR: "En cours" },
+  completed: { EN: "Completed", FR: "Terminé" },
+  paused: { EN: "Paused", FR: "En pause" },
 };
 
 const STATE_BADGE: Record<ProgramState, string> = {
@@ -48,8 +53,8 @@ const STATE_BADGE: Record<ProgramState, string> = {
   paused: "bg-amber-100 text-amber-600",
 };
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-BE", {
+function fmtDate(iso: string, lang: Lang): string {
+  return new Date(iso).toLocaleDateString(lang === "EN" ? "en-GB" : "fr-BE", {
     day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Brussels",
   });
 }
@@ -69,6 +74,8 @@ const MODULE_TEXT_COLORS: Record<string, string> = {
 };
 
 export default function ProgramProgress() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [data, setData] = useState<ClientProgram | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -84,7 +91,7 @@ export default function ProgramProgress() {
   if (!data)
     return (
       <p className="text-sm font-ui text-brun-mid/50 italic text-center py-4">
-        Ton parcours est en cours de préparation.
+        {T({ EN: "Your journey is being prepared.", FR: "Ton parcours est en cours de préparation." })}
       </p>
     );
 
@@ -115,13 +122,13 @@ export default function ProgramProgress() {
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 text-center">
         <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-2">{data.programName}</p>
         <p className="font-display text-2xl text-brun-chaud">
-          Jour {data.currentDay} <span className="text-brun-mid/40 font-ui text-lg">/ {data.totalDays}</span>
+          {T({ EN: "Day", FR: "Jour" })} {data.currentDay} <span className="text-brun-mid/40 font-ui text-lg">/ {data.totalDays}</span>
         </p>
         <p className="font-ui text-xs text-brun-mid/60 mt-1">
-          Du {fmtDate(data.startDate)} au {fmtDate(data.endDate)}
+          {T({ EN: "From", FR: "Du" })} {fmtDate(data.startDate, lang)} {T({ EN: "to", FR: "au" })} {fmtDate(data.endDate, lang)}
         </p>
         <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${STATE_BADGE[data.state]}`}>
-          {STATE_LABELS[data.state]}
+          {T(STATE_LABELS[data.state])}
         </span>
         <div className="mt-3 mx-auto max-w-xs">
           <div className="h-2 bg-creme-sacree rounded-full overflow-hidden">
@@ -133,21 +140,26 @@ export default function ProgramProgress() {
 
       {/* Current phase */}
       <div className="bg-cire-chaude border-2 border-or-sacre rounded-sm p-5">
-        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-1">Phase actuelle</p>
+        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-1">{T({ EN: "Current phase", FR: "Phase actuelle" })}</p>
         <p className={`font-display text-xl ${MODULE_TEXT_COLORS[data.currentPhase.moduleName] || "text-brun-chaud"}`}>
           {data.currentPhase.name}
         </p>
         <p className="font-ui text-sm text-brun-mid mt-1">
-          Jour {data.currentPhase.dayInPhase} / {data.currentPhase.totalDaysInPhase}
+          {T({ EN: "Day", FR: "Jour" })} {data.currentPhase.dayInPhase} / {data.currentPhase.totalDaysInPhase}
           {data.currentPhase.daysRemaining > 0 && (
-            <span className="text-brun-mid/50"> · Encore {data.currentPhase.daysRemaining} jour{data.currentPhase.daysRemaining > 1 ? "s" : ""}</span>
+            <span className="text-brun-mid/50">
+              {" · "}
+              {lang === "EN"
+                ? `${data.currentPhase.daysRemaining} day${data.currentPhase.daysRemaining > 1 ? "s" : ""} left`
+                : `Encore ${data.currentPhase.daysRemaining} jour${data.currentPhase.daysRemaining > 1 ? "s" : ""}`}
+            </span>
           )}
         </p>
       </div>
 
       {/* Timeline */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-        <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">Timeline</p>
+        <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{T({ EN: "Timeline", FR: "Timeline" })}</p>
         <div className="relative">
           <div className="flex rounded-full overflow-hidden h-4">
             {data.modules.map((mod, i) => (
@@ -161,7 +173,7 @@ export default function ProgramProgress() {
           {/* Marker */}
           <div className="absolute -top-1" style={{ left: `${Math.min(markerPosition, 98)}%` }}>
             <div className="w-0.5 h-6 bg-brun-chaud" />
-            <p className="text-[9px] font-ui text-brun-chaud -ml-3 mt-0.5 whitespace-nowrap">Ici</p>
+            <p className="text-[9px] font-ui text-brun-chaud -ml-3 mt-0.5 whitespace-nowrap">{T({ EN: "Here", FR: "Ici" })}</p>
           </div>
         </div>
         <div className="flex mt-2">
@@ -176,10 +188,12 @@ export default function ProgramProgress() {
       {/* Next phase */}
       {data.nextPhase && (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
-          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-1">Prochaine étape</p>
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-1">{T({ EN: "Next step", FR: "Prochaine étape" })}</p>
           <p className="font-display text-lg text-brun-chaud">{data.nextPhase.name}</p>
           <p className="font-ui text-sm text-brun-mid">
-            Commence dans {data.nextPhase.startsIn} jour{data.nextPhase.startsIn > 1 ? "s" : ""} · Durée : {data.nextPhase.duration} jours
+            {lang === "EN"
+              ? `Starts in ${data.nextPhase.startsIn} day${data.nextPhase.startsIn > 1 ? "s" : ""} · Duration: ${data.nextPhase.duration} days`
+              : `Commence dans ${data.nextPhase.startsIn} jour${data.nextPhase.startsIn > 1 ? "s" : ""} · Durée : ${data.nextPhase.duration} jours`}
           </p>
         </div>
       )}

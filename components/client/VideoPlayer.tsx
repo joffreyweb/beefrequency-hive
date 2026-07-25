@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/lib/LanguageContext";
+
 interface Practice {
   id: string;
   title: string;
@@ -28,6 +30,8 @@ export default function VideoPlayer({
   onComplete,
   onClose,
 }: VideoPlayerProps) {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   let content: VideoContent;
   try {
     content = JSON.parse(practice.content);
@@ -49,14 +53,14 @@ export default function VideoPlayer({
             </p>
             {content.duration && (
               <p className="font-ui text-xs text-brun-mid/60 mt-1">
-                Durée : {content.duration} min
+                {T({ EN: "Duration:", FR: "Durée :" })} {content.duration} min
               </p>
             )}
           </div>
           <button
             onClick={onClose}
             className="text-brun-mid hover:text-brun-chaud transition-colors text-xl font-ui ml-4"
-            aria-label="Fermer"
+            aria-label={T({ EN: "Close", FR: "Fermer" })}
           >
             ✕
           </button>
@@ -79,7 +83,7 @@ export default function VideoPlayer({
             onClick={onClose}
             className="px-4 py-2 font-ui text-sm text-brun-mid hover:text-brun-chaud transition-colors"
           >
-            Fermer
+            {T({ EN: "Close", FR: "Fermer" })}
           </button>
           <button
             onClick={() => {
@@ -88,7 +92,7 @@ export default function VideoPlayer({
             }}
             className="px-6 py-2 bg-or-sacre text-white rounded-sharp font-ui text-sm hover:opacity-90 transition-opacity"
           >
-            Marquer comme vu
+            {T({ EN: "Mark as watched", FR: "Marquer comme vu" })}
           </button>
         </div>
       </div>

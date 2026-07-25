@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import CharteEngagement from "@/components/client/CharteEngagement";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface Slot {
   start: string;
@@ -15,6 +16,10 @@ export default function BookingPage() {
   const params = useParams();
   const router = useRouter();
   const token = params.token as string;
+
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
+  const dateLocale = lang === "EN" ? "en-US" : "fr-FR";
 
   const [valid, setValid] = useState<boolean | null>(null);
   const [clientName, setClientName] = useState("");
@@ -37,10 +42,10 @@ export default function BookingPage() {
           setClientName(d.clientName || "");
         } else {
           setValid(false);
-          setError(d.error || "Lien invalide");
+          setError(d.error || T({ EN: "Invalid link", FR: "Lien invalide" }));
         }
       })
-      .catch(() => { setValid(false); setError("Erreur de connexion"); });
+      .catch(() => { setValid(false); setError(T({ EN: "Connection error", FR: "Erreur de connexion" })); });
 
     // Load slots
     const start = new Date().toISOString().split("T")[0];
@@ -77,7 +82,7 @@ export default function BookingPage() {
     });
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || "Erreur lors de l'acceptation");
+      setError(data.error || T({ EN: "Error during acceptance", FR: "Erreur lors de l'acceptation" }));
       setShowCharte(false);
       return;
     }
@@ -100,7 +105,7 @@ export default function BookingPage() {
         setDone(true);
         setZoomUrl(data.appointment?.zoomJoinUrl || "");
       } else {
-        setError(data.error || "Erreur");
+        setError(data.error || T({ EN: "Error", FR: "Erreur" }));
       }
     } finally {
       setBooking(false);
@@ -110,7 +115,7 @@ export default function BookingPage() {
   if (valid === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-creme-sacree">
-        <p className="font-ui text-sm text-brun-mid/60">Chargement...</p>
+        <p className="font-ui text-sm text-brun-mid/60">{T({ EN: "Loading...", FR: "Chargement..." })}</p>
       </div>
     );
   }
@@ -119,7 +124,7 @@ export default function BookingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
         <div className="text-center">
-          <h1 className="font-display text-2xl text-brun-chaud mb-2">Lien invalide</h1>
+          <h1 className="font-display text-2xl text-brun-chaud mb-2">{T({ EN: "Invalid link", FR: "Lien invalide" })}</h1>
           <p className="font-ui text-sm text-brun-mid">{error}</p>
         </div>
       </div>
@@ -130,18 +135,21 @@ export default function BookingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
         <div className="text-center max-w-sm">
-          <h1 className="font-display text-2xl text-brun-chaud mb-3">Session confirmee</h1>
+          <h1 className="font-display text-2xl text-brun-chaud mb-3">{T({ EN: "Session confirmed", FR: "Session confirmee" })}</h1>
           <p className="font-ui text-sm text-brun-mid mb-2">
-            {new Date(selectedSlot!).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-            {" a "}
-            {new Date(selectedSlot!).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+            {new Date(selectedSlot!).toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
+            {T({ EN: " at ", FR: " a " })}
+            {new Date(selectedSlot!).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
           </p>
           <p className="font-ui text-sm text-brun-mid mb-4">
-            Tu recevras un email de confirmation avec le lien Zoom.
+            {T({
+              EN: "You'll receive a confirmation email with the Zoom link.",
+              FR: "Tu recevras un email de confirmation avec le lien Zoom.",
+            })}
           </p>
           {zoomUrl && (
             <a href={zoomUrl} target="_blank" rel="noopener noreferrer" className="inline-block px-6 py-2.5 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif">
-              Lien Zoom
+              {T({ EN: "Zoom link", FR: "Lien Zoom" })}
             </a>
           )}
         </div>
@@ -158,7 +166,10 @@ export default function BookingPage() {
           <h1 className="font-display text-3xl text-brun-chaud">Hive</h1>
           <p className="font-caps text-sm text-or-sacre tracking-widest mt-1">BeeFrequency</p>
           <p className="font-ui text-sm text-brun-mid mt-4">
-            Bonjour {clientName?.split(" ")[0]}. Choisis ton creneau.
+            {T({
+              EN: `Hello ${clientName?.split(" ")[0]}. Choose your slot.`,
+              FR: `Bonjour ${clientName?.split(" ")[0]}. Choisis ton creneau.`,
+            })}
           </p>
         </div>
 
@@ -170,7 +181,7 @@ export default function BookingPage() {
             return (
               <div key={date} className="bg-cire-chaude border border-or-pale rounded-[10px] p-4">
                 <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">
-                  {new Date(date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                  {new Date(date + "T12:00:00").toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {daySlots.map((s) => {
@@ -185,7 +196,7 @@ export default function BookingPage() {
                             : "bg-creme-sacree border border-or-pale text-brun-chaud hover:border-or-sacre"
                         }`}
                       >
-                        {new Date(s.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(s.start).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
                       </button>
                     );
                   })}
@@ -202,7 +213,9 @@ export default function BookingPage() {
               disabled={booking}
               className="px-8 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif disabled:opacity-50"
             >
-              {booking ? "Confirmation..." : "Confirmer ce creneau"}
+              {booking
+                ? T({ EN: "Confirming...", FR: "Confirmation..." })
+                : T({ EN: "Confirm this slot", FR: "Confirmer ce creneau" })}
             </button>
           </div>
         )}

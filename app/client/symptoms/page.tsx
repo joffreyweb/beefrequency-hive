@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface SymptomMessage {
   id: string;
@@ -10,6 +11,8 @@ interface SymptomMessage {
 }
 
 export default function SymptomsPage() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<SymptomMessage[]>([]);
@@ -63,10 +66,13 @@ export default function SymptomsPage() {
       {/* Titre et explication */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl text-brun-chaud">
-          Report a symptom
+          {T({ EN: "Report a symptom", FR: "Signaler un symptôme" })}
         </h1>
         <p className="text-brun-mid font-ui text-sm mt-1">
-          Report your symptoms or ask Joffrey a priority question.
+          {T({
+            EN: "Report your symptoms or ask Joffrey a priority question.",
+            FR: "Signalez vos symptômes ou posez une question prioritaire à Joffrey.",
+          })}
         </p>
       </div>
 
@@ -75,7 +81,7 @@ export default function SymptomsPage() {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Describe your symptom..."
+          placeholder={T({ EN: "Describe your symptom...", FR: "Décrivez votre symptôme..." })}
           rows={4}
           className="w-full border border-or-pale rounded-sm p-3 font-ui text-sm text-brun-chaud bg-creme-sacree placeholder:text-brun-mid/40 focus:outline-none focus:border-or-sacre"
         />
@@ -84,21 +90,25 @@ export default function SymptomsPage() {
           disabled={sending || !content.trim()}
           className="bg-or-sacre text-creme-sacree font-ui text-sm px-5 py-2 rounded-sharp hover:bg-ambre-vif transition-colors disabled:opacity-50"
         >
-          {sending ? "Sending..." : "Send"}
+          {sending
+            ? T({ EN: "Sending...", FR: "Envoi..." })
+            : T({ EN: "Send", FR: "Envoyer" })}
         </button>
       </form>
 
       {/* Historique */}
       <section>
         <h2 className="font-caps text-xs uppercase tracking-widest text-brun-mid mb-3">
-          History
+          {T({ EN: "History", FR: "Historique" })}
         </h2>
         {loading ? (
-          <p className="text-sm text-brun-mid/60 font-ui">Loading...</p>
+          <p className="text-sm text-brun-mid/60 font-ui">
+            {T({ EN: "Loading...", FR: "Chargement..." })}
+          </p>
         ) : messages.length === 0 ? (
           <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
             <p className="text-sm text-brun-mid/60 font-ui">
-              No symptoms reported.
+              {T({ EN: "No symptoms reported.", FR: "Aucun symptôme signalé." })}
             </p>
           </div>
         ) : (
@@ -110,7 +120,7 @@ export default function SymptomsPage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-ui text-brun-mid/60">
-                    {new Date(msg.createdAt).toLocaleDateString("en-US", {
+                    {new Date(msg.createdAt).toLocaleDateString(lang === "EN" ? "en-US" : "fr-FR", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
@@ -120,7 +130,7 @@ export default function SymptomsPage() {
                   </span>
                   {msg.readAt && (
                     <span className="text-xs font-ui bg-foret/10 text-foret px-2 py-0.5 rounded-sharp">
-                      Read
+                      {T({ EN: "Read", FR: "Lu" })}
                     </span>
                   )}
                 </div>
