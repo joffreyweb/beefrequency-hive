@@ -81,7 +81,12 @@ export default function ProgramProgress() {
   }, []);
 
   if (loading) return null;
-  if (!data) return null;
+  if (!data)
+    return (
+      <p className="text-sm font-ui text-brun-mid/50 italic text-center py-4">
+        Ton parcours est en cours de préparation.
+      </p>
+    );
 
   // Compute position for "you are here" marker
   let markerPosition = 0;
@@ -92,6 +97,16 @@ export default function ProgramProgress() {
       break;
     }
     dayAcc += mod.duration;
+  }
+
+  // Opacité passé/futur : un segment est "atteint" si son début < jour courant.
+  const reached: boolean[] = [];
+  {
+    let acc = 0;
+    for (const mod of data.modules) {
+      reached.push(acc < data.currentDay);
+      acc += mod.duration;
+    }
   }
 
   return (
@@ -138,7 +153,7 @@ export default function ProgramProgress() {
             {data.modules.map((mod, i) => (
               <div
                 key={i}
-                className={`${MODULE_COLORS[mod.name] || "bg-gray-300"} ${dayAcc <= data.currentDay ? "opacity-100" : "opacity-40"}`}
+                className={`${MODULE_COLORS[mod.name] || "bg-gray-300"} ${reached[i] ? "opacity-100" : "opacity-40"}`}
                 style={{ flex: mod.duration }}
               />
             ))}
