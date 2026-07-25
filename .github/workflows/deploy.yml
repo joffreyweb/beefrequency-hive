@@ -5,6 +5,12 @@ on:
     branches:
       - main
 
+# Un seul déploiement à la fois : les pushs rapprochés se mettent en file
+# d'attente au lieu de tourner en parallèle (évite les conflits pm2/port 3001).
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
