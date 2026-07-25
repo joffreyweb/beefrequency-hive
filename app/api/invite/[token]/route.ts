@@ -171,6 +171,7 @@ export async function POST(
       requiresJournal: invite.requiresJournal,
       requiresProgramTimeline: invite.requiresProgramTimeline,
       requiresElixirs: invite.requiresElixirs,
+      requiresModules: invite.requiresModules,
     };
 
     // Blocage PWA : onboarding requis uniquement si le parcours exige le questionnaire

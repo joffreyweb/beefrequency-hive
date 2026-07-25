@@ -398,8 +398,8 @@ export default async function ClientHomePage() {
       {clarityBanner}
       {clarityReportBanner}
 
-      {/* Élixirs reçus banner */}
-      <ElixirReceivedBanner />
+      {/* Élixirs reçus banner — jamais pour un CUSTOM */}
+      {!isCustom && <ElixirReceivedBanner />}
 
       {/* Legacy onboarding banner — persistent until completed */}
       {client.isLegacy && (!client.charteSignee || client.questionnaireEntry?.status !== "SUBMITTED") && (
