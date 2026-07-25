@@ -272,6 +272,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       {/* Modules actifs — 9 toggles éditables */}
       <ClientModulesSection
         clientId={clientId}
+        parcoursType={client.parcoursType}
         initialFlags={{
           requiresWelcomeVideo: client.requiresWelcomeVideo,
           requiresConvention: client.requiresConvention,
