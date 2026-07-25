@@ -26,6 +26,8 @@ export default async function ClientsListPage() {
     status: client.status,
     language: client.language,
     startDate: client.startDate.toISOString(),
+    detoxStartDate: client.detoxStartDate ? client.detoxStartDate.toISOString() : null,
+    requiresProgramTimeline: client.requiresProgramTimeline,
     analysisStatus: client.analysis?.status ?? null,
     pendingCount: client._count.pendingActions,
     isLegacy: (client as any).isLegacy || false,

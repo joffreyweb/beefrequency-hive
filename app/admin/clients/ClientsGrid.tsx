@@ -16,6 +16,8 @@ interface SerializedClient {
   status: string;
   language: string;
   startDate: string;
+  detoxStartDate?: string | null;
+  requiresProgramTimeline?: boolean;
   analysisStatus: string | null;
   pendingCount: number;
   isLegacy?: boolean;
@@ -28,6 +30,13 @@ function getInitials(name: string): string {
 
 function computeDayNumber(startDate: string): number {
   return Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000) + 1;
+}
+
+// Parcours (Le Passage/timeline) terminé = plus de 103 jours depuis le début (detoxStartDate)
+function isParcoursFinished(c: SerializedClient): boolean {
+  if (!c.requiresProgramTimeline || !c.detoxStartDate) return false;
+  const day = Math.floor((Date.now() - new Date(c.detoxStartDate).getTime()) / 86400000) + 1;
+  return day > 103;
 }
 
 const ALL_FLAGS_TRUE: ParcoursFlags = {
@@ -73,12 +82,16 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
   const [parcoursType] = useState<ParcoursType>("LE_PASSAGE");
   const [flags, setFlags] = useState<ParcoursFlags>(ALL_FLAGS_TRUE);
+  const [parcoursFilter, setParcoursFilter] = useState<"all" | "actifs" | "termines">("all");
 
   const filteredClients = useMemo(() => {
-    if (!search.trim()) return clients;
+    let list = clients;
+    if (parcoursFilter === "termines") list = list.filter(isParcoursFinished);
+    else if (parcoursFilter === "actifs") list = list.filter((c) => !isParcoursFinished(c));
+    if (!search.trim()) return list;
     const q = search.toLowerCase();
-    return clients.filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
-  }, [clients, search]);
+    return list.filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+  }, [clients, search, parcoursFilter]);
 
   async function handleCreate() {
     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) return;
@@ -142,6 +155,20 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
           onChange={(e) => setSearch(e.target.value)}
           className="w-full max-w-sm px-4 py-2.5 bg-cire-chaude border border-or-pale rounded-[10px] text-sm font-ui text-brun-chaud placeholder:text-brun-mid/40 outline-none focus:border-or-sacre transition-colors"
         />
+        <div className="mt-3 flex items-center gap-2">
+          {(["all", "actifs", "termines"] as const).map((key) => {
+            const label = key === "all" ? "Tous" : key === "actifs" ? "En cours" : "Termines";
+            return (
+              <button
+                key={key}
+                onClick={() => setParcoursFilter(key)}
+                className={`px-3 py-1.5 text-xs font-ui rounded-full border transition-colors ${parcoursFilter === key ? "bg-or-sacre text-white border-or-sacre" : "border-or-pale text-brun-mid hover:border-or-sacre"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Client grid */}
@@ -169,6 +196,9 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                   <div className="flex items-center gap-1.5">
                     {client.isLegacy && (
                       <span className="text-[9px] bg-brun-mid/10 text-brun-mid px-1.5 py-0.5 rounded-full">Legacy</span>
+                    )}
+                    {isParcoursFinished(client) && (
+                      <span className="text-[9px] bg-foret/10 text-foret px-1.5 py-0.5 rounded-full">Termine</span>
                     )}
                     {client.pendingCount > 0 && (
                       <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full">{client.pendingCount}</span>
