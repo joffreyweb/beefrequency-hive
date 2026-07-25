@@ -81,7 +81,12 @@ export async function POST(request: NextRequest) {
       isLegacy: isLegacy || false,
       startDate: clientStartDate,
       // Blocage PWA : onboarding requis seulement si le parcours exige le questionnaire
-      onboardingCompleted: isLegacy ? true : !parcoursNeedsQuestionnaire(resolvedParcours),
+      // Respecte la case décochée par l'admin (override) sinon défaut du parcours.
+      onboardingCompleted: isLegacy
+        ? true
+        : !(requiresQuestionnaire !== undefined
+            ? Boolean(requiresQuestionnaire)
+            : parcoursNeedsQuestionnaire(resolvedParcours)),
       parcoursType: resolvedParcours,
       // Flags : défauts du parcours, surchargés par toute valeur fournie explicitement
       ...parcoursDefaults,

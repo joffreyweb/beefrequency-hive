@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { EDITABLE_FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { EDITABLE_FLAG_KEYS, getDefaultsForParcoursType, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { getParcoursTypeForOffer } from "@/lib/offer-parcours-binding";
 import { FLAG_LABELS } from "@/lib/parcours-labels";
 import type { ParcoursType } from "@prisma/client";
 
@@ -52,6 +53,8 @@ const ALL_FLAGS_TRUE: ParcoursFlags = {
   requiresModules: true,
 };
 
+const DEFAULT_OFFER = "CONVERSATION_EXPLORATOIRE";
+
 const OFFER_OPTIONS = [
   { value: "CONVERSATION_EXPLORATOIRE", label: "Conversation exploratoire priv\u00e9e" },
   { value: "SESSION_SEUIL", label: "Session Seuil" },
@@ -80,9 +83,17 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
   });
   const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
-  const [parcoursType] = useState<ParcoursType>("LE_PASSAGE");
-  const [flags, setFlags] = useState<ParcoursFlags>(ALL_FLAGS_TRUE);
+  const [parcoursType, setParcoursType] = useState<ParcoursType>(getParcoursTypeForOffer(DEFAULT_OFFER));
+  const [flags, setFlags] = useState<ParcoursFlags>(() => getDefaultsForParcoursType(getParcoursTypeForOffer(DEFAULT_OFFER)));
   const [parcoursFilter, setParcoursFilter] = useState<"all" | "actifs" | "termines">("all");
+
+  // L'offre pilote le parcoursType ET les flags par défaut (comme /admin/clients/new).
+  function handleOfferChange(nextOffer: string) {
+    const pt = getParcoursTypeForOffer(nextOffer);
+    setForm((f) => ({ ...f, offerType: nextOffer }));
+    setParcoursType(pt);
+    setFlags(getDefaultsForParcoursType(pt));
+  }
 
   const filteredClients = useMemo(() => {
     let list = clients;
@@ -137,8 +148,9 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
           onClick={() => {
             setShowInvite(true);
             setResult(null);
-            setForm({ firstName: "", lastName: "", email: "", offerType: "CONVERSATION_EXPLORATOIRE", language: "FR", isLegacy: false, startDate: "", dayDirect: "" });
-            setFlags(ALL_FLAGS_TRUE);
+            setForm({ firstName: "", lastName: "", email: "", offerType: DEFAULT_OFFER, language: "FR", isLegacy: false, startDate: "", dayDirect: "" });
+            setParcoursType(getParcoursTypeForOffer(DEFAULT_OFFER));
+            setFlags(getDefaultsForParcoursType(getParcoursTypeForOffer(DEFAULT_OFFER)));
           }}
           className="px-4 py-2.5 bg-or-sacre text-white font-ui text-xs uppercase tracking-wider rounded-[10px] hover:bg-ambre-vif transition-colors"
         >
@@ -264,7 +276,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-ui text-brun-mid/60 mb-1">Offre</label>
-                    <select value={form.offerType} onChange={(e) => setForm({ ...form, offerType: e.target.value })} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud">
+                    <select value={form.offerType} onChange={(e) => handleOfferChange(e.target.value)} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud">
                       {OFFER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>

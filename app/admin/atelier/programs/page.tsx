@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface ProgramModule {
@@ -24,12 +25,63 @@ const MODULE_COLORS: Record<string, string> = {
   protocol30: "bg-ambre-vif",
 };
 
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "programme";
+}
+
 export default function ProgramsPage() {
+  const router = useRouter();
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [nameFr, setNameFr] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [description, setDescription] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/programs").then((r) => r.json()).then((d) => setPrograms(d.programs || []));
   }, []);
+
+  async function handleCreate() {
+    if (!nameFr.trim()) {
+      setError("Donne au moins un nom au programme.");
+      return;
+    }
+    setCreating(true);
+    setError("");
+    try {
+      // name technique unique (slug + suffixe court pour éviter les collisions)
+      const suffix = Math.random().toString(36).slice(2, 6);
+      const res = await fetch("/api/admin/programs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${slugify(nameFr)}-${suffix}`,
+          nameFr: nameFr.trim(),
+          nameEn: (nameEn.trim() || nameFr.trim()),
+          description: description.trim() || null,
+        }),
+      });
+      if (res.ok) {
+        const { program } = await res.json();
+        // On file direct sur la page détail pour composer les modules.
+        router.push(`/admin/atelier/programs/${program.id}`);
+      } else {
+        setError((await res.json().catch(() => ({}))).error || "Erreur à la création.");
+        setCreating(false);
+      }
+    } catch {
+      setError("Erreur réseau.");
+      setCreating(false);
+    }
+  }
 
   return (
     <div>
@@ -39,6 +91,12 @@ export default function ProgramsPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl text-brun-chaud">Programmes</h1>
+        <button
+          onClick={() => { setShowCreate(true); setError(""); setNameFr(""); setNameEn(""); setDescription(""); }}
+          className="px-4 py-2 bg-or-sacre text-white rounded-sharp text-xs font-caps uppercase tracking-wider hover:bg-ambre-vif transition-colors"
+        >
+          + Nouveau programme
+        </button>
       </div>
 
       <div className="space-y-4">
@@ -62,25 +120,83 @@ export default function ProgramsPage() {
               {prog.description && <p className="text-xs font-ui text-brun-mid/60 mb-3">{prog.description}</p>}
 
               {/* Timeline */}
-              <div className="flex rounded-full overflow-hidden h-3">
-                {prog.modules.map((pm, i) => (
-                  <div
-                    key={i}
-                    className={`${MODULE_COLORS[pm.module.name] || "bg-brun-mid/20"} relative group/bar`}
-                    style={{ flex: pm.module.duration }}
-                    title={`${pm.module.nameFr} (${pm.module.duration}j)`}
-                  />
-                ))}
-              </div>
-              <div className="flex mt-1.5 text-[9px] font-ui text-brun-mid/40">
-                {prog.modules.map((pm, i) => (
-                  <span key={i} style={{ flex: pm.module.duration }} className="truncate">{pm.module.nameFr}</span>
-                ))}
-              </div>
+              {prog.modules.length > 0 ? (
+                <>
+                  <div className="flex rounded-full overflow-hidden h-3">
+                    {prog.modules.map((pm, i) => (
+                      <div
+                        key={i}
+                        className={`${MODULE_COLORS[pm.module.name] || "bg-brun-mid/20"} relative group/bar`}
+                        style={{ flex: pm.module.duration }}
+                        title={`${pm.module.nameFr} (${pm.module.duration}j)`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex mt-1.5 text-[9px] font-ui text-brun-mid/40">
+                    {prog.modules.map((pm, i) => (
+                      <span key={i} style={{ flex: pm.module.duration }} className="truncate">{pm.module.nameFr}</span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-[11px] font-ui text-brun-mid/40 italic">Aucun module — clique pour en ajouter.</p>
+              )}
             </Link>
           );
         })}
       </div>
+
+      {/* Modale création */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => !creating && setShowCreate(false)}>
+          <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="font-display text-lg text-brun-chaud mb-1">Nouveau programme</h2>
+            <p className="font-ui text-sm text-brun-mid mb-5">Crée le programme, puis compose ses modules sur la page suivante.</p>
+
+            {error && <p className="text-sm text-red-600 font-ui bg-red-50 px-3 py-2 rounded-sharp mb-4">{error}</p>}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Nom (FR)</label>
+                <input
+                  autoFocus
+                  value={nameFr}
+                  onChange={(e) => setNameFr(e.target.value)}
+                  placeholder="ex : Cure Détox 21 jours"
+                  className="w-full px-3 py-2 text-sm font-ui bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Nom (EN) — optionnel</label>
+                <input
+                  value={nameEn}
+                  onChange={(e) => setNameEn(e.target.value)}
+                  placeholder="par défaut : identique au FR"
+                  className="w-full px-3 py-2 text-sm font-ui bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Description — optionnel</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm font-ui bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre resize-y"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-5 mt-4 border-t border-or-pale/30">
+              <button onClick={() => setShowCreate(false)} disabled={creating} className="px-4 py-2 text-xs font-caps text-brun-mid border border-or-pale rounded-sharp hover:bg-creme-sacree disabled:opacity-40">
+                Annuler
+              </button>
+              <button onClick={handleCreate} disabled={creating || !nameFr.trim()} className="px-4 py-2 text-xs font-caps bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif disabled:opacity-40">
+                {creating ? "…" : "Créer et composer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
