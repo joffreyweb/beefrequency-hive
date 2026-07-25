@@ -19,7 +19,6 @@ interface SerializedClient {
   startDate: string;
   detoxStartDate?: string | null;
   requiresProgramTimeline?: boolean;
-  analysisStatus: string | null;
   pendingCount: number;
   isLegacy?: boolean;
   questionnaireStatus?: string | null;

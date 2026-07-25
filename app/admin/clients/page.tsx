@@ -10,7 +10,6 @@ export default async function ClientsListPage() {
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { name: true, email: true } },
-      analysis: { select: { status: true } },
       questionnaireEntry: { select: { status: true } },
       _count: { select: { pendingActions: { where: { completedAt: null } } } },
     },
@@ -28,7 +27,6 @@ export default async function ClientsListPage() {
     startDate: client.startDate.toISOString(),
     detoxStartDate: client.detoxStartDate ? client.detoxStartDate.toISOString() : null,
     requiresProgramTimeline: client.requiresProgramTimeline,
-    analysisStatus: client.analysis?.status ?? null,
     pendingCount: client._count.pendingActions,
     isLegacy: (client as any).isLegacy || false,
     questionnaireStatus: client.questionnaireEntry?.status ?? null,

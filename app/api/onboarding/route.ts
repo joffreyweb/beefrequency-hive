@@ -186,33 +186,6 @@ export async function POST(request: Request) {
       data: { name: firstName.trim() + (lastName ? " " + lastName.trim() : "") },
     });
 
-    // Upsert du ClientAnalysis avec status PENDING
-    await prisma.clientAnalysis.upsert({
-      where: { clientId: client.id },
-      create: {
-        clientId: client.id,
-        status: "PENDING",
-      },
-      update: {
-        status: "PENDING",
-      },
-    });
-
-    // Déclenche l'analyse IA de manière asynchrone (fire and forget)
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
-
-    fetch(`${baseUrl}/api/analysis/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId: client.id }),
-    }).catch(() => {
-      // Fire and forget — on ignore les erreurs réseau
-    });
-
     // Notification admin — onboarding terminé
     import("@/lib/notifications")
       .then(({ notifyAdmin }) => notifyAdmin({

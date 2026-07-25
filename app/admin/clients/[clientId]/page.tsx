@@ -5,7 +5,6 @@ import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientModulesSection from "@/components/admin/ClientModulesSection";
-import ClientProgramSection from "@/components/admin/ClientProgramSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
 import ClientClaritySection from "@/components/admin/ClientClaritySection";
@@ -96,8 +95,6 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       documents: {
         orderBy: { createdAt: "desc" },
       },
-      // Analyse IA
-      analysis: true,
       // Intake onboarding
       intake: true,
       // Questionnaire d'entrée
@@ -312,9 +309,6 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         startDate={client.startDate.toISOString()}
         offerType={OFFER_LABELS[client.offerType] ?? client.offerType}
       />
-
-      {/* Programme assigné */}
-      <ClientProgramSection clientId={clientId} clientName={client.user.name} parcoursType={client.parcoursType} />
 
       {/* Actions : desactiver, archiver, supprimer, envoyer email */}
       <ClientActions

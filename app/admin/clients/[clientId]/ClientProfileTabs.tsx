@@ -8,7 +8,6 @@ import RecommendationSection from "@/components/admin/RecommendationSection";
 import DailyFocusSection from "@/components/admin/DailyFocusSection";
 import ClientRecommendationsSection from "@/components/admin/ClientRecommendationsSection";
 import DocumentsSection from "@/components/admin/DocumentsSection";
-import AnalysisSection from "@/components/admin/AnalysisSection";
 import { renderMarkdownToHtml } from "@/lib/clarity/markdown";
 import HdTypeSelector from "@/components/admin/HdTypeSelector";
 import TimezoneSelector from "@/components/admin/TimezoneSelector";
@@ -45,7 +44,6 @@ type TabKey =
   | "program"
   | "parcours"
   | "sessions"
-  | "analysis"
   | "documents"
   | "messages"
   | "recommendations"
@@ -139,7 +137,6 @@ export default function ClientProfileTabs({
       )}
       {activeTab === "parcours" && <ParcoursTab client={client} />}
       {activeTab === "sessions" && <SessionsTab client={client} />}
-      {activeTab === "analysis" && <AnalysisTab client={client} />}
       {activeTab === "documents" && (
         <DocumentsTab client={client} unreadDocCount={unreadDocCount} />
       )}
@@ -737,21 +734,6 @@ function SessionsTab({ client }: { client: any }) {
 /* ─────────────────────────────────────────────
    TAB 5 — Analyse
    ───────────────────────────────────────────── */
-function AnalysisTab({ client }: { client: any }) {
-  return (
-    <div>
-      <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-        Analyse
-      </h2>
-      <AnalysisSection
-        clientId={client.id}
-        analysis={client.analysis ?? null}
-        intake={client.intake ?? null}
-      />
-    </div>
-  );
-}
-
 /* ─────────────────────────────────────────────
    TAB 6 — Documents
    ───────────────────────────────────────────── */
