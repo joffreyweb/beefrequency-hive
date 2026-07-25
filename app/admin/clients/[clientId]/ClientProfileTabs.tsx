@@ -17,6 +17,7 @@ import ParcoursSection from "@/components/admin/ParcoursSection";
 import ClientParcoursCard from "@/components/admin/ClientParcoursCard";
 import DetoxSection from "@/components/admin/DetoxSection";
 import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
+import ClientClaritySection from "@/components/admin/ClientClaritySection";
 import CheckinsTab from "@/components/admin/CheckinsTab";
 import StackedProgramsSection from "@/components/admin/StackedProgramsSection";
 
@@ -1355,6 +1356,12 @@ function QuestionnairesTab({ client }: { client: any }) {
     <div className="space-y-8">
       {/* Questionnaire d'entrée (8 sections) */}
       <QuestionnaireEntrySection clientId={client.id} />
+
+      {/* Clarity by Beefrequency — activation, génération et rapport */}
+      <ClientClaritySection
+        clientId={client.id}
+        initialSubmission={client.claritySubmission ?? null}
+      />
 
       {/* Questionnaires classiques */}
       <ResponseSection type="PRE_START" label="Pre-Start" />

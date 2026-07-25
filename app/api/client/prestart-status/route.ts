@@ -16,6 +16,7 @@ export async function GET() {
       produitsRecus: true,
       detoxStartDate: true,
       requiresQuestionnaire: true,
+      elixirAEnvoyer: true,
     },
   });
 
@@ -30,6 +31,7 @@ export async function GET() {
       pendingResponseId: null,
       colisEnvoye: client.colisEnvoye,
       produitsRecus: client.produitsRecus,
+      elixirAEnvoyer: client.elixirAEnvoyer,
       programmeStarted: !!client.detoxStartDate,
       questionnaireStatus: "SUBMITTED",
       questionnaireSectionsDone: 0,
@@ -57,6 +59,7 @@ export async function GET() {
     pendingResponseId: pendingPreStart?.id ?? null,
     colisEnvoye: client.colisEnvoye,
     produitsRecus: client.produitsRecus,
+    elixirAEnvoyer: client.elixirAEnvoyer,
     programmeStarted: !!client.detoxStartDate,
     questionnaireStatus: questionnaireEntry?.status ?? null,
     questionnaireSectionsDone: questionnaireEntry?.sectionsDone ?? 0,

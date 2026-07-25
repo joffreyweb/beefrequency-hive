@@ -132,6 +132,10 @@ model Client {
   requiresElixirs         Boolean      @default(true)
   requiresModules         Boolean      @default(false)
 
+  // Élixir : true = colis à envoyer au client (flux commande/adresse/email).
+  // false = déjà chez le client — aucun envoi, aucun email, colis considéré livré.
+  elixirAEnvoyer          Boolean      @default(true)
+
   // Cadre d'engagement Monitoring Passage
   fixedDay             String?
   reportsUsed          Int       @default(0)

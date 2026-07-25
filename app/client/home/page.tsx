@@ -192,14 +192,18 @@ export default async function ClientHomePage() {
 
   // ── PAGE "EN ATTENTE" — affichée tant que le programme n'a pas démarré ──
   if (!pendingQuestionnaire && !programHasStarted && client.requiresProgramTimeline && !isCustom) {
+    // Élixir déjà chez le client → aucun envoi : on saute les états colis (préparation/route).
+    const elixirNeedsShipping = client.elixirAEnvoyer !== false;
+
     // 3 sous-états :
     //   A. Colis pas envoyé          → "En préparation"
     //   B. Colis envoyé, pas reçu    → "En route" + bouton (via ElixirReceivedBanner)
     //   C. Reçu, démarrage à venir   → "Démarrage le {date}"
     const stage: "preparing" | "shipped" | "starting" =
       client.produitsRecus ? "starting"
-      : client.colisEnvoye ? "shipped"
-      : "preparing";
+      : elixirNeedsShipping && client.colisEnvoye ? "shipped"
+      : elixirNeedsShipping ? "preparing"
+      : "starting";
 
     const startsAtFormatted = client.detoxStartDate
       ? new Date(client.detoxStartDate).toLocaleDateString(lang === "FR" ? "fr-FR" : "en-US", {
@@ -255,10 +259,12 @@ export default async function ClientHomePage() {
           })}
         </div>
 
-        {/* Élixirs reçus banner — affiche le bouton si colis envoyé */}
-        <div className="w-full">
-          <ElixirReceivedBanner />
-        </div>
+        {/* Élixirs reçus banner — affiche le bouton si colis envoyé (jamais si pas d'envoi) */}
+        {elixirNeedsShipping && (
+          <div className="w-full">
+            <ElixirReceivedBanner />
+          </div>
+        )}
 
         {/* Contenu — varie selon le sous-état */}
         <div className="text-center max-w-md mx-auto">

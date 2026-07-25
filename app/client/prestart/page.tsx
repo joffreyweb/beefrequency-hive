@@ -24,6 +24,18 @@ export default function PreStartPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Élixir déjà chez le client → aucun envoi : pas de formulaire de commande.
+  useEffect(() => {
+    fetch("/api/client/prestart-status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && data.elixirAEnvoyer === false) {
+          router.replace("/client/home");
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
   // Pré-remplir depuis l'intake si disponible
   useEffect(() => {
     fetch("/api/onboarding")

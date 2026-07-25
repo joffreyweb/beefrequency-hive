@@ -11,14 +11,41 @@ export default function ClientModulesSection({
   clientId,
   parcoursType,
   initialFlags,
+  elixirAEnvoyer: initialElixirAEnvoyer = true,
 }: {
   clientId: string;
   parcoursType: ParcoursType;
   initialFlags: ParcoursFlags;
+  elixirAEnvoyer?: boolean;
 }) {
   const [flags, setFlags] = useState<ParcoursFlags>(initialFlags);
+  const [elixirAEnvoyer, setElixirAEnvoyer] = useState<boolean>(initialElixirAEnvoyer);
   const [saving, setSaving] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+
+  // Élixir : à envoyer (colis) ou déjà chez le client (pas d'envoi).
+  async function setElixirEnvoi(next: boolean) {
+    if (next === elixirAEnvoyer) return;
+    const prev = elixirAEnvoyer;
+    setElixirAEnvoyer(next); // optimiste
+    setSaving("__elixir__");
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ elixirAEnvoyer: next }),
+      });
+      if (!res.ok) throw new Error();
+      setMsg("Enregistré ✓");
+      setTimeout(() => setMsg(""), 2500);
+    } catch {
+      setElixirAEnvoyer(prev); // rollback
+      setMsg("Échec de l'enregistrement");
+      setTimeout(() => setMsg(""), 3000);
+    } finally {
+      setSaving(null);
+    }
+  }
 
   async function toggle(key: keyof ParcoursFlags) {
     const next = !flags[key];
@@ -102,6 +129,45 @@ export default function ClientModulesSection({
           </label>
         ))}
       </div>
+
+      {/* Sous-réglage Élixir — visible seulement si le module Élixir est actif */}
+      {flags.requiresElixirs && (
+        <div className="mt-4 pt-4 border-t border-or-pale/40">
+          <p className="text-xs font-caps uppercase tracking-wider text-brun-mid mb-2">Élixir — envoi</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setElixirEnvoi(true)}
+              disabled={saving === "__elixir__"}
+              className={`px-3 py-1.5 rounded-[8px] text-sm font-ui border transition-colors disabled:opacity-50 ${
+                elixirAEnvoyer
+                  ? "bg-or-sacre text-white border-or-sacre"
+                  : "bg-cire-chaude text-brun-mid border-or-pale hover:border-or-sacre"
+              }`}
+            >
+              À envoyer (colis)
+            </button>
+            <button
+              type="button"
+              onClick={() => setElixirEnvoi(false)}
+              disabled={saving === "__elixir__"}
+              className={`px-3 py-1.5 rounded-[8px] text-sm font-ui border transition-colors disabled:opacity-50 ${
+                !elixirAEnvoyer
+                  ? "bg-foret text-white border-foret"
+                  : "bg-cire-chaude text-brun-mid border-or-pale hover:border-foret"
+              }`}
+            >
+              Déjà chez le client — pas d'envoi
+            </button>
+          </div>
+          <p className="text-xs font-ui text-brun-mid/50 mt-2">
+            {elixirAEnvoyer
+              ? "Le client confirme son adresse, un email de commande t'est envoyé, puis il suit le colis."
+              : "Aucun envoi ni email : l'élixir est considéré déjà livré. Il te reste à fixer la date de démarrage."}
+          </p>
+        </div>
+      )}
+
       <p className="text-xs font-ui text-brun-mid/50 mt-3">
         Modification immédiate — pilote l'affichage côté client (PWA).
       </p>

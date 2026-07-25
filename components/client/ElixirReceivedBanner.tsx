@@ -19,7 +19,7 @@ export default function ElixirReceivedBanner() {
     fetch("/api/client/prestart-status")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data && data.colisEnvoye && !data.produitsRecus) {
+        if (data && data.elixirAEnvoyer !== false && data.colisEnvoye && !data.produitsRecus) {
           setVisible(true);
         }
       })

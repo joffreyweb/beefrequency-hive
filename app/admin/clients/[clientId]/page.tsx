@@ -7,7 +7,6 @@ import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientModulesSection from "@/components/admin/ClientModulesSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
-import ClientClaritySection from "@/components/admin/ClientClaritySection";
 import { OFFER_LABELS } from "@/lib/offer-labels";
 
 // Labels lisibles pour les statuts
@@ -270,6 +269,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
       <ClientModulesSection
         clientId={clientId}
         parcoursType={client.parcoursType}
+        elixirAEnvoyer={client.elixirAEnvoyer}
         initialFlags={{
           requiresWelcomeVideo: client.requiresWelcomeVideo,
           requiresConvention: client.requiresConvention,
@@ -282,12 +282,6 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           requiresElixirs: client.requiresElixirs,
           requiresModules: client.requiresModules,
         }}
-      />
-
-      {/* Clarity by Beefrequency */}
-      <ClientClaritySection
-        clientId={clientId}
-        initialSubmission={client.claritySubmission}
       />
 
       {/* Actions requises */}

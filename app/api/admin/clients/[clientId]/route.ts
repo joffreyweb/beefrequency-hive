@@ -26,6 +26,11 @@ export async function PATCH(
 
   const updateData: {
     parcoursType?: ParcoursType;
+    elixirAEnvoyer?: boolean;
+    colisEnvoye?: boolean;
+    colisEnvoyeAt?: Date;
+    produitsRecus?: boolean;
+    produitsRecusAt?: Date;
   } & Partial<ParcoursFlags> = {};
 
   if (body.parcoursType !== undefined) {
@@ -51,6 +56,31 @@ export async function PATCH(
     }
   }
 
+  // Élixir : à envoyer (colis) vs déjà chez le client (pas d'envoi).
+  if (body.elixirAEnvoyer !== undefined) {
+    if (typeof body.elixirAEnvoyer !== "boolean") {
+      return NextResponse.json(
+        { error: "Le champ elixirAEnvoyer doit être un booléen" },
+        { status: 400 }
+      );
+    }
+    updateData.elixirAEnvoyer = body.elixirAEnvoyer;
+
+    // « Déjà chez le client » → aucun envoi : le colis est considéré livré,
+    // pour que le parcours ne bloque pas sur les écrans d'expédition.
+    if (body.elixirAEnvoyer === false) {
+      const current = await prisma.client.findUnique({
+        where: { id: clientId },
+        select: { colisEnvoyeAt: true, produitsRecusAt: true },
+      });
+      const now = new Date();
+      updateData.colisEnvoye = true;
+      if (!current?.colisEnvoyeAt) updateData.colisEnvoyeAt = now;
+      updateData.produitsRecus = true;
+      if (!current?.produitsRecusAt) updateData.produitsRecusAt = now;
+    }
+  }
+
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json(
       { error: "Aucun champ à mettre à jour" },
@@ -65,6 +95,7 @@ export async function PATCH(
       select: {
         id: true,
         parcoursType: true,
+        elixirAEnvoyer: true,
         ...Object.fromEntries(FLAG_KEYS.map((k) => [k, true])),
       },
     });
