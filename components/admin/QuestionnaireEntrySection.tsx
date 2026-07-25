@@ -14,6 +14,15 @@ interface Entry {
 export default function QuestionnaireEntrySection({ clientId }: { clientId: string }) {
   const [entry, setEntry] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
 
   useEffect(() => {
     fetch(`/api/admin/questionnaire-entry?clientId=${clientId}`)
@@ -45,6 +54,13 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
       ? "bg-or-sacre/10 text-or-sacre"
       : "bg-brun-mid/10 text-brun-mid";
 
+  const answeredSections = entry.responses
+    ? SECTIONS.filter((sec) => (entry.responses as Record<string, Record<string, string>>)?.[sec.id])
+    : [];
+  const allOpen = answeredSections.length > 0 && answeredSections.every((sec) => open.has(sec.id));
+  const toggleAll = () =>
+    setOpen(allOpen ? new Set() : new Set(answeredSections.map((sec) => sec.id)));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -53,6 +69,11 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
           Questionnaire d&apos;entrée
         </h3>
         <div className="flex items-center gap-2">
+          {answeredSections.length > 0 && (
+            <button onClick={toggleAll} className="text-[10px] font-ui text-or-sacre hover:text-ambre-vif">
+              {allOpen ? "Tout replier" : "Tout deplier"}
+            </button>
+          )}
           <span className={`text-[10px] font-ui px-2 py-1 rounded-full ${statusColor}`}>
             {statusLabel}
           </span>
@@ -81,15 +102,20 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
         if (!sectionAnswers) return null;
 
         return (
-          <div key={section.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
-            <div className="flex items-center gap-2 mb-3">
+          <div key={section.id} className="bg-cire-chaude border border-or-pale rounded-sm overflow-hidden">
+            <button
+              onClick={() => toggle(section.id)}
+              className="w-full flex items-center gap-2 p-4 text-left hover:bg-creme-sacree/40 transition-colors"
+            >
               <span>{section.icon}</span>
-              <h4 className="font-caps text-xs text-brun-mid uppercase tracking-wider">
+              <h4 className="flex-1 font-caps text-xs text-brun-mid uppercase tracking-wider">
                 {section.title}
               </h4>
-            </div>
+              <span className="text-brun-mid/40 text-xs shrink-0">{open.has(section.id) ? "\u25be" : "\u25b8"}</span>
+            </button>
 
-            <div className="space-y-2">
+            {open.has(section.id) && (
+            <div className="space-y-2 px-4 pb-4">
               {section.questions.map((q) => {
                 // Skip conditional textareas — shown inline with their parent
                 if (section.questions.some((other) => other.conditional === q.id)) return null;
@@ -144,6 +170,7 @@ export default function QuestionnaireEntrySection({ clientId }: { clientId: stri
                 );
               })}
             </div>
+            )}
           </div>
         );
       })}
