@@ -14,7 +14,6 @@ import TimezoneSelector from "@/components/admin/TimezoneSelector";
 import JourneyMessagesLog from "@/components/admin/JourneyMessagesLog";
 import ClientPracticesSection from "@/components/admin/ClientPracticesSection";
 import ParcoursSection from "@/components/admin/ParcoursSection";
-import ClientParcoursCard from "@/components/admin/ClientParcoursCard";
 import DetoxSection from "@/components/admin/DetoxSection";
 import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
 import ClientClaritySection from "@/components/admin/ClientClaritySection";
@@ -86,6 +85,7 @@ export default function ClientProfileTabs({
     { key: "journal", label: "Journal", badge: 0 },
     { key: "checkins", label: "Check-ins", badge: 0 },
     { key: "parcours", label: "Parcours", badge: 0 },
+    { key: "program", label: "Soins", badge: 0 },
     { key: "sessions", label: "Sessions", badge: 0 },
     { key: "seances", label: "Seances", badge: 0 },
     { key: "documents", label: "Documents", badge: unreadDocCount },
@@ -604,27 +604,8 @@ function ProtocolsSubTab({ client }: { client: any }) {
 function ParcoursTab({ client }: { client: any }) {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-          Type de parcours & modules actifs
-        </h2>
-        <ClientParcoursCard
-          clientId={client.id}
-          initialParcoursType={client.parcoursType ?? "LE_PASSAGE"}
-          initialFlags={{
-            requiresWelcomeVideo: client.requiresWelcomeVideo ?? true,
-            requiresConvention: client.requiresConvention ?? true,
-            requiresQuestionnaire: client.requiresQuestionnaire ?? true,
-            requiresPhaseVideos: client.requiresPhaseVideos ?? true,
-            requiresMorningCheckin: client.requiresMorningCheckin ?? true,
-            requiresEveningCheckin: client.requiresEveningCheckin ?? true,
-            requiresJournal: client.requiresJournal ?? true,
-            requiresProgramTimeline: client.requiresProgramTimeline ?? true,
-            requiresElixirs: client.requiresElixirs ?? true,
-            requiresModules: client.requiresModules ?? false,
-          }}
-        />
-      </div>
+      {/* Le réglage « Type de parcours & modules actifs » vit en haut de la fiche
+          (ClientModulesSection) — plus de doublon ici. */}
       <div>
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
           Parcours 3 mois

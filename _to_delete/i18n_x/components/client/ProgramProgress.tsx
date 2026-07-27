@@ -1,0 +1,202 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
+import type { Lang } from "@/lib/translations";
+
+interface Phase {
+  name: string;
+  moduleName: string;
+  dayInPhase: number;
+  totalDaysInPhase: number;
+  daysRemaining: number;
+}
+
+interface NextPhase {
+  name: string;
+  duration: number;
+  startsIn: number;
+}
+
+interface ModuleInfo {
+  name: string;
+  nameFr: string;
+  duration: number;
+}
+
+type ProgramState = "pending" | "active" | "completed" | "paused";
+
+interface ClientProgram {
+  programName: string;
+  totalDays: number;
+  currentDay: number;
+  progress: number;
+  currentPhase: Phase;
+  nextPhase: NextPhase | null;
+  modules: ModuleInfo[];
+  startDate: string;
+  endDate: string;
+  state: ProgramState;
+}
+
+const STATE_LABELS: Record<ProgramState, { EN: string; FR: string }> = {
+  pending: { EN: "Pending", FR: "En attente" },
+  active: { EN: "In progress", FR: "En cours" },
+  completed: { EN: "Completed", FR: "Terminé" },
+  paused: { EN: "Paused", FR: "En pause" },
+};
+
+const STATE_BADGE: Record<ProgramState, string> = {
+  pending: "bg-amber-100 text-amber-600",
+  active: "bg-foret/10 text-foret",
+  completed: "bg-brun-mid/10 text-brun-mid",
+  paused: "bg-amber-100 text-amber-600",
+};
+
+function fmtDate(iso: string, lang: Lang): string {
+  return new Date(iso).toLocaleDateString(lang === "EN" ? "en-GB" : "fr-BE", {
+    day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Brussels",
+  });
+}
+
+const MODULE_COLORS: Record<string, string> = {
+  detox: "bg-red-500",
+  cycle: "bg-amber-500",
+  break: "bg-emerald-600",
+  protocol30: "bg-amber-700",
+};
+
+const MODULE_TEXT_COLORS: Record<string, string> = {
+  detox: "text-red-600",
+  cycle: "text-amber-600",
+  break: "text-emerald-700",
+  protocol30: "text-amber-800",
+};
+
+export default function ProgramProgress() {
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
+  const [data, setData] = useState<ClientProgram | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/client/program")
+      .then((r) => r.json())
+      .then((d) => setData(d.clientProgram))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return null;
+  if (!data)
+    return (
+      <p className="text-sm font-ui text-brun-mid/50 italic text-center py-4">
+        {T({ EN: "Your journey is being prepared.", FR: "Ton parcours est en cours de préparation." })}
+      </p>
+    );
+
+  // Compute position for "you are here" marker
+  let markerPosition = 0;
+  let dayAcc = 0;
+  for (const mod of data.modules) {
+    if (dayAcc + mod.duration >= data.currentDay) {
+      markerPosition = ((dayAcc + (data.currentDay - dayAcc)) / data.totalDays) * 100;
+      break;
+    }
+    dayAcc += mod.duration;
+  }
+
+  // Opacité passé/futur : un segment est "atteint" si son début < jour courant.
+  const reached: boolean[] = [];
+  {
+    let acc = 0;
+    for (const mod of data.modules) {
+      reached.push(acc < data.currentDay);
+      acc += mod.duration;
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Progress header */}
+      <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 text-center">
+        <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-2">{data.programName}</p>
+        <p className="font-display text-2xl text-brun-chaud">
+          {T({ EN: "Day", FR: "Jour" })} {data.currentDay} <span className="text-brun-mid/40 font-ui text-lg">/ {data.totalDays}</span>
+        </p>
+        <p className="font-ui text-xs text-brun-mid/60 mt-1">
+          {T({ EN: "From", FR: "Du" })} {fmtDate(data.startDate, lang)} {T({ EN: "to", FR: "au" })} {fmtDate(data.endDate, lang)}
+        </p>
+        <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${STATE_BADGE[data.state]}`}>
+          {T(STATE_LABELS[data.state])}
+        </span>
+        <div className="mt-3 mx-auto max-w-xs">
+          <div className="h-2 bg-creme-sacree rounded-full overflow-hidden">
+            <div className="h-full bg-or-sacre rounded-full transition-all duration-500" style={{ width: `${data.progress}%` }} />
+          </div>
+          <p className="text-xs font-ui text-brun-mid/50 mt-1">{data.progress}%</p>
+        </div>
+      </div>
+
+      {/* Current phase */}
+      <div className="bg-cire-chaude border-2 border-or-sacre rounded-sm p-5">
+        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-1">{T({ EN: "Current phase", FR: "Phase actuelle" })}</p>
+        <p className={`font-display text-xl ${MODULE_TEXT_COLORS[data.currentPhase.moduleName] || "text-brun-chaud"}`}>
+          {data.currentPhase.name}
+        </p>
+        <p className="font-ui text-sm text-brun-mid mt-1">
+          {T({ EN: "Day", FR: "Jour" })} {data.currentPhase.dayInPhase} / {data.currentPhase.totalDaysInPhase}
+          {data.currentPhase.daysRemaining > 0 && (
+            <span className="text-brun-mid/50">
+              {" · "}
+              {lang === "EN"
+                ? `${data.currentPhase.daysRemaining} day${data.currentPhase.daysRemaining > 1 ? "s" : ""} left`
+                : `Encore ${data.currentPhase.daysRemaining} jour${data.currentPhase.daysRemaining > 1 ? "s" : ""}`}
+            </span>
+          )}
+        </p>
+      </div>
+
+      {/* Timeline */}
+      <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+        <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">{T({ EN: "Timeline", FR: "Timeline" })}</p>
+        <div className="relative">
+          <div className="flex rounded-full overflow-hidden h-4">
+            {data.modules.map((mod, i) => (
+              <div
+                key={i}
+                className={`${MODULE_COLORS[mod.name] || "bg-gray-300"} ${reached[i] ? "opacity-100" : "opacity-40"}`}
+                style={{ flex: mod.duration }}
+              />
+            ))}
+          </div>
+          {/* Marker */}
+          <div className="absolute -top-1" style={{ left: `${Math.min(markerPosition, 98)}%` }}>
+            <div className="w-0.5 h-6 bg-brun-chaud" />
+            <p className="text-[9px] font-ui text-brun-chaud -ml-3 mt-0.5 whitespace-nowrap">{T({ EN: "Here", FR: "Ici" })}</p>
+          </div>
+        </div>
+        <div className="flex mt-2">
+          {data.modules.map((mod, i) => (
+            <span key={i} style={{ flex: mod.duration }} className="text-[9px] font-ui text-brun-mid/40 truncate">
+              {mod.nameFr}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Next phase */}
+      {data.nextPhase && (
+        <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
+          <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-1">{T({ EN: "Next step", FR: "Prochaine étape" })}</p>
+          <p className="font-display text-lg text-brun-chaud">{data.nextPhase.name}</p>
+          <p className="font-ui text-sm text-brun-mid">
+            {lang === "EN"
+              ? `Starts in ${data.nextPhase.startsIn} day${data.nextPhase.startsIn > 1 ? "s" : ""} · Duration: ${data.nextPhase.duration} days`
+              : `Commence dans ${data.nextPhase.startsIn} jour${data.nextPhase.startsIn > 1 ? "s" : ""} · Durée : ${data.nextPhase.duration} jours`}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

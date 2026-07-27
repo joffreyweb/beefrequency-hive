@@ -27,11 +27,13 @@ export const FLAG_KEYS = [
   "requiresModules",
 ] as const satisfies readonly (keyof ParcoursFlags)[];
 
-// Flags éditables par l'admin (UI). requiresWelcomeVideo en est exclu : il est
-// dérivé de l'offre côté serveur (welcomeVideoForOffer), jamais coché à la main.
+// Flags éditables par l'admin (UI). Exclus :
+//  - requiresWelcomeVideo : dérivé de l'offre côté serveur (welcomeVideoForOffer).
+//  - requiresPhaseVideos : dormant (aucun consommateur côté client, fonction non codée) → masqué.
+// La colonne reste en base ; seul l'affichage de la case est retiré.
 export const EDITABLE_FLAG_KEYS = FLAG_KEYS.filter(
-  (k) => k !== "requiresWelcomeVideo"
-) as Exclude<(typeof FLAG_KEYS)[number], "requiresWelcomeVideo">[];
+  (k) => k !== "requiresWelcomeVideo" && k !== "requiresPhaseVideos"
+) as Exclude<(typeof FLAG_KEYS)[number], "requiresWelcomeVideo" | "requiresPhaseVideos">[];
 
 // Dérivé de PARCOURS_CONFIG (source unique du binding — lib/offer-parcours-binding.ts).
 // Chaque parcoursType expose ses 8 flags legacy via PARCOURS_CONFIG[type].flags.

@@ -1,0 +1,235 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import CharteEngagement from "@/components/client/CharteEngagement";
+import { useLanguage } from "@/lib/LanguageContext";
+
+interface Slot {
+  start: string;
+  available: boolean;
+}
+
+const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+export default function BookingPage() {
+  const params = useParams();
+  const router = useRouter();
+  const token = params.token as string;
+
+  const { lang } = useLanguage();
+  const T = (k: { EN: string; FR: string }) => k[lang];
+  const dateLocale = lang === "EN" ? "en-US" : "fr-FR";
+
+  const [valid, setValid] = useState<boolean | null>(null);
+  const [clientName, setClientName] = useState("");
+  const [error, setError] = useState("");
+  const [slots, setSlots] = useState<Record<string, Slot[]>>({});
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [booking, setBooking] = useState(false);
+  const [done, setDone] = useState(false);
+  const [zoomUrl, setZoomUrl] = useState("");
+  const [showCharte, setShowCharte] = useState(false);
+  const [engagementAccepted, setEngagementAccepted] = useState(false);
+
+  useEffect(() => {
+    // Validate token
+    fetch(`/api/booking/${token}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.valid) {
+          setValid(true);
+          setClientName(d.clientName || "");
+        } else {
+          setValid(false);
+          setError(d.error || T({ EN: "Invalid link", FR: "Lien invalide" }));
+        }
+      })
+      .catch(() => { setValid(false); setError(T({ EN: "Connection error", FR: "Erreur de connexion" })); });
+
+    // Load slots
+    const start = new Date().toISOString().split("T")[0];
+    fetch(`/api/availability?start=${start}&days=21`)
+      .then((r) => r.json())
+      .then((d) => setSlots(d.slots || {}))
+      .catch(() => {});
+
+    // Check if engagement already accepted
+    fetch("/api/client/engagement")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.hasAccepted) setEngagementAccepted(true);
+      })
+      .catch(() => {});
+  }, [token]);
+
+  function handleConfirmClick() {
+    if (!selectedSlot) return;
+    if (engagementAccepted) {
+      handleBook();
+    } else {
+      setShowCharte(true);
+    }
+  }
+
+  async function handleCharteAccept() {
+    if (!selectedSlot) return;
+    const fixedDay = DAY_NAMES[new Date(selectedSlot).getDay()];
+    const res = await fetch("/api/client/engagement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fixedDay }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || T({ EN: "Error during acceptance", FR: "Erreur lors de l'acceptation" }));
+      setShowCharte(false);
+      return;
+    }
+    setEngagementAccepted(true);
+    setShowCharte(false);
+    await handleBook();
+  }
+
+  async function handleBook() {
+    if (!selectedSlot) return;
+    setBooking(true);
+    try {
+      const res = await fetch(`/api/booking/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledAt: selectedSlot }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDone(true);
+        setZoomUrl(data.appointment?.zoomJoinUrl || "");
+      } else {
+        setError(data.error || T({ EN: "Error", FR: "Erreur" }));
+      }
+    } finally {
+      setBooking(false);
+    }
+  }
+
+  if (valid === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-creme-sacree">
+        <p className="font-ui text-sm text-brun-mid/60">{T({ EN: "Loading...", FR: "Chargement..." })}</p>
+      </div>
+    );
+  }
+
+  if (!valid || error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
+        <div className="text-center">
+          <h1 className="font-display text-2xl text-brun-chaud mb-2">{T({ EN: "Invalid link", FR: "Lien invalide" })}</h1>
+          <p className="font-ui text-sm text-brun-mid">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (done) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-creme-sacree px-4">
+        <div className="text-center max-w-sm">
+          <h1 className="font-display text-2xl text-brun-chaud mb-3">{T({ EN: "Session confirmed", FR: "Session confirmee" })}</h1>
+          <p className="font-ui text-sm text-brun-mid mb-2">
+            {new Date(selectedSlot!).toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
+            {T({ EN: " at ", FR: " a " })}
+            {new Date(selectedSlot!).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
+          </p>
+          <p className="font-ui text-sm text-brun-mid mb-4">
+            {T({
+              EN: "You'll receive a confirmation email with the Zoom link.",
+              FR: "Tu recevras un email de confirmation avec le lien Zoom.",
+            })}
+          </p>
+          {zoomUrl && (
+            <a href={zoomUrl} target="_blank" rel="noopener noreferrer" className="inline-block px-6 py-2.5 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif">
+              {T({ EN: "Zoom link", FR: "Lien Zoom" })}
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const sortedDates = Object.keys(slots).sort();
+
+  return (
+    <div className="min-h-screen bg-creme-sacree px-4 py-8">
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="font-display text-3xl text-brun-chaud">Hive</h1>
+          <p className="font-caps text-sm text-or-sacre tracking-widest mt-1">BeeFrequency</p>
+          <p className="font-ui text-sm text-brun-mid mt-4">
+            {T({
+              EN: `Hello ${clientName?.split(" ")[0]}. Choose your slot.`,
+              FR: `Bonjour ${clientName?.split(" ")[0]}. Choisis ton creneau.`,
+            })}
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {sortedDates.map((date) => {
+            const daySlots = slots[date].filter((s) => s.available);
+            if (daySlots.length === 0) return null;
+
+            return (
+              <div key={date} className="bg-cire-chaude border border-or-pale rounded-[10px] p-4">
+                <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-3">
+                  {new Date(date + "T12:00:00").toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {daySlots.map((s) => {
+                    const isSelected = selectedSlot === s.start;
+                    return (
+                      <button
+                        key={s.start}
+                        onClick={() => setSelectedSlot(s.start)}
+                        className={`px-4 py-2 rounded-lg text-sm font-ui transition-colors ${
+                          isSelected
+                            ? "bg-or-sacre text-white"
+                            : "bg-creme-sacree border border-or-pale text-brun-chaud hover:border-or-sacre"
+                        }`}
+                      >
+                        {new Date(s.start).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {selectedSlot && !showCharte && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleConfirmClick}
+              disabled={booking}
+              className="px-8 py-3 bg-or-sacre text-white rounded-sharp font-caps text-sm uppercase tracking-wider hover:bg-ambre-vif disabled:opacity-50"
+            >
+              {booking
+                ? T({ EN: "Confirming...", FR: "Confirmation..." })
+                : T({ EN: "Confirm this slot", FR: "Confirmer ce creneau" })}
+            </button>
+          </div>
+        )}
+
+        {showCharte && (
+          <div className="mt-6">
+            <CharteEngagement
+              onAccept={handleCharteAccept}
+              onCancel={() => setShowCharte(false)}
+              clientName={clientName}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
