@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 # Swiss Ephemeris data files — tracked in repo (3.5MB, needed for HD/astro calculations)
+
+_to_delete/
