@@ -172,6 +172,8 @@ export async function createClientFolder(clientName: string, clientId: string): 
       createFolder(rootFolderId, "Videos"),
       createFolder(rootFolderId, "Sessions"),
       createFolder(rootFolderId, "RGPD"),
+      createFolder(rootFolderId, "Documents"),
+      createFolder(rootFolderId, "Clarity"),
     ]);
 
     console.log(`[kDrive] Dossier client cree: ${folderName}`);
@@ -224,4 +226,19 @@ export async function uploadToKDrive(folderId: string, fileName: string, content
 /** Trouver le sous-dossier d'un client par nom (Contrats, Videos, etc.) */
 export async function getClientSubfolder(rootFolderId: string, subfolderName: string): Promise<string | null> {
   return findChildFolder(rootFolderId, subfolderName);
+}
+
+/**
+ * Trouver OU créer un sous-dossier client (idempotent).
+ * Utile pour les sous-dossiers ajoutés après coup (Documents, Clarity),
+ * absents des dossiers des clients créés avant leur introduction.
+ */
+export async function ensureClientSubfolder(rootFolderId: string, subfolderName: string): Promise<string | null> {
+  if (!isKDriveConfigured()) return null;
+  try {
+    return await createFolder(rootFolderId, subfolderName);
+  } catch (error) {
+    console.error(`[kDrive] ensureClientSubfolder "${subfolderName}":`, error);
+    return null;
+  }
 }

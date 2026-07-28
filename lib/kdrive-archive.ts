@@ -1,14 +1,18 @@
 /**
  * kDrive Auto-Archivage — fire-and-forget uploads
  *
- * 3 fonctions appelées après les événements client :
- * 1. archiveConventionToKDrive — après signature convention
- * 2. archiveVideoToKDrive — après enregistrement vidéo seuil
- * 3. archiveQuestionnaireToKDrive — après soumission questionnaire
+ * Fonctions appelées après les événements client (double sécurité app + kDrive) :
+ * 1. archiveConventionToKDrive  — après signature convention   → Contrats/
+ * 2. archiveVideoToKDrive       — après enregistrement vidéo    → Videos/
+ * 3. archiveQuestionnaireToKDrive — après soumission questionnaire → Onboarding/
+ * 4. archiveDocumentToKDrive    — après dépôt d'un document      → Documents/  (prise de sang, etc.)
+ * 5. archiveClarityToKDrive     — à la publication du rapport    → Clarity/
+ * 6. archiveSessionNoteToKDrive — à l'enregistrement d'une note  → Sessions/
+ * 7. archiveRgpdToKDrive        — à l'acceptation du consentement → RGPD/
  */
 
 import { prisma } from "@/lib/prisma";
-import { isKDriveConfigured, uploadToKDrive, getClientSubfolder, createClientFolder } from "@/lib/kdrive";
+import { isKDriveConfigured, uploadToKDrive, getClientSubfolder, createClientFolder, ensureClientSubfolder } from "@/lib/kdrive";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { t } from "@/lib/translations";
@@ -263,5 +267,225 @@ export async function archiveQuestionnaireToKDrive(clientId: string): Promise<vo
     }
   } catch (error) {
     console.error("[kDrive-archive] Erreur questionnaire:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 4. DOCUMENT CLIENT (prise de sang, etc.) → kDrive/Documents/
+// ══════════════════════════════════════
+
+export async function archiveDocumentToKDrive(documentId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const document = await prisma.clientDocument.findUnique({
+      where: { id: documentId },
+      select: { clientId: true, fileName: true, fileUrl: true, category: true, createdAt: true },
+    });
+    if (!document) return;
+
+    const rootId = await ensureRootFolderId(document.clientId);
+    if (!rootId) return;
+
+    const folderId = await ensureClientSubfolder(rootId, "Documents");
+    if (!folderId) return;
+
+    // Le fichier est sur le disque : fileUrl = /uploads/clients/{clientId}/{stored}
+    const localPath = join(process.cwd(), document.fileUrl);
+    const buffer = await readFile(localPath);
+
+    const dateStr = new Date(document.createdAt).toISOString().split("T")[0];
+    const safeName = document.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const fileName = `${dateStr}_${document.category}_${safeName}`;
+
+    const ok = await uploadToKDrive(folderId, fileName, buffer);
+    if (ok) console.log(`[kDrive-archive] Document uploadé: ${fileName}`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur document:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 5. CLARITY (rapport + réponses) → kDrive/Clarity/
+// ══════════════════════════════════════
+
+export async function archiveClarityToKDrive(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const sub = await prisma.claritySubmission.findUnique({
+      where: { clientId },
+      select: {
+        answers: true,
+        reportMd: true,
+        publishedAt: true,
+        submittedAt: true,
+        client: { select: { user: { select: { name: true, email: true } } } },
+      },
+    });
+    if (!sub || (!sub.reportMd && !sub.answers)) return;
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+
+    const folderId = await ensureClientSubfolder(rootId, "Clarity");
+    if (!folderId) return;
+
+    const dateRef = sub.publishedAt ?? sub.submittedAt ?? new Date();
+    const dateStr = new Date(dateRef).toISOString().split("T")[0];
+    const { CLARITY_MAPS, answerKey } = await import("@/lib/clarity/maps");
+    const answers = (sub.answers as Record<string, string>) || {};
+
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("CLARITY — Synthèse & Réponses", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text("BeeFrequency — Joffrey Deleplanque", { align: "center" });
+      doc.text(`Client : ${sub.client.user.name} (${sub.client.user.email})`, { align: "center" });
+      doc.moveDown(2);
+
+      if (sub.reportMd) {
+        doc.fontSize(13).font("Helvetica-Bold").text("Rapport de synthèse");
+        doc.moveDown(0.5);
+        doc.fontSize(10).font("Helvetica").text(sub.reportMd);
+      }
+
+      // Annexe — réponses brutes (archive INTERNE de Joffrey uniquement, jamais exposée au client)
+      doc.addPage();
+      doc.fontSize(13).font("Helvetica-Bold").text("Annexe — Réponses du client (usage interne)");
+      doc.moveDown(0.5);
+      CLARITY_MAPS.forEach((map, mapIdx) => {
+        map.sections.forEach((sec, secIdx) => {
+          sec.questions.forEach((q, qIdx) => {
+            const a = (answers[answerKey(mapIdx, secIdx, qIdx)] || "").trim();
+            if (!a) return;
+            doc.fontSize(9).font("Helvetica-Bold").text(q.text.FR);
+            doc.fontSize(9).font("Helvetica").text(a);
+            doc.moveDown(0.4);
+          });
+        });
+      });
+
+      doc.moveDown(1);
+      doc.fontSize(8).fillColor("#999").text(
+        `Document généré automatiquement — BeeFrequency — ${new Date().toISOString()}`,
+        { align: "center" },
+      );
+    });
+
+    const fileName = `Clarity_${dateStr}.pdf`;
+    const ok = await uploadToKDrive(folderId, fileName, pdf);
+    if (ok) console.log(`[kDrive-archive] Clarity uploadé: ${fileName}`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur Clarity:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 6. NOTE DE SÉANCE → kDrive/Sessions/
+// ══════════════════════════════════════
+
+export async function archiveSessionNoteToKDrive(sessionNoteId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const note = await prisma.sessionNote.findUnique({
+      where: { id: sessionNoteId },
+      select: {
+        content: true,
+        createdAt: true,
+        session: { select: { clientId: true } },
+        appointment: { select: { clientId: true } },
+      },
+    });
+    if (!note) return;
+
+    const clientId = note.session?.clientId ?? note.appointment?.clientId;
+    if (!clientId) return;
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+
+    const folderId = await ensureClientSubfolder(rootId, "Sessions");
+    if (!folderId) return;
+
+    const dateStr = new Date(note.createdAt).toISOString().split("T")[0];
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("NOTE DE SÉANCE", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text("BeeFrequency — Joffrey Deleplanque", { align: "center" });
+      doc.text(`Date : ${new Date(note.createdAt).toLocaleDateString("fr-FR")}`, { align: "center" });
+      doc.moveDown(2);
+      doc.fontSize(10).font("Helvetica").text(note.content);
+      doc.moveDown(2);
+      doc.fontSize(8).fillColor("#999").text(
+        `Document généré automatiquement — BeeFrequency — ${new Date().toISOString()}`,
+        { align: "center" },
+      );
+    });
+
+    // Nom stable par note (évite les doublons si la note est ré-enregistrée).
+    const fileName = `Note_seance_${dateStr}_${sessionNoteId.slice(0, 6)}.pdf`;
+    const ok = await uploadToKDrive(folderId, fileName, pdf);
+    if (ok) console.log(`[kDrive-archive] Note de séance uploadée: ${fileName}`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur note de séance:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 7. CONSENTEMENT RGPD → kDrive/RGPD/
+// ══════════════════════════════════════
+
+export async function archiveRgpdToKDrive(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: {
+        engagementAcceptedAt: true,
+        charteSignedAt: true,
+        engagementText: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+    if (!client) return;
+
+    const acceptedAt = client.engagementAcceptedAt ?? client.charteSignedAt;
+    if (!acceptedAt) return; // pas encore de consentement
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+
+    const folderId = await ensureClientSubfolder(rootId, "RGPD");
+    if (!folderId) return;
+
+    const accepted = new Date(acceptedAt);
+    const dateStr = accepted.toISOString().split("T")[0];
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("CONSENTEMENT & DONNÉES (RGPD)", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text("BeeFrequency — Joffrey Deleplanque", { align: "center" });
+      doc.moveDown(2);
+      doc.fontSize(10).font("Helvetica");
+      doc.text(`Client : ${client.user.name} (${client.user.email})`);
+      doc.text(
+        `Consentement accepté le : ${accepted.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} à ${accepted.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`,
+      );
+      if (client.engagementText) {
+        doc.moveDown(1);
+        doc.fontSize(12).font("Helvetica-Bold").text("Déclaration archivée");
+        doc.moveDown(0.5);
+        doc.fontSize(10).font("Helvetica").text(client.engagementText);
+      }
+      doc.moveDown(2);
+      doc.fontSize(8).fillColor("#999").text(
+        `Preuve de consentement générée automatiquement — BeeFrequency — ${new Date().toISOString()}`,
+        { align: "center" },
+      );
+    });
+
+    const fileName = `Consentement_RGPD_${dateStr}.pdf`;
+    const ok = await uploadToKDrive(folderId, fileName, pdf);
+    if (ok) console.log(`[kDrive-archive] Consentement RGPD uploadé: ${fileName}`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur RGPD:", error);
   }
 }

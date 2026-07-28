@@ -42,6 +42,11 @@ export async function POST(request: NextRequest) {
       .then(({ archiveConventionToKDrive }) => archiveConventionToKDrive(updatedClient.id))
       .catch((err) => console.error("[charte] kDrive archive error:", err));
 
+    // Archive preuve de consentement RGPD (fire-and-forget)
+    import("@/lib/kdrive-archive")
+      .then(({ archiveRgpdToKDrive }) => archiveRgpdToKDrive(updatedClient.id))
+      .catch((err) => console.error("[charte] kDrive RGPD archive error:", err));
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

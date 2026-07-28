@@ -178,6 +178,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Archive vers kDrive (fire-and-forget) — double sécurité app + kDrive
+    import("@/lib/kdrive-archive")
+      .then(({ archiveDocumentToKDrive }) => archiveDocumentToKDrive(document.id))
+      .catch((err) => console.error("[documents] kDrive archive error:", err));
+
     return NextResponse.json({ document }, { status: 201 });
   } catch {
     return NextResponse.json(

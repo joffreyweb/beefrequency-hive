@@ -57,5 +57,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // Archive vers kDrive (fire-and-forget) — double sécurité app + kDrive
+  import("@/lib/kdrive-archive")
+    .then(({ archiveSessionNoteToKDrive }) => archiveSessionNoteToKDrive(note.id))
+    .catch((err) => console.error("[session-notes] kDrive archive error:", err));
+
   return NextResponse.json({ note }, { status: existing ? 200 : 201 });
 }

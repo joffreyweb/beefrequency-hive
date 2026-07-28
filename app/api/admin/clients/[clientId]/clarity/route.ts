@@ -104,6 +104,12 @@ export async function PATCH(
       data: { status: "PUBLISHED", publishedAt: new Date() },
       select: { status: true, reportToken: true, publishedAt: true },
     });
+
+    // Archive Clarity (rapport + réponses) vers kDrive (fire-and-forget)
+    import("@/lib/kdrive-archive")
+      .then(({ archiveClarityToKDrive }) => archiveClarityToKDrive(clientId))
+      .catch((err) => console.error("[clarity] kDrive archive error:", err));
+
     return NextResponse.json({ submission: updated });
   }
 
