@@ -62,7 +62,7 @@ export default function PushNotificationSection() {
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(key),
+        applicationServerKey: urlBase64ToUint8Array(key) as unknown as BufferSource,
       });
 
       const res = await fetch("/api/push/subscribe", {
