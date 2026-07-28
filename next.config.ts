@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["sweph"],
+  serverExternalPackages: ["sweph", "pdfkit"],
   async headers() {
     return [
       {
