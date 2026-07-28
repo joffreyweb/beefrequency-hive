@@ -4,6 +4,7 @@ import Link from "next/link";
 import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
 import KDriveSyncButton from "@/components/admin/KDriveSyncButton";
+import AdminSetPasswordSection from "@/components/admin/AdminSetPasswordSection";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientModulesSection from "@/components/admin/ClientModulesSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
@@ -316,6 +317,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
 
       {/* Archivage kDrive — tout le dossier client, double sécurité */}
       <KDriveSyncButton clientId={clientId} />
+
+      {/* Mot de passe client — reset admin (aucun email) */}
+      <AdminSetPasswordSection clientId={clientId} />
 
       {/* Onglets (client component) */}
       <ClientProfileTabs

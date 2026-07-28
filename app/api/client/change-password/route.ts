@@ -8,32 +8,18 @@ export async function POST(request: NextRequest) {
     const auth = await requireClient();
     if (isErrorResponse(auth)) return auth;
 
-    const { currentPassword, newPassword } = await request.json();
+    const { newPassword } = await request.json();
 
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json({ error: "Champs requis" }, { status: 400 });
-    }
-
-    if (newPassword.length < 8) {
+    // Le client est déjà authentifié par sa session (requireClient) : cette
+    // session EST la preuve d'identité. On ne demande donc PAS l'ancien mot de
+    // passe — sinon un client qui l'a oublié serait bloqué (aucun email requis).
+    if (!newPassword || newPassword.length < 8) {
       return NextResponse.json({ error: "passwordTooShort" }, { status: 400 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: auth.session.userId },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
-    }
-
-    const valid = await bcrypt.compare(currentPassword, user.password);
-    if (!valid) {
-      return NextResponse.json({ error: "passwordWrong" }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
-      where: { id: user.id },
+      where: { id: auth.session.userId },
       data: { password: hashed },
     });
 

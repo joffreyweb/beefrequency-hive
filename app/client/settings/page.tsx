@@ -230,7 +230,6 @@ export default function ClientSettingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          currentPassword: pwForm.current,
           newPassword: pwForm.newPw,
         }),
       });
@@ -519,13 +518,14 @@ export default function ClientSettingsPage() {
           {T(t.settings.password)}
         </h2>
 
+        <p className="font-ui text-xs text-brun-mid/60">
+          {T({
+            EN: "You're logged in — just choose a new password. No old password or email needed.",
+            FR: "Tu es connecté(e) — choisis simplement un nouveau mot de passe. Pas besoin de l'ancien ni d'email.",
+          })}
+        </p>
+
         <div className="space-y-3">
-          <SettingsField
-            label={T(t.settings.currentPassword)}
-            value={pwForm.current}
-            onChange={(v) => setPwForm((p) => ({ ...p, current: v }))}
-            type="password"
-          />
           <SettingsField
             label={T(t.settings.newPassword)}
             value={pwForm.newPw}
@@ -542,7 +542,7 @@ export default function ClientSettingsPage() {
 
         <button
           onClick={handlePwSave}
-          disabled={pwSaving || !pwForm.current || !pwForm.newPw || !pwForm.confirm}
+          disabled={pwSaving || !pwForm.newPw || !pwForm.confirm}
           className="w-full py-2.5 bg-or-sacre text-white rounded-sharp font-ui text-sm uppercase tracking-wider hover:bg-ambre-vif transition-colors disabled:opacity-50"
         >
           {pwSaving ? T(t.settings.saving) : T(t.settings.changePassword)}
