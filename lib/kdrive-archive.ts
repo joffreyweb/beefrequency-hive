@@ -727,3 +727,74 @@ export async function archiveAllForClient(clientId: string): Promise<void> {
   console.log(`[kDrive-archive] archiveAllForClient terminé: ${clientId} (${notes.length} notes, ${docs.length} docs)`);
   // NB : les vidéos seuil s'archivent à l'enregistrement (fichiers volumineux, pas de rattrapage ici).
 }
+
+// ══════════════════════════════════════
+// FLUX SEULS — pour le cron nocturne (ce qui s'accumule dans le temps)
+// ══════════════════════════════════════
+
+export async function archiveFluxForClient(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+  await archiveMessagesToKDrive(clientId);
+  await archiveJournalToKDrive(clientId);
+  await archiveCheckinsToKDrive(clientId);
+  await archiveCartesToKDrive(clientId);
+}
+
+// ══════════════════════════════════════
+// 12. E-MAILS SORTANTS → kDrive/Emails/  (1 PDF par e-mail envoyé à un client)
+// ══════════════════════════════════════
+
+export async function archiveOutgoingEmailToKDrive(
+  toEmail: string,
+  subject: string,
+  htmlOrText: string,
+): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const email = (toEmail || "").trim().toLowerCase();
+    if (!email) return;
+
+    // On n'archive que si le destinataire est un client (sinon : mail admin/système).
+    const client = await prisma.client.findFirst({
+      where: { user: { email: { equals: email, mode: "insensitive" } } },
+      select: { id: true },
+    });
+    if (!client) return;
+
+    const rootId = await ensureRootFolderId(client.id);
+    if (!rootId) return;
+    const folderId = await ensureClientSubfolder(rootId, "Emails");
+    if (!folderId) return;
+
+    // HTML → texte lisible.
+    const body = (htmlOrText || "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    const now = new Date();
+    const stamp = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(16).font("Helvetica-Bold").text("E-MAIL ENVOYÉ", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text("BeeFrequency — Joffrey Deleplanque", { align: "center" });
+      doc.moveDown(1);
+      doc.fontSize(10).font("Helvetica-Bold").text(`À : ${email}`);
+      doc.text(`Objet : ${subject || "(sans objet)"}`);
+      doc.text(`Date : ${now.toLocaleString("fr-FR")}`);
+      doc.moveDown(1);
+      doc.fontSize(10).font("Helvetica").text(body || "(corps vide)");
+    });
+
+    const fileName = `Email_${stamp}.pdf`;
+    const ok = await uploadToKDrive(folderId, fileName, pdf);
+    if (ok) console.log(`[kDrive-archive] Email archivé: ${fileName} → ${email}`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur email:", error);
+  }
+}

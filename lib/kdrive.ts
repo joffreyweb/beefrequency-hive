@@ -178,6 +178,7 @@ export async function createClientFolder(clientName: string, clientId: string): 
       createFolder(rootFolderId, "Journal"),
       createFolder(rootFolderId, "Check-ins"),
       createFolder(rootFolderId, "Cartes"),
+      createFolder(rootFolderId, "Emails"),
     ]);
 
     console.log(`[kDrive] Dossier client cree: ${folderName}`);

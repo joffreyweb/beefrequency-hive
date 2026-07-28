@@ -24,6 +24,34 @@ export const transporter = nodemailer.createTransport({
   },
 } as nodemailer.TransportOptions);
 
+// Archivage kDrive de tout e-mail sortant vers un client — wrap unique, fire-and-forget.
+// Ne peut JAMAIS bloquer ni casser l'envoi (try/catch + appel de l'original inchangé).
+{
+  const _origSendMail = transporter.sendMail.bind(transporter);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (transporter as any).sendMail = (mailOptions: any, callback?: any) => {
+    try {
+      const rawTo = mailOptions?.to;
+      const to =
+        typeof rawTo === "string" ? rawTo : Array.isArray(rawTo) ? String(rawTo[0]) : "";
+      if (to) {
+        import("@/lib/kdrive-archive")
+          .then((m) =>
+            m.archiveOutgoingEmailToKDrive(
+              to,
+              String(mailOptions?.subject || ""),
+              String(mailOptions?.html || mailOptions?.text || ""),
+            ),
+          )
+          .catch(() => {});
+      }
+    } catch {
+      /* jamais bloquant */
+    }
+    return _origSendMail(mailOptions, callback);
+  };
+}
+
 const mailFrom = () =>
   `"${process.env.FROM_NAME || "Joffrey Deleplanque"}" <${process.env.FROM_EMAIL || "admin@beefrequency.com"}>`;
 
