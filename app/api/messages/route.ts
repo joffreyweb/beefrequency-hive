@@ -156,7 +156,11 @@ export async function GET(request: NextRequest) {
 }
 
 // POST — Crée un nouveau message
-// Body: { receiverId, content }
+// Body: { receiverId, content, tag }
+// Sécurité : les messages ne circulent QU'ENTRE un client et l'admin.
+//  - CLIENT  → destinataire forcé à l'admin (receiverId fourni ignoré, tag ignoré).
+//  - ADMIN   → destinataire doit être un client existant (rôle CLIENT vérifié).
+// Garantit qu'un message ne peut jamais arriver au mauvais client.
 export async function POST(request: NextRequest) {
   try {
     const authResult = await requireAuth();
@@ -165,31 +169,58 @@ export async function POST(request: NextRequest) {
 
     const { receiverId, content, tag } = await request.json();
 
-    if (!receiverId || !content?.trim()) {
+    if (!content?.trim()) {
       return NextResponse.json(
-        { error: "receiverId et content requis" },
+        { error: "content requis" },
         { status: 400 }
       );
     }
 
-    // Vérifie que le destinataire existe
-    const receiver = await prisma.user.findUnique({
-      where: { id: receiverId },
-    });
+    let finalReceiverId: string;
+    let finalTag: string | undefined;
 
-    if (!receiver) {
-      return NextResponse.json(
-        { error: "Destinataire introuvable" },
-        { status: 404 }
-      );
+    if (session.role === "CLIENT") {
+      // Un client ne peut écrire qu'à l'admin. On ignore tout receiverId fourni.
+      const admin = await prisma.user.findFirst({
+        where: { role: "ADMIN" },
+        select: { id: true },
+      });
+      if (!admin) {
+        return NextResponse.json(
+          { error: "Aucun admin trouvé" },
+          { status: 500 }
+        );
+      }
+      finalReceiverId = admin.id;
+      finalTag = undefined; // Le tag (JOURNEY/SYMPTOM) est réservé à l'admin/système.
+    } else {
+      // ADMIN : le destinataire doit être un client existant.
+      if (!receiverId) {
+        return NextResponse.json(
+          { error: "receiverId requis" },
+          { status: 400 }
+        );
+      }
+      const receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: { id: true, role: true },
+      });
+      if (!receiver || receiver.role !== "CLIENT") {
+        return NextResponse.json(
+          { error: "Destinataire invalide" },
+          { status: 400 }
+        );
+      }
+      finalReceiverId = receiver.id;
+      finalTag = typeof tag === "string" && tag.trim() ? tag.trim() : undefined;
     }
 
     const message = await prisma.message.create({
       data: {
         senderId: session.userId,
-        receiverId,
+        receiverId: finalReceiverId,
         content: content.trim(),
-        ...(tag ? { tag } : {}),
+        ...(finalTag ? { tag: finalTag } : {}),
       },
       include: {
         sender: { select: { id: true, name: true, role: true } },
