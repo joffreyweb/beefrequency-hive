@@ -9,6 +9,7 @@ import ElixirReceivedBanner from "@/components/client/ElixirReceivedBanner";
 import ElixirInstructions from "@/components/client/ElixirInstructions";
 import TimelineWidget from "@/components/client/TimelineWidget";
 import ProgramProgress from "@/components/client/ProgramProgress";
+import ProgressMirror from "@/components/client/ProgressMirror";
 import AppointmentActions from "@/components/client/AppointmentActions";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
@@ -482,6 +483,9 @@ export default async function ClientHomePage() {
           <ProgramProgress />
         </section>
       )}
+
+      {/* Miroir de progression — courbe d'énergie + assiduité (self-hiding si aucun check-in) */}
+      <ProgressMirror />
 
       {/* Élixirs du jour (phase actuelle) + lien vers tous les élixirs assignés */}
       {client.requiresElixirs && hasAnyElixir && (
