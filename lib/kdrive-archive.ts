@@ -287,7 +287,18 @@ export async function archiveDocumentToKDrive(documentId: string): Promise<void>
     const rootId = await ensureRootFolderId(document.clientId);
     if (!rootId) return;
 
-    const folderId = await ensureClientSubfolder(rootId, "Documents");
+    // Documents/ → puis un sous-dossier PAR CATÉGORIE (évite le fourre-tout).
+    const documentsId = await ensureClientSubfolder(rootId, "Documents");
+    if (!documentsId) return;
+
+    const CATEGORY_FOLDERS: Record<string, string> = {
+      ANALYSE: "Analyses",
+      IDENTITE: "Identité",
+      MEDICAL: "Médical",
+      AUTRE: "Autre",
+    };
+    const catFolder = CATEGORY_FOLDERS[document.category] ?? "Autre";
+    const folderId = await ensureClientSubfolder(documentsId, catFolder);
     if (!folderId) return;
 
     // Le fichier est sur le disque : fileUrl = /uploads/clients/{clientId}/{stored}
@@ -296,10 +307,10 @@ export async function archiveDocumentToKDrive(documentId: string): Promise<void>
 
     const dateStr = new Date(document.createdAt).toISOString().split("T")[0];
     const safeName = document.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileName = `${dateStr}_${document.category}_${safeName}`;
+    const fileName = `${dateStr}_${safeName}`;
 
     const ok = await uploadToKDrive(folderId, fileName, buffer);
-    if (ok) console.log(`[kDrive-archive] Document uploadé: ${fileName}`);
+    if (ok) console.log(`[kDrive-archive] Document uploadé: Documents/${catFolder}/${fileName}`);
   } catch (error) {
     console.error("[kDrive-archive] Erreur document:", error);
   }
