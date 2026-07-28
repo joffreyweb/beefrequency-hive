@@ -7,6 +7,7 @@ import type { Lang } from "@/lib/translations";
 import Link from "next/link";
 import MySessionsSection from "@/components/client/MySessionsSection";
 import InstallPwaSection from "@/components/client/InstallPwaSection";
+import PushNotificationSection from "@/components/client/PushNotificationSection";
 
 const DAYS_FR: Record<string, string> = {
   monday: "Lundi",
@@ -260,6 +261,9 @@ export default function ClientSettingsPage() {
       <h1 className="font-display text-2xl text-brun-chaud">
         {T(t.settings.title)}
       </h1>
+
+      {/* Notifications push */}
+      <PushNotificationSection />
 
       {/* Language toggle */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 space-y-4">

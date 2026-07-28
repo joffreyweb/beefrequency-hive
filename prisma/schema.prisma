@@ -208,6 +208,7 @@ model Client {
   clientPhases           ClientPhase[]
   dailyCheckins          DailyCheckin[]
   openWebuiQueue         OpenWebuiQueue[]
+  pushSubscriptions      PushSubscription[]
   sessionChangeRequests  SessionChangeRequest[]
   questionnaireResponses QuestionnaireResponse[]
   appointments           Appointment[]
@@ -323,6 +324,19 @@ model Message {
   readAt     DateTime?
 
   createdAt DateTime @default(now())
+}
+
+// Abonnement aux notifications push (un par appareil/navigateur d'un client)
+model PushSubscription {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
 }
 
 model InviteToken {

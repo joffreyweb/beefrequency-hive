@@ -227,6 +227,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Notification push — quand l'admin écrit à un client (fire-and-forget).
+    if (session.role === "ADMIN") {
+      const bodyPreview = content.trim().slice(0, 120);
+      import("@/lib/push")
+        .then(async ({ sendPushToClient }) => {
+          const c = await prisma.client.findUnique({
+            where: { userId: finalReceiverId },
+            select: { id: true },
+          });
+          if (c) {
+            await sendPushToClient(c.id, {
+              title: "Joffrey t'a écrit",
+              body: bodyPreview,
+              url: "/client/messages",
+            });
+          }
+        })
+        .catch(() => {});
+    }
+
     return NextResponse.json({ message }, { status: 201 });
   } catch {
     return NextResponse.json(
