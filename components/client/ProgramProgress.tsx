@@ -118,6 +118,32 @@ export default function ProgramProgress() {
 
   return (
     <div className="space-y-4">
+      {/* Célébration J+103 — affichée quand le parcours est accompli (Pilier 9).
+          Contenu face client : §14 respecté (aucun mot interdit ; « du poison au
+          nectar » et le visuel honeycomb sont autorisés). */}
+      {data.state === "completed" && (
+        <div className="bg-gradient-to-b from-or-sacre/15 to-cire-chaude border-2 border-or-sacre rounded-sm p-6 text-center">
+          <p className="text-4xl mb-2" aria-hidden>🍯</p>
+          <p className="font-caps text-xs text-or-sacre uppercase tracking-[0.2em] mb-2">
+            {T({ EN: "Journey complete", FR: "Parcours accompli" })}
+          </p>
+          <p className="font-display text-2xl text-brun-chaud mb-3">
+            {T({ EN: "You crossed the 103 days.", FR: "Tu as traversé les 103 jours." })}
+          </p>
+          <p className="font-ui text-sm text-brun-mid/80 max-w-sm mx-auto leading-relaxed">
+            {T({
+              EN: "What you began in the shadows, you now carry in full light. From poison to nectar. This is not an end — it is a threshold.",
+              FR: "Ce que tu as commencé dans l'ombre, tu le portes aujourd'hui en pleine lumière. Du poison au nectar. Ce n'est pas une fin — c'est un seuil.",
+            })}
+          </p>
+          <p className="font-ui text-xs text-brun-mid/50 mt-4">
+            {T({ EN: "From", FR: "Du" })} {fmtDate(data.startDate, lang)} {T({ EN: "to", FR: "au" })} {fmtDate(data.endDate, lang)}
+            {" · "}
+            {data.totalDays} {T({ EN: "days", FR: "jours" })}
+          </p>
+        </div>
+      )}
+
       {/* Progress header */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5 text-center">
         <p className="font-caps text-xs text-brun-mid uppercase tracking-wider mb-2">{data.programName}</p>
@@ -138,24 +164,26 @@ export default function ProgramProgress() {
         </div>
       </div>
 
-      {/* Current phase */}
-      <div className="bg-cire-chaude border-2 border-or-sacre rounded-sm p-5">
-        <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-1">{T({ EN: "Current phase", FR: "Phase actuelle" })}</p>
-        <p className={`font-display text-xl ${MODULE_TEXT_COLORS[data.currentPhase.moduleName] || "text-brun-chaud"}`}>
-          {data.currentPhase.name}
-        </p>
-        <p className="font-ui text-sm text-brun-mid mt-1">
-          {T({ EN: "Day", FR: "Jour" })} {data.currentPhase.dayInPhase} / {data.currentPhase.totalDaysInPhase}
-          {data.currentPhase.daysRemaining > 0 && (
-            <span className="text-brun-mid/50">
-              {" · "}
-              {lang === "EN"
-                ? `${data.currentPhase.daysRemaining} day${data.currentPhase.daysRemaining > 1 ? "s" : ""} left`
-                : `Encore ${data.currentPhase.daysRemaining} jour${data.currentPhase.daysRemaining > 1 ? "s" : ""}`}
-            </span>
-          )}
-        </p>
-      </div>
+      {/* Current phase — masquée quand le parcours est accompli */}
+      {data.state !== "completed" && (
+        <div className="bg-cire-chaude border-2 border-or-sacre rounded-sm p-5">
+          <p className="font-caps text-xs text-or-sacre uppercase tracking-wider mb-1">{T({ EN: "Current phase", FR: "Phase actuelle" })}</p>
+          <p className={`font-display text-xl ${MODULE_TEXT_COLORS[data.currentPhase.moduleName] || "text-brun-chaud"}`}>
+            {data.currentPhase.name}
+          </p>
+          <p className="font-ui text-sm text-brun-mid mt-1">
+            {T({ EN: "Day", FR: "Jour" })} {data.currentPhase.dayInPhase} / {data.currentPhase.totalDaysInPhase}
+            {data.currentPhase.daysRemaining > 0 && (
+              <span className="text-brun-mid/50">
+                {" · "}
+                {lang === "EN"
+                  ? `${data.currentPhase.daysRemaining} day${data.currentPhase.daysRemaining > 1 ? "s" : ""} left`
+                  : `Encore ${data.currentPhase.daysRemaining} jour${data.currentPhase.daysRemaining > 1 ? "s" : ""}`}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
