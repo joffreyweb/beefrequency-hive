@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SidebarProps {
   adminName: string;
@@ -20,6 +20,12 @@ export default function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Referme le tiroir mobile a chaque changement de page
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -44,99 +50,140 @@ export default function Sidebar({
     isActive("/admin/elixir-library");
 
   return (
-    <aside className="w-[200px] min-h-screen bg-cire-chaude flex flex-col" style={{ borderRight: "0.5px solid #E8D5A8" }}>
-      {/* Header */}
-      <div className="px-4 pt-6 pb-5">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{"\uD83D\uDC1D"}</span>
-          <div>
-            <p className="font-display text-base text-brun-chaud tracking-wide">Hive</p>
-            <p className="font-caps text-[9px] text-or-sacre tracking-[0.15em] uppercase">Administration</p>
-          </div>
-        </div>
-        <p className="text-[10px] font-ui text-brun-mid/50 mt-2 truncate">{adminName}</p>
-      </div>
-
-      {/* Navigation — 5 sections */}
-      <div className="px-3 flex-1">
-        <nav className="space-y-0.5">
-          <NavItem
-            href="/admin/dashboard"
-            label="Le Cockpit"
-            emoji={"\uD83C\uDFE0"}
-            active={isActive("/admin/dashboard")}
-            badge={pendingActionsCount}
-          />
-          <NavItem
-            href="/admin/agenda"
-            label="Agenda"
-            emoji={"\uD83D\uDCC5"}
-            active={isActive("/admin/agenda")}
-          />
-          <NavItem
-            href="/admin/slots"
-            label="Créneaux"
-            emoji={"\uD83D\uDD50"}
-            active={isActive("/admin/slots")}
-          />
-          <NavItem
-            href="/admin/clients"
-            label="La Ruche"
-            emoji={"\uD83D\uDC1D"}
-            active={isActive("/admin/clients")}
-            badge={activeClientsCount}
-          />
-          <NavItem
-            href="/admin/atelier"
-            label="L'Atelier"
-            emoji={"\uD83D\uDD27"}
-            active={isAtelier}
-          />
-          <NavItem
-            href="/admin/messages"
-            label="Messages"
-            emoji={"\uD83D\uDCAC"}
-            active={isActive("/admin/messages")}
-            badge={unreadMessagesCount}
-          />
-          <NavItem
-            href="/admin/prospects"
-            label="Prospects"
-            emoji={"\uD83C\uDFAF"}
-            active={isActive("/admin/prospects")}
-          />
-          <NavItem
-            href="/admin/analytics"
-            label="Analytics"
-            emoji={"\uD83D\uDCC8"}
-            active={isActive("/admin/analytics")}
-          />
-          <NavItem
-            href="/admin/newsletter"
-            label="Newsletter"
-            emoji={"\u2709\uFE0F"}
-            active={isActive("/admin/newsletter")}
-          />
-          <NavItem
-            href="/admin/settings"
-            label="Paramètres"
-            emoji={"\u2699\uFE0F"}
-            active={isActive("/admin/settings")}
-          />
-        </nav>
-      </div>
-
-      {/* Footer */}
-      <div className="px-5 pb-5">
+    <>
+      {/* Barre superieure mobile (telephone uniquement) */}
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 bg-cire-chaude"
+        style={{ borderBottom: "0.5px solid #E8D5A8" }}
+      >
         <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          className="text-[11px] font-ui text-brun-mid/35 hover:text-brun-mid transition-colors duration-150 disabled:opacity-50"
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Ouvrir le menu"
+          className="flex items-center gap-2.5"
         >
-          {loggingOut ? "D\u00e9connexion..." : "D\u00e9connexion"}
+          <span className="flex flex-col gap-[3px]">
+            <span className="block w-5 h-[2px] bg-brun-chaud rounded-full" />
+            <span className="block w-5 h-[2px] bg-brun-chaud rounded-full" />
+            <span className="block w-5 h-[2px] bg-brun-chaud rounded-full" />
+          </span>
+          <span className="text-lg">{"🐝"}</span>
+          <span className="font-display text-base text-brun-chaud tracking-wide">Hive</span>
         </button>
+        <span className="font-caps text-[9px] text-or-sacre tracking-[0.15em] uppercase">
+          Administration
+        </span>
       </div>
-    </aside>
+
+      {/* Voile sombre derriere le tiroir (mobile) */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/30"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Barre laterale — statique sur ordinateur, tiroir coulissant sur mobile */}
+      <aside
+        className={`w-[200px] bg-cire-chaude flex flex-col z-50 fixed top-0 bottom-0 left-0 transition-transform duration-200 ease-out md:static md:min-h-screen md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+        style={{ borderRight: "0.5px solid #E8D5A8" }}
+      >
+        {/* Header */}
+        <div className="px-4 pt-6 pb-5">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{"🐝"}</span>
+            <div>
+              <p className="font-display text-base text-brun-chaud tracking-wide">Hive</p>
+              <p className="font-caps text-[9px] text-or-sacre tracking-[0.15em] uppercase">Administration</p>
+            </div>
+          </div>
+          <p className="text-[10px] font-ui text-brun-mid/50 mt-2 truncate">{adminName}</p>
+        </div>
+
+        {/* Navigation — 5 sections */}
+        <div className="px-3 flex-1 overflow-y-auto">
+          <nav className="space-y-0.5">
+            <NavItem
+              href="/admin/dashboard"
+              label="Le Cockpit"
+              emoji={"🏠"}
+              active={isActive("/admin/dashboard")}
+              badge={pendingActionsCount}
+            />
+            <NavItem
+              href="/admin/agenda"
+              label="Agenda"
+              emoji={"📅"}
+              active={isActive("/admin/agenda")}
+            />
+            <NavItem
+              href="/admin/slots"
+              label="Créneaux"
+              emoji={"🕐"}
+              active={isActive("/admin/slots")}
+            />
+            <NavItem
+              href="/admin/clients"
+              label="La Ruche"
+              emoji={"🐝"}
+              active={isActive("/admin/clients")}
+              badge={activeClientsCount}
+            />
+            <NavItem
+              href="/admin/atelier"
+              label="L'Atelier"
+              emoji={"🔧"}
+              active={isAtelier}
+            />
+            <NavItem
+              href="/admin/messages"
+              label="Messages"
+              emoji={"💬"}
+              active={isActive("/admin/messages")}
+              badge={unreadMessagesCount}
+            />
+            <NavItem
+              href="/admin/prospects"
+              label="Prospects"
+              emoji={"🎯"}
+              active={isActive("/admin/prospects")}
+            />
+            <NavItem
+              href="/admin/analytics"
+              label="Analytics"
+              emoji={"📈"}
+              active={isActive("/admin/analytics")}
+            />
+            <NavItem
+              href="/admin/newsletter"
+              label="Newsletter"
+              emoji={"✉️"}
+              active={isActive("/admin/newsletter")}
+            />
+            <NavItem
+              href="/admin/settings"
+              label="Paramètres"
+              emoji={"⚙️"}
+              active={isActive("/admin/settings")}
+            />
+          </nav>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 pb-5">
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="text-[11px] font-ui text-brun-mid/35 hover:text-brun-mid transition-colors duration-150 disabled:opacity-50"
+          >
+            {loggingOut ? "Déconnexion..." : "Déconnexion"}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 

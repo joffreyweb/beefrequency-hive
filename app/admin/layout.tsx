@@ -33,7 +33,7 @@ export default async function AdminLayout({
         activeClientsCount={activeClientsCount}
         unreadMessagesCount={unreadMessagesCount}
       />
-      <main className="flex-1 min-w-0 bg-creme-sacree p-4 sm:p-6 lg:p-8 overflow-y-auto">
+      <main className="flex-1 min-w-0 bg-creme-sacree px-4 sm:px-6 lg:px-8 pb-8 pt-20 md:pt-6 lg:pt-8 overflow-y-auto">
         {children}
       </main>
     </div>
