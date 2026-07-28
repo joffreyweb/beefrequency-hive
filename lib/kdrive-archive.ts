@@ -500,3 +500,230 @@ export async function archiveRgpdToKDrive(clientId: string): Promise<void> {
     console.error("[kDrive-archive] Erreur RGPD:", error);
   }
 }
+
+// ══════════════════════════════════════
+// 8. MESSAGES (échanges client ↔ Joffrey) → kDrive/Messages/  (snapshot consolidé)
+// ══════════════════════════════════════
+
+export async function archiveMessagesToKDrive(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { userId: true, user: { select: { name: true } } },
+    });
+    if (!client) return;
+
+    const messages = await prisma.message.findMany({
+      where: { OR: [{ senderId: client.userId }, { receiverId: client.userId }] },
+      orderBy: { createdAt: "asc" },
+      include: { sender: { select: { name: true, role: true } } },
+    });
+    if (messages.length === 0) return;
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+    const folderId = await ensureClientSubfolder(rootId, "Messages");
+    if (!folderId) return;
+
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("MESSAGES — Échanges", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text(`Client : ${client.user.name}`, { align: "center" });
+      doc.text(`Export du ${new Date().toLocaleDateString("fr-FR")} — ${messages.length} messages`, { align: "center" });
+      doc.moveDown(1.5);
+      for (const m of messages) {
+        const who = m.sender.role === "ADMIN" ? "Joffrey" : (m.sender.name || "Client");
+        const when = new Date(m.createdAt).toLocaleString("fr-FR", {
+          day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+        });
+        doc.fontSize(9).font("Helvetica-Bold").text(`${who} · ${when}`);
+        doc.fontSize(10).font("Helvetica").text(m.content);
+        doc.moveDown(0.6);
+      }
+    });
+
+    const ok = await uploadToKDrive(folderId, "Messages.pdf", pdf);
+    if (ok) console.log(`[kDrive-archive] Messages uploadés (${messages.length})`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur messages:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 9. JOURNAL (entrées NON privées) → kDrive/Journal/  (snapshot consolidé)
+// ══════════════════════════════════════
+
+export async function archiveJournalToKDrive(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    // isPrivate reste privé au client — jamais archivé côté Joffrey (cohérent Vague 2).
+    const entries = await prisma.journalEntry.findMany({
+      where: { clientId, isPrivate: false },
+      orderBy: { createdAt: "asc" },
+      select: { content: true, mood: true, entryType: true, mediaUrl: true, createdAt: true },
+    });
+    if (entries.length === 0) return;
+
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { user: { select: { name: true } } },
+    });
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+    const folderId = await ensureClientSubfolder(rootId, "Journal");
+    if (!folderId) return;
+
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("JOURNAL", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text(`Client : ${client?.user.name ?? ""}`, { align: "center" });
+      doc.text(`Export du ${new Date().toLocaleDateString("fr-FR")} — ${entries.length} entrées (non privées)`, { align: "center" });
+      doc.moveDown(1.5);
+      for (const e of entries) {
+        const when = new Date(e.createdAt).toLocaleDateString("fr-FR", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+        });
+        doc.fontSize(9).font("Helvetica-Bold").text(`${when}${e.mood ? ` · ${e.mood}` : ""}`);
+        if (e.content) doc.fontSize(10).font("Helvetica").text(e.content);
+        if (e.entryType && e.entryType !== "text") {
+          doc.fillColor("#999").fontSize(8).text(`[${e.entryType}${e.mediaUrl ? " — média dans l'app" : ""}]`);
+          doc.fillColor("black");
+        }
+        doc.moveDown(0.6);
+      }
+    });
+
+    const ok = await uploadToKDrive(folderId, "Journal.pdf", pdf);
+    if (ok) console.log(`[kDrive-archive] Journal uploadé (${entries.length})`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur journal:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 10. CHECK-INS (matin/soir) → kDrive/Check-ins/  (snapshot consolidé)
+// ══════════════════════════════════════
+
+export async function archiveCheckinsToKDrive(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const checkins = await prisma.dailyCheckin.findMany({
+      where: { clientId },
+      orderBy: { date: "asc" },
+    });
+    if (checkins.length === 0) return;
+
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { user: { select: { name: true } } },
+    });
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+    const folderId = await ensureClientSubfolder(rootId, "Check-ins");
+    if (!folderId) return;
+
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("CHECK-INS", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text(`Client : ${client?.user.name ?? ""}`, { align: "center" });
+      doc.text(`Export du ${new Date().toLocaleDateString("fr-FR")} — ${checkins.length} jours`, { align: "center" });
+      doc.moveDown(1.5);
+      for (const c of checkins) {
+        const when = new Date(c.date).toLocaleDateString("fr-FR", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+        });
+        doc.fontSize(11).font("Helvetica-Bold").text(when);
+        doc.fontSize(9).font("Helvetica");
+        if (c.energyLevel != null) doc.text(`Énergie : ${c.energyLevel}/10`);
+        if (c.sleepQuality != null) doc.text(`Sommeil : ${c.sleepQuality}/10`);
+        if (c.morningGratitude) doc.text(`Gratitude (matin) : ${c.morningGratitude}`);
+        if (c.freeFeeling) doc.text(`Ressenti (soir) : ${c.freeFeeling}`);
+        if (c.pride1) doc.text(`Fierté 1 : ${c.pride1}`);
+        if (c.pride2) doc.text(`Fierté 2 : ${c.pride2}`);
+        if (c.pride3) doc.text(`Fierté 3 : ${c.pride3}`);
+        if (c.gratitudeMoment) doc.text(`Moment de gratitude : ${c.gratitudeMoment}`);
+        if (c.closingSentence) doc.text(`Clôture : ${c.closingSentence}`);
+        doc.moveDown(0.6);
+      }
+    });
+
+    const ok = await uploadToKDrive(folderId, "Check-ins.pdf", pdf);
+    if (ok) console.log(`[kDrive-archive] Check-ins uploadés (${checkins.length})`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur check-ins:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// 11. CARTES (synthèse HD / Astro / Numéro) → kDrive/Cartes/
+// ══════════════════════════════════════
+
+export async function archiveCartesToKDrive(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  try {
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { cartesSynthesis: true, cartesGeneratedAt: true, user: { select: { name: true } } },
+    });
+    if (!client || (!client.cartesSynthesis && !client.cartesGeneratedAt)) return;
+
+    const rootId = await ensureRootFolderId(clientId);
+    if (!rootId) return;
+    const folderId = await ensureClientSubfolder(rootId, "Cartes");
+    if (!folderId) return;
+
+    const pdf = await generatePdfBuffer((doc) => {
+      doc.fontSize(18).font("Helvetica-Bold").text("CARTES — Synthèse", { align: "center" });
+      doc.fontSize(10).font("Helvetica").text(`Client : ${client.user.name}`, { align: "center" });
+      if (client.cartesGeneratedAt) {
+        doc.text(`Généré le ${new Date(client.cartesGeneratedAt).toLocaleDateString("fr-FR")}`, { align: "center" });
+      }
+      doc.moveDown(1.5);
+      doc.fontSize(10).font("Helvetica").text(client.cartesSynthesis || "(pas de synthèse disponible)");
+    });
+
+    const ok = await uploadToKDrive(folderId, "Cartes.pdf", pdf);
+    if (ok) console.log(`[kDrive-archive] Cartes uploadées`);
+  } catch (error) {
+    console.error("[kDrive-archive] Erreur cartes:", error);
+  }
+}
+
+// ══════════════════════════════════════
+// MASTER — Tout archiver pour un client (rattrapage historique + relance à la demande)
+// ══════════════════════════════════════
+
+export async function archiveAllForClient(clientId: string): Promise<void> {
+  if (!isKDriveConfigured()) return;
+
+  // Séquentiel pour ne pas saturer l'API kDrive.
+  await archiveConventionToKDrive(clientId);
+  await archiveRgpdToKDrive(clientId);
+  await archiveQuestionnaireToKDrive(clientId);
+  await archiveClarityToKDrive(clientId);
+  await archiveMessagesToKDrive(clientId);
+  await archiveJournalToKDrive(clientId);
+  await archiveCheckinsToKDrive(clientId);
+  await archiveCartesToKDrive(clientId);
+
+  // Toutes les notes de séance du client
+  const notes = await prisma.sessionNote.findMany({
+    where: { OR: [{ session: { clientId } }, { appointment: { clientId } }] },
+    select: { id: true },
+  });
+  for (const n of notes) await archiveSessionNoteToKDrive(n.id);
+
+  // Tous les documents déposés
+  const docs = await prisma.clientDocument.findMany({
+    where: { clientId },
+    select: { id: true },
+  });
+  for (const d of docs) await archiveDocumentToKDrive(d.id);
+
+  console.log(`[kDrive-archive] archiveAllForClient terminé: ${clientId} (${notes.length} notes, ${docs.length} docs)`);
+  // NB : les vidéos seuil s'archivent à l'enregistrement (fichiers volumineux, pas de rattrapage ici).
+}

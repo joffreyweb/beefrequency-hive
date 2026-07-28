@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ClientProfileTabs from "./ClientProfileTabs";
 import ClientActions from "./ClientActions";
+import KDriveSyncButton from "@/components/admin/KDriveSyncButton";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientModulesSection from "@/components/admin/ClientModulesSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
@@ -312,6 +313,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         clientStatus={client.status}
         inviteLink={inviteLink}
       />
+
+      {/* Archivage kDrive — tout le dossier client, double sécurité */}
+      <KDriveSyncButton clientId={clientId} />
 
       {/* Onglets (client component) */}
       <ClientProfileTabs
