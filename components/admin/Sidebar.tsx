@@ -119,6 +119,12 @@ export default function Sidebar({
               active={isActive("/admin/depot")}
             />
             <NavItem
+              href="/admin/kdrive"
+              label="kDrive"
+              emoji={"🗄️"}
+              active={isActive("/admin/kdrive")}
+            />
+            <NavItem
               href="/admin/dashboard"
               label="Le Cockpit"
               emoji={"🏠"}

@@ -247,3 +247,66 @@ export async function ensureClientSubfolder(rootFolderId: string, subfolderName:
     return null;
   }
 }
+
+// ═══════════════════════════════════════
+// POSTE DE PILOTAGE — Navigation kDrive (lister / télécharger)
+// Admin-only, souverain (tout passe par l'API Infomaniak avec le token du VPS).
+// ═══════════════════════════════════════
+
+export interface KDriveItem {
+  id: string;
+  name: string;
+  type: "dir" | "file";
+  size: number | null;
+}
+
+/** Lister le contenu d'un dossier kDrive (dossiers + fichiers). */
+export async function listFolder(folderId: string): Promise<KDriveItem[]> {
+  if (!isKDriveConfigured()) return [];
+  const driveId = getDriveId();
+  const res = await fetch(`${API_BASE}/drive/${driveId}/files/${folderId}/files?per_page=500`, {
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error(`kDrive listFolder ${res.status}`);
+  const data = await res.json();
+  const items = (data.data || data.result || []) as Array<{
+    id: number | string;
+    name: string;
+    type?: string;
+    size?: number;
+  }>;
+  return (Array.isArray(items) ? items : [])
+    .map((f) => ({
+      id: String(f.id),
+      name: f.name,
+      type: (f.type === "dir" ? "dir" : "file") as "dir" | "file",
+      size: typeof f.size === "number" ? f.size : null,
+    }))
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+}
+
+/** Dossier de départ pour la navigation : /BeeFrequency si présent, sinon racine (1). */
+export async function getKDriveStartFolder(): Promise<string> {
+  try {
+    const bf = await findFolderByPath("BeeFrequency");
+    if (bf) return bf;
+  } catch {
+    /* ignore */
+  }
+  return "1";
+}
+
+/** Télécharger un fichier kDrive (Buffer). Réservé à un usage serveur. */
+export async function downloadFile(fileId: string): Promise<Buffer | null> {
+  if (!isKDriveConfigured()) return null;
+  const driveId = getDriveId();
+  const res = await fetch(`${API_BASE}/drive/${driveId}/files/${fileId}/download`, {
+    headers: { Authorization: `Bearer ${process.env.INFOMANIAK_API_TOKEN}` },
+  });
+  if (!res.ok) return null;
+  const arr = await res.arrayBuffer();
+  return Buffer.from(arr);
+}
