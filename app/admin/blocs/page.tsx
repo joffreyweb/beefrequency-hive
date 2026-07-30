@@ -36,6 +36,12 @@ export default function BlocsPage() {
     load();
   }, []);
 
+  // Prefill de la date si on arrive depuis la Vue Semaine (?date=YYYY-MM-DD)
+  useEffect(() => {
+    const d = new URLSearchParams(window.location.search).get("date");
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d);
+  }, []);
+
   async function add() {
     if (!title.trim() || !date) return;
     setBusy(true);

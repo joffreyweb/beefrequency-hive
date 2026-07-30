@@ -80,7 +80,7 @@ export default async function SemainePage() {
           const items = itemsForDay(d.start, d.end);
           const today = i === 0;
           return (
-            <section key={d.iso} className={`rounded-[12px] p-4 border ${today ? "bg-or-sacre/8 border-or-sacre/40 lg:col-span-2" : "bg-cire-chaude border-or-pale"}`}>
+            <Link key={d.iso} href={`/admin/blocs?date=${d.iso}`} className={`block rounded-[12px] p-4 border transition-colors hover:border-or-sacre ${today ? "bg-or-sacre/8 border-or-sacre/40 lg:col-span-2" : "bg-cire-chaude border-or-pale"}`}>
               <div className="flex items-baseline justify-between mb-3">
                 <div>
                   <p className="font-display text-lg text-brun-chaud capitalize leading-none">
@@ -110,7 +110,8 @@ export default async function SemainePage() {
                   ))}
                 </ul>
               )}
-            </section>
+              <p className="mt-3 pt-2 border-t border-or-pale/30 text-[11px] font-ui text-or-sacre/70">+ Ajouter un bloc sur ce jour →</p>
+            </Link>
           );
         })}
       </div>
