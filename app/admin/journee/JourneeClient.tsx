@@ -319,7 +319,7 @@ function BriefSettings() {
       }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(keyRes.key),
+        applicationServerKey: urlBase64ToUint8Array(keyRes.key) as unknown as BufferSource,
       });
       await fetch("/api/admin/push/subscribe", {
         method: "POST",
