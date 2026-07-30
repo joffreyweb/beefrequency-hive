@@ -7,8 +7,9 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
 
-  const status = request.nextUrl.searchParams.get("status");
-  const where = status === "TODO" || status === "POSTED" ? { status } : {};
+  const statusParam = request.nextUrl.searchParams.get("status");
+  const where: { status?: "TODO" | "POSTED" } =
+    statusParam === "TODO" || statusParam === "POSTED" ? { status: statusParam } : {};
 
   const posts = await prisma.contentPost.findMany({
     where,

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get("status");
   const showCompleted = searchParams.get("completed") === "true";
 
-  const where =
+  const where: { status?: TaskStatus; completed?: boolean } =
     status && (STATUSES as readonly string[]).includes(status)
       ? { status: status as TaskStatus }
       : showCompleted
