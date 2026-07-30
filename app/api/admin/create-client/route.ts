@@ -99,9 +99,13 @@ export async function POST(request: NextRequest) {
       // Respecte la case décochée par l'admin (override) sinon défaut du parcours.
       onboardingCompleted: isLegacy
         ? true
-        : !(requiresQuestionnaire !== undefined
-            ? Boolean(requiresQuestionnaire)
-            : parcoursNeedsQuestionnaire(resolvedParcours)),
+        : !(
+            (requiresQuestionnaire !== undefined
+              ? Boolean(requiresQuestionnaire)
+              : parcoursNeedsQuestionnaire(resolvedParcours))
+            || effectiveFlags.requiresConvention
+            || welcomeVideoForOffer(resolvedOffer)
+          ),
       parcoursType: resolvedParcours,
       // Flags : défauts du parcours, surchargés par toute valeur fournie explicitement
       ...parcoursDefaults,

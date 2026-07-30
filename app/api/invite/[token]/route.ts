@@ -176,7 +176,11 @@ export async function POST(
 
     // Blocage PWA : onboarding requis uniquement si le parcours exige le questionnaire
     // (DISCOVERY / SOS_URGENCE exemptés). Sinon onboardingCompleted=true → accès direct.
-    const onboardingCompleted = !requiresQuestionnaire(invite.parcoursType);
+    const onboardingCompleted = !(
+      requiresQuestionnaire(invite.parcoursType) ||
+      invite.requiresConvention ||
+      welcomeVideoForOffer(invite.offerType)
+    );
 
     let user;
 
