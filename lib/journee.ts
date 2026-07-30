@@ -178,7 +178,7 @@ function mapTask(t: TaskRow): TaskLite {
 export async function getDayPlan(now: Date = new Date()): Promise<DayPlan> {
   const { start, end, iso, label } = brusselsDayBounds(now);
 
-  const [focusRaw, weekRaw, inboxRaw, apptRaw, nextPostRaw, postsRemaining, messagesRaw, pendingRaw] =
+  const [focusRaw, weekRaw, inboxRaw, apptRaw, personalRaw, nextPostRaw, postsRemaining, messagesRaw, pendingRaw] =
     await Promise.all([
       prisma.task.findMany({
         where: { status: "TODAY" },
@@ -199,6 +199,10 @@ export async function getDayPlan(now: Date = new Date()): Promise<DayPlan> {
         where: { scheduledAt: { gte: start, lte: end }, status: { not: "CANCELLED" } },
         orderBy: { scheduledAt: "asc" },
         include: { client: { include: { user: { select: { name: true } } } } },
+      }),
+      prisma.personalEvent.findMany({
+        where: { scheduledAt: { gte: start, lte: end } },
+        orderBy: { scheduledAt: "asc" },
       }),
       prisma.contentPost.findFirst({
         where: { status: "TODO" },
@@ -235,6 +239,19 @@ export async function getDayPlan(now: Date = new Date()): Promise<DayPlan> {
     clientName: a.client?.user?.name ?? null,
   }));
 
+  const personal: ApptLite[] = personalRaw.map((e) => ({
+    id: e.id,
+    title: e.title,
+    scheduledAt: e.scheduledAt.toISOString(),
+    timeLabel: timeFmt.format(e.scheduledAt),
+    durationMin: e.durationMin,
+    meetingType: "perso",
+    clientName: null,
+  }));
+  const agenda: ApptLite[] = [...appointments, ...personal].sort((a, b) =>
+    a.scheduledAt.localeCompare(b.scheduledAt),
+  );
+
   const nextPost: PostLite | null = nextPostRaw
     ? {
         id: nextPostRaw.id,
@@ -268,7 +285,7 @@ export async function getDayPlan(now: Date = new Date()): Promise<DayPlan> {
     focus: focusRaw.map(mapTask),
     week: weekRaw.map(mapTask),
     inbox: inboxRaw.map(mapTask),
-    appointments,
+    appointments: agenda,
     nextPost,
     postsRemaining,
     messages,

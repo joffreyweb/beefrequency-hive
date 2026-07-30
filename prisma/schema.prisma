@@ -1522,6 +1522,7 @@ model AdminSettings {
   briefLastRunOn    String?  // "YYYY-MM-DD" garde d'idempotence du cron
   shutdownEnabled   Boolean  @default(false)
   shutdownHour      Int      @default(20)
+  shutdownLastRunOn String?  // "YYYY-MM-DD" garde idempotence rappel du soir
   id String @id @default(cuid())
 
   // Notifications
@@ -1662,4 +1663,17 @@ model AdminPushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// Bloc/rendez-vous PERSONNEL admin (agenda interne, sans client) — Ma Journee
+model PersonalEvent {
+  id          String   @id @default(cuid())
+  title       String
+  scheduledAt DateTime
+  durationMin Int      @default(60)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([scheduledAt])
 }
