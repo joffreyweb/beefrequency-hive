@@ -10,6 +10,7 @@ interface Post {
   caption: string | null;
   hashtags: string | null;
   format: string | null;
+  mediaRef: string | null;
   pinned: boolean;
   status: string;
 }
@@ -92,17 +93,20 @@ export default function ContenuPage() {
       </div>
 
       {/* À poster */}
-      <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">À poster ({todo.length})</h2>
+      <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-1">À poster ({todo.length})</h2>
+      <p className="font-ui text-[12px] text-brun-mid/60 mb-3">Ordre de publication — <span className="text-or-sacre">n°1 = à poster en premier</span> (il se pose en bas de ta grille, puis tu montes). 📌 = épinglé · 📎 = fichier.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-        {todo.map((p) => (
+        {todo.map((p, i) => (
           <div key={p.id} className="bg-cire-chaude border border-or-pale rounded-[10px] p-4">
             <div className="flex items-start gap-2">
+              <span className="shrink-0 w-6 h-6 rounded-full bg-or-sacre text-white font-caps text-[13px] flex items-center justify-center mt-0.5">{i + 1}</span>
               <button onClick={() => patch(p.id, { status: "POSTED" })} aria-label="Marquer posté" className="mt-0.5 w-5 h-5 rounded border-2 border-or-sacre shrink-0 hover:bg-or-sacre/20" />
               <div className="flex-1 min-w-0">
                 <p className="font-ui text-sm text-brun-chaud">
                   {p.pinned ? "📌 " : ""}{p.title}
                   {p.format ? <span className="text-brun-mid/50"> · {p.format}</span> : null}
                 </p>
+                {p.mediaRef && <p className="text-[11px] font-ui text-or-sacre/80 mt-0.5">📎 {p.mediaRef}</p>}
                 {p.caption && <p className="text-[12px] font-ui text-brun-mid/70 mt-1 whitespace-pre-wrap line-clamp-3">{p.caption}</p>}
                 {p.hashtags && <p className="text-[11px] font-ui text-or-sacre/80 mt-1 line-clamp-2">{p.hashtags}</p>}
               </div>
