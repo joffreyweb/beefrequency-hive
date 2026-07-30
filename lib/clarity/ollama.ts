@@ -45,12 +45,12 @@ export function buildClarityPrompt(answers: Answers): { system: string; prompt: 
 export async function generateClarityReport(answers: Answers): Promise<string> {
   const { system, prompt } = buildClarityPrompt(answers);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 240_000); // 4 min max
+  const timeout = setTimeout(() => controller.abort(), 600_000); // 10 min max (CPU, questionnaire complet)
   try {
     const res = await fetch(`${OLLAMA_URL}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: OLLAMA_MODEL, system, prompt, stream: false, options: { temperature: 0.7 } }),
+      body: JSON.stringify({ model: OLLAMA_MODEL, system, prompt, stream: false, keep_alive: "30m", options: { temperature: 0.7 } }),
       signal: controller.signal,
     });
     if (!res.ok) {

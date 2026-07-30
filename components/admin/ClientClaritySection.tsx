@@ -95,7 +95,7 @@ export default function ClientClaritySection({
     setBusy("generate");
     setMsg("Génération en cours… (elle continue même si tu changes d'écran)");
     try {
-      for (let i = 0; i < 90; i++) {
+      for (let i = 0; i < 130; i++) {
         await new Promise((r) => setTimeout(r, 5000));
         const res = await fetch(`/api/admin/clients/${clientId}/clarity`);
         const d = await res.json();
