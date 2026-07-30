@@ -113,6 +113,12 @@ export default function Sidebar({
               active={isActive("/admin/journee")}
             />
             <NavItem
+              href="/admin/depot"
+              label="Dépôt"
+              emoji={"📥"}
+              active={isActive("/admin/depot")}
+            />
+            <NavItem
               href="/admin/dashboard"
               label="Le Cockpit"
               emoji={"🏠"}
