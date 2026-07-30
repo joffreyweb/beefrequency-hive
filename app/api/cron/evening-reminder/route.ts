@@ -2,17 +2,23 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { brusselsNow, getDayPlan } from "@/lib/journee";
 import { sendPushToAdmin } from "@/lib/push";
+import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 
 // POST /api/cron/evening-reminder — rappel du soir souverain (« shutdown »).
 // Appelé chaque heure par le cron VPS. Ne s'envoie qu'UNE fois par jour, à partir de
 // shutdownHour (Europe/Brussels), et seulement si shutdownEnabled. Push app uniquement.
 // ?test=1 force un envoi. Auth : x-cron-secret. Route dans publicPaths.
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-cron-secret");
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
   const test = new URL(req.url).searchParams.get("test") === "1";
+  if (test) {
+    const auth = await requireAdmin();
+    if (isErrorResponse(auth)) return auth;
+  } else {
+    const secret = req.headers.get("x-cron-secret");
+    if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+  }
 
   let settings = await prisma.adminSettings.findFirst();
   if (!settings) settings = await prisma.adminSettings.create({ data: {} });

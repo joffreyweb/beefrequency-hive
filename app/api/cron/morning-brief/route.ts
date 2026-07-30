@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getDayPlan, brusselsNow } from "@/lib/journee";
 import { sendPushToAdmin } from "@/lib/push";
+import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 
 // POST /api/cron/morning-brief — brief matinal souverain « Ma Journée ».
 // Appelé par le cron du VPS (toutes les heures p.ex.). Ne s'envoie qu'UNE fois par jour,
@@ -10,13 +11,19 @@ import { sendPushToAdmin } from "@/lib/push";
 // ?test=1 force un envoi immédiat sans toucher la garde d'idempotence (bouton de test admin).
 // Auth : header x-cron-secret. Route déclarée dans publicPaths (proxy.ts).
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-cron-secret");
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
-
   const url = new URL(req.url);
   const test = url.searchParams.get("test") === "1";
+
+  // Test depuis l'app (bouton) → session admin · cron VPS → secret partagé.
+  if (test) {
+    const auth = await requireAdmin();
+    if (isErrorResponse(auth)) return auth;
+  } else {
+    const secret = req.headers.get("x-cron-secret");
+    if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+  }
 
   let settings = await prisma.adminSettings.findFirst();
   if (!settings) settings = await prisma.adminSettings.create({ data: {} });
