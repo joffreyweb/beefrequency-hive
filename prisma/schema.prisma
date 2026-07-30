@@ -1142,7 +1142,7 @@ model Task {
   snoozedUntil  DateTime?
   doneAt        DateTime?
   origin        String?      // capture | import | followup | manual
-  importKey     String?      @unique // idempotence import Option A (= nom#ordre)
+  importKey     String?      // idempotence import Option A (= nom#ordre) — unicite geree applicativement (pas de contrainte DB)
   projectId     String?
   project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   id            String       @id @default(cuid())

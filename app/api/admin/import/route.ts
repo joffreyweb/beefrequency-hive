@@ -107,27 +107,33 @@ export async function POST(request: NextRequest) {
     } else {
       const status: "INBOX" | "TODAY" | "WEEK" | "DONE" | "SNOOZED" =
         el.statut === "fait" ? "DONE" : "WEEK";
-      await prisma.task.upsert({
-        where: { importKey: key },
-        create: {
-          importKey: key,
-          title: titre,
-          status,
-          order: ordre,
-          origin: "import",
-          notes: el.legende?.trim() || null,
-          projectId: project.id,
-          completed: el.statut === "fait",
-          doneAt: el.statut === "fait" ? new Date() : null,
-        },
+      const existingTask = await prisma.task.findFirst({ where: { importKey: key } });
+      if (existingTask) {
         // Update : on préserve le statut courant (progression).
-        update: {
-          title: titre,
-          order: ordre,
-          notes: el.legende?.trim() || null,
-          projectId: project.id,
-        },
-      });
+        await prisma.task.update({
+          where: { id: existingTask.id },
+          data: {
+            title: titre,
+            order: ordre,
+            notes: el.legende?.trim() || null,
+            projectId: project.id,
+          },
+        });
+      } else {
+        await prisma.task.create({
+          data: {
+            importKey: key,
+            title: titre,
+            status,
+            order: ordre,
+            origin: "import",
+            notes: el.legende?.trim() || null,
+            projectId: project.id,
+            completed: el.statut === "fait",
+            doneAt: el.statut === "fait" ? new Date() : null,
+          },
+        });
+      }
       tasks++;
     }
   }
