@@ -167,7 +167,6 @@ export default function ClientModulesSection({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {EDITABLE_FLAG_KEYS
-          .filter((key) => !(parcoursType === "CUSTOM" && key === "requiresElixirs"))
           .map((key) => (
           <label
             key={key}
@@ -185,8 +184,8 @@ export default function ClientModulesSection({
         ))}
       </div>
 
-      {/* Sous-réglage Élixir — module actif ET pas un parcours CUSTOM (élixirs via modules) */}
-      {flags.requiresElixirs && parcoursType !== "CUSTOM" && (
+      {/* Sous-réglage Élixir — visible dès que le module Élixirs est actif (tous parcours, CUSTOM compris) */}
+      {flags.requiresElixirs && (
         <div className="mt-4 pt-4 border-t border-or-pale/40">
           <p className="text-xs font-caps uppercase tracking-wider text-brun-mid mb-2">Élixir — envoi</p>
           <div className="flex flex-wrap gap-2">
