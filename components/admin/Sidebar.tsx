@@ -107,6 +107,12 @@ export default function Sidebar({
         <div className="px-3 flex-1 overflow-y-auto">
           <nav className="space-y-0.5">
             <NavItem
+              href="/admin/journee"
+              label="Ma Journée"
+              emoji={"🌅"}
+              active={isActive("/admin/journee")}
+            />
+            <NavItem
               href="/admin/dashboard"
               label="Le Cockpit"
               emoji={"🏠"}

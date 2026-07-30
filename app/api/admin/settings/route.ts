@@ -10,14 +10,12 @@ async function getOrCreateSettings() {
   return settings;
 }
 
-// GET — Retourne tous les paramètres admin
+// GET — Retourne tous les paramètres admin (inclut les réglages du brief matinal).
 export async function GET() {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
 
   const settings = await getOrCreateSettings();
-
-  // Also get dailyRecapTime from User model (legacy)
   const user = await prisma.user.findUnique({
     where: { id: auth.session.userId },
     select: { dailyRecapTime: true },
@@ -29,7 +27,7 @@ export async function GET() {
   });
 }
 
-// PATCH — Met à jour les paramètres
+// PATCH — Met à jour les paramètres (existants + brief matinal Ma Journée).
 export async function PATCH(request: NextRequest) {
   const auth = await requireAdmin();
   if (isErrorResponse(auth)) return auth;
@@ -38,6 +36,7 @@ export async function PATCH(request: NextRequest) {
   const settings = await getOrCreateSettings();
 
   const data: Record<string, unknown> = {};
+  // Existant
   if (body.emailReminderSession !== undefined) data.emailReminderSession = body.emailReminderSession;
   if (body.emailNewMessage !== undefined) data.emailNewMessage = body.emailNewMessage;
   if (body.notifyOverdueTask !== undefined) data.notifyOverdueTask = body.notifyOverdueTask;
@@ -47,13 +46,22 @@ export async function PATCH(request: NextRequest) {
   if (body.emailSignature !== undefined) data.emailSignature = body.emailSignature;
   if (body.timezone !== undefined) data.timezone = body.timezone;
   if (body.language !== undefined) data.language = body.language;
+  // Brief matinal Ma Journée
+  if (body.briefHour !== undefined) {
+    const h = Number(body.briefHour);
+    if (Number.isInteger(h) && h >= 0 && h <= 23) data.briefHour = h;
+  }
+  if (body.briefPushEnabled !== undefined) data.briefPushEnabled = !!body.briefPushEnabled;
+  if (body.briefEmailEnabled !== undefined) data.briefEmailEnabled = !!body.briefEmailEnabled;
+  if (body.briefEmail !== undefined) data.briefEmail = body.briefEmail ? String(body.briefEmail).trim() : null;
+  if (body.shutdownEnabled !== undefined) data.shutdownEnabled = !!body.shutdownEnabled;
+  if (body.shutdownHour !== undefined) {
+    const h = Number(body.shutdownHour);
+    if (Number.isInteger(h) && h >= 0 && h <= 23) data.shutdownHour = h;
+  }
 
-  const updated = await prisma.adminSettings.update({
-    where: { id: settings.id },
-    data,
-  });
+  const updated = await prisma.adminSettings.update({ where: { id: settings.id }, data });
 
-  // Legacy: update dailyRecapTime on User model
   if (body.dailyRecapTime && /^\d{2}:\d{2}$/.test(body.dailyRecapTime)) {
     await prisma.user.update({
       where: { id: auth.session.userId },

@@ -70,7 +70,7 @@ export default function LoginPage() {
       }
 
       if (data.user.role === "ADMIN") {
-        router.push("/admin/dashboard");
+        router.push("/admin/journee");
       } else {
         router.push("/client/home");
       }

@@ -1135,6 +1135,15 @@ model SessionNote {
 
 // Tâches admin liées à un client/séance
 model Task {
+  status        TaskStatus   @default(INBOX)
+  notes         String?      @db.Text
+  priority      Int?
+  order         Int          @default(0)
+  snoozedUntil  DateTime?
+  doneAt        DateTime?
+  origin        String?      // capture | import | followup | manual
+  projectId     String?
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   id            String       @id @default(cuid())
   title         String
   completed     Boolean      @default(false)
@@ -1504,6 +1513,14 @@ model PasswordReset {
 }
 
 model AdminSettings {
+  // Brief matinal Ma Journee
+  briefHour         Int      @default(8)   // heure locale Europe/Brussels (0-23)
+  briefPushEnabled  Boolean  @default(true)
+  briefEmailEnabled Boolean  @default(true)
+  briefEmail        String?
+  briefLastRunOn    String?  // "YYYY-MM-DD" garde d'idempotence du cron
+  shutdownEnabled   Boolean  @default(false)
+  shutdownHour      Int      @default(20)
   id String @id @default(cuid())
 
   // Notifications
@@ -1574,4 +1591,74 @@ model ClaritySubmission {
   updatedAt   DateTime  @updatedAt
 
   @@index([status])
+}
+
+// ═══════════════════════════════════════
+// POSTE DE PILOTAGE « MA JOURNEE » (Sens 2026)
+// Modeles additifs — admin-only — invariant client preserve
+// ═══════════════════════════════════════
+
+enum TaskStatus {
+  INBOX
+  TODAY
+  WEEK
+  DONE
+  SNOOZED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  DONE
+  ARCHIVED
+}
+
+enum ContentStatus {
+  TODO
+  POSTED
+}
+
+model Project {
+  id        String        @id @default(cuid())
+  name      String
+  color     String        @default("#B8821E")
+  type      String?       // sprint | chantier | ...
+  status    ProjectStatus @default(ACTIVE)
+  order     Int           @default(0)
+  importKey String?       @unique // idempotence import Option A (= programme.nom)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  tasks        Task[]
+  contentPosts ContentPost[]
+}
+
+model ContentPost {
+  id        String        @id @default(cuid())
+  order     Int           @default(0)
+  title     String
+  caption   String?       @db.Text
+  hashtags  String?       @db.Text
+  mediaRef  String?
+  format    String?       // carte | reel
+  pinned    Boolean       @default(false)
+  status    ContentStatus @default(TODO)
+  projectId String?
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  importKey String?       @unique // idempotence import (= nom+ordre)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, order])
+}
+
+model AdminPushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
