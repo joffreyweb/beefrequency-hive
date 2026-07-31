@@ -33,10 +33,12 @@ export default function MorningCheckinPage() {
   const isOpen = hour >= 5 && hour < 13;
 
   const SLEEP_TYPES = [
-    { key: "Deep", label: T(t.morning.sleepDeep) },
-    { key: "Light", label: T(t.morning.sleepLight) },
-    { key: "Fragmented", label: T(t.morning.sleepFragmented) },
-    { key: "No sleep", label: T(t.morning.sleepNone) },
+    { key: "leger", label: T(t.morning.sleepLegerFlou) },
+    { key: "profond", label: T(t.morning.sleepProfondRep) },
+    { key: "reves", label: T(t.morning.sleepReves) },
+    { key: "reveils", label: T(t.morning.sleepReveils) },
+    { key: "endormissement_long", label: T(t.morning.sleepEndormissement) },
+    { key: "nuit_continue", label: T(t.morning.sleepContinue) },
   ];
 
   const DREAM_OPTIONS = [
@@ -217,7 +219,7 @@ export default function MorningCheckinPage() {
         {/* Step 3 — Sleep type */}
         {step === 3 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">{T(t.morning.step2Title)}</h2>
+            <h2 className="font-display text-xl text-brun-chaud">{T(t.morning.step3Title)}</h2>
             <div className="flex flex-wrap justify-center gap-2">
               {SLEEP_TYPES.map(({ key, label }) => (
                 <button
@@ -243,7 +245,7 @@ export default function MorningCheckinPage() {
         {/* Step 4 — Dreams */}
         {step === 4 && (
           <div className="w-full max-w-sm space-y-6 text-center">
-            <h2 className="font-display text-xl text-brun-chaud">{lang === "FR" ? "R\u00eaves" : "Dreams"}</h2>
+            <h2 className="font-display text-xl text-brun-chaud">{lang === "FR" ? "Ai-je rêvé ?" : "Did I dream?"}</h2>
             <div className="flex justify-center gap-2">
               {DREAM_OPTIONS.map(({ key, label }) => (
                 <button
