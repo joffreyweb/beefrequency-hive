@@ -18,7 +18,7 @@ import DetoxSection from "@/components/admin/DetoxSection";
 import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySection";
 import ClientClaritySection from "@/components/admin/ClientClaritySection";
 import CheckinsTab from "@/components/admin/CheckinsTab";
-import StackedProgramsSection from "@/components/admin/StackedProgramsSection";
+import ClientModulesSection from "@/components/admin/ClientModulesSection";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -604,24 +604,38 @@ function ProtocolsSubTab({ client }: { client: any }) {
 function ParcoursTab({ client }: { client: any }) {
   return (
     <div className="space-y-6">
-      {/* Le réglage « Type de parcours & modules actifs » vit en haut de la fiche
-          (ClientModulesSection) — plus de doublon ici. */}
+      {/* Offre + fonctionnalités du client — regroupées ici (depuis le haut de la fiche). */}
+      <ClientModulesSection
+        clientId={client.id}
+        parcoursType={client.parcoursType}
+        elixirAEnvoyer={client.elixirAEnvoyer}
+        initialFlags={{
+          requiresWelcomeVideo: client.requiresWelcomeVideo,
+          requiresConvention: client.requiresConvention,
+          requiresQuestionnaire: client.requiresQuestionnaire,
+          requiresPhaseVideos: client.requiresPhaseVideos,
+          requiresMorningCheckin: client.requiresMorningCheckin,
+          requiresEveningCheckin: client.requiresEveningCheckin,
+          requiresJournal: client.requiresJournal,
+          requiresProgramTimeline: client.requiresProgramTimeline,
+          requiresElixirs: client.requiresElixirs,
+          requiresModules: client.requiresModules,
+        }}
+      />
       <div>
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
-          Parcours 3 mois
+          Timeline du parcours
         </h2>
         {(client.requiresProgramTimeline ?? true) ? (
           <ParcoursSection clientId={client.id} />
         ) : (
           <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-6 text-center">
             <p className="text-sm font-ui text-brun-mid/70">
-              Pas de parcours à phases pour ce client (timeline désactivée). Active « Timeline
-              programme jour-par-jour » dans les modules pour générer un parcours 103 jours.
+              Pas de timeline pour ce client. Active « Timeline programme jour-par-jour » ci-dessus pour la générer.
             </p>
           </div>
         )}
       </div>
-      <StackedProgramsSection clientId={client.id} clientName={client.user.name || "Client"} />
     </div>
   );
 }

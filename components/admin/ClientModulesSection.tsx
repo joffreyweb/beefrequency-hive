@@ -128,7 +128,7 @@ export default function ClientModulesSection({
   return (
     <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider">Type de parcours &amp; modules actifs</h2>
+        <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider">Offre / Programme du client</h2>
         <div className="flex items-center gap-3">
           {msg && (
             <span className={`text-xs font-ui ${msg.startsWith("Échec") ? "text-red-600" : "text-foret"}`}>{msg}</span>
@@ -147,7 +147,7 @@ export default function ClientModulesSection({
       {/* Type de parcours — seul éditeur (le doublon de l'onglet Parcours a été retiré) */}
       <div className="mb-4">
         <label htmlFor="parcoursTypeSel" className="block text-xs font-caps uppercase tracking-wider text-brun-mid mb-1.5">
-          Type de parcours
+          Offre du client
         </label>
         <select
           id="parcoursTypeSel"
@@ -161,9 +161,11 @@ export default function ClientModulesSection({
           ))}
         </select>
         <p className="text-xs font-ui text-brun-mid/50 mt-1.5">
-          Changer le type pré-coche les modules par défaut. Tu peux ensuite ajuster ci-dessous.
+          Changer l'offre pré-coche les fonctionnalités par défaut. Tu peux ensuite ajuster ci-dessous.
         </p>
       </div>
+
+      <p className="text-xs font-caps uppercase tracking-wider text-brun-mid mb-2">Fonctionnalités actives — accès du client</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {EDITABLE_FLAG_KEYS

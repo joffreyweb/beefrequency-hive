@@ -6,7 +6,6 @@ import ClientActions from "./ClientActions";
 import KDriveSyncButton from "@/components/admin/KDriveSyncButton";
 import AdminSetPasswordSection from "@/components/admin/AdminSetPasswordSection";
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
-import ClientModulesSection from "@/components/admin/ClientModulesSection";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
 import { OFFER_LABELS } from "@/lib/offer-labels";
@@ -266,25 +265,6 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         startDate={client.startDate.toISOString()}
       />
       )}
-
-      {/* Modules actifs — 9 toggles éditables */}
-      <ClientModulesSection
-        clientId={clientId}
-        parcoursType={client.parcoursType}
-        elixirAEnvoyer={client.elixirAEnvoyer}
-        initialFlags={{
-          requiresWelcomeVideo: client.requiresWelcomeVideo,
-          requiresConvention: client.requiresConvention,
-          requiresQuestionnaire: client.requiresQuestionnaire,
-          requiresPhaseVideos: client.requiresPhaseVideos,
-          requiresMorningCheckin: client.requiresMorningCheckin,
-          requiresEveningCheckin: client.requiresEveningCheckin,
-          requiresJournal: client.requiresJournal,
-          requiresProgramTimeline: client.requiresProgramTimeline,
-          requiresElixirs: client.requiresElixirs,
-          requiresModules: client.requiresModules,
-        }}
-      />
 
       {/* Actions requises */}
       <ClientActionBanner
