@@ -852,7 +852,7 @@ function ElixirsBlock({ phase, allPhases, onUpdate }: { phase: ClientPhase; allP
                   <div>
                     <span className="text-sm font-ui text-brun-chaud">{pe.elixirLibrary.name}</span>
                     <span className="text-xs font-ui text-brun-mid/60 ml-2">
-                      {pe.dose || pe.elixirLibrary.dosage} · {TIMING_LABELS[pe.timing]} · {FREQ_LABELS[pe.frequency]}
+                      {pe.dose || pe.elixirLibrary.dosage} · {TIMING_LABELS[pe.timing] ?? pe.timing} · {FREQ_LABELS[pe.frequency] ?? pe.frequency}
                     </span>
                     <span className="inline-block text-[10px] font-caps uppercase tracking-wider px-2 py-0.5 ml-2 rounded-full bg-or-pale/40 text-brun-mid/80 align-middle">
                       {elixirScopeLabel(pe, allPhases)}

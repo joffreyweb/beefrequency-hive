@@ -650,33 +650,14 @@ model ClientPractice {
 // MODULE — PARCOURS 3 MOIS
 // ═══════════════════════════════════════
 
-enum ElixirCategory {
-  ACTIVATION
-  INTEGRATION
-  SUPPORT
-}
-
-enum ElixirTiming {
-  MATIN
-  SOIR
-  JOURNEE
-  FLEXIBLE
-}
-
-enum ElixirUnit {
-  GOUTTES
-  GELULES
-  CAPUCHONS
-}
-
 model Elixir {
   id          String         @id @default(uuid())
   name        String
   description String
   dosage      String // ex: "20 gouttes"
-  unit        ElixirUnit
-  category    ElixirCategory
-  timing      ElixirTiming   @default(FLEXIBLE)
+  unit        String
+  category    String
+  timing      String         @default("Flexible")
   notes       String?
   isActive    Boolean        @default(true)
 
@@ -759,7 +740,7 @@ model PhaseElixir {
   elixirLibrary   Elixir         @relation(fields: [elixirLibraryId], references: [id], onDelete: Cascade)
   dose            String? // Override du dosage par defaut
   frequency       PhaseFrequency @default(DAILY)
-  timing          ElixirTiming   @default(FLEXIBLE)
+  timing          String         @default("FLEXIBLE")
   notes           String?
 
   createdAt DateTime @default(now())

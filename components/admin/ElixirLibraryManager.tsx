@@ -14,6 +14,9 @@ interface ElixirLib {
   _count: { phaseElixirs: number };
 }
 
+// Libellés « intégrés » : servent à afficher joliment les valeurs historiques
+// (stockées en MAJUSCULES) ET à amorcer les suggestions. Les champs sont désormais
+// LIBRES : Joffrey peut taper/ajouter/renommer n'importe quelle valeur.
 const CATEGORY_LABELS: Record<string, string> = {
   ACTIVATION: "Activation",
   INTEGRATION: "Intégration",
@@ -33,11 +36,17 @@ const UNIT_LABELS: Record<string, string> = {
   CAPUCHONS: "Capuchons",
 };
 
+// Couleurs de pastille par catégorie (clé = libellé affiché). Repli neutre pour toute
+// catégorie personnalisée que Joffrey ajoute.
 const CATEGORY_COLORS: Record<string, string> = {
-  ACTIVATION: "bg-or-sacre/10 text-or-sacre",
-  INTEGRATION: "bg-foret/10 text-foret",
-  SUPPORT: "bg-ambre-vif/10 text-ambre-profond",
+  Activation: "bg-or-sacre/10 text-or-sacre",
+  Intégration: "bg-foret/10 text-foret",
+  Support: "bg-ambre-vif/10 text-ambre-profond",
 };
+
+// Repli d'affichage : un libellé connu → sa version jolie ; sinon la valeur telle quelle.
+const lbl = (map: Record<string, string>, v: string) => (v ? map[v] ?? v : v);
+const uniq = (arr: string[]) => Array.from(new Set(arr.filter((x) => x && x.trim())));
 
 export default function ElixirLibraryManager() {
   const [elixirs, setElixirs] = useState<ElixirLib[]>([]);
@@ -51,15 +60,16 @@ export default function ElixirLibraryManager() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dosage, setDosage] = useState("");
-  const [unit, setUnit] = useState("GOUTTES");
-  const [category, setCategory] = useState("ACTIVATION");
-  const [timing, setTiming] = useState("FLEXIBLE");
+  const [unit, setUnit] = useState("Gouttes");
+  const [category, setCategory] = useState("Activation");
+  const [timing, setTiming] = useState("Flexible");
   const [notes, setNotes] = useState("");
 
   async function loadElixirs() {
     try {
-      const url = filter === "ALL" ? "/api/elixir-library" : `/api/elixir-library?category=${filter}`;
-      const res = await fetch(url);
+      // On charge TOUT (le filtre est appliqué côté client pour regrouper proprement
+      // les valeurs historiques MAJUSCULE et les nouvelles valeurs libres).
+      const res = await fetch("/api/elixir-library");
       const data = await res.json();
       setElixirs(data.elixirs ?? []);
     } catch {
@@ -71,16 +81,16 @@ export default function ElixirLibraryManager() {
 
   useEffect(() => {
     loadElixirs();
-  }, [filter]);
+  }, []);
 
   function resetForm() {
     setEditId(null);
     setName("");
     setDescription("");
     setDosage("");
-    setUnit("GOUTTES");
-    setCategory("ACTIVATION");
-    setTiming("FLEXIBLE");
+    setUnit("Gouttes");
+    setCategory("Activation");
+    setTiming("Flexible");
     setNotes("");
   }
 
@@ -89,18 +99,27 @@ export default function ElixirLibraryManager() {
     setName(e.name);
     setDescription(e.description);
     setDosage(e.dosage);
-    setUnit(e.unit);
-    setCategory(e.category);
-    setTiming(e.timing);
+    // On normalise à l'ouverture : éditer un élixir historique nettoie sa valeur.
+    setUnit(lbl(UNIT_LABELS, e.unit));
+    setCategory(lbl(CATEGORY_LABELS, e.category));
+    setTiming(lbl(TIMING_LABELS, e.timing));
     setNotes(e.notes || "");
     setShowForm(true);
   }
 
   async function handleSave() {
-    if (!name.trim() || !dosage.trim() || !description.trim()) return;
+    if (!name.trim() || !dosage.trim() || !description.trim() || !unit.trim() || !category.trim()) return;
     setSaving(true);
 
-    const payload = { name: name.trim(), description: description.trim(), dosage: dosage.trim(), unit, category, timing, notes: notes.trim() || null };
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
+      dosage: dosage.trim(),
+      unit: unit.trim(),
+      category: category.trim(),
+      timing: timing.trim() || "Flexible",
+      notes: notes.trim() || null,
+    };
 
     try {
       const url = editId ? `/api/elixir-library/${editId}` : "/api/elixir-library";
@@ -132,11 +151,25 @@ export default function ElixirLibraryManager() {
     return <p className="text-sm font-ui text-brun-mid/60 py-8">Chargement...</p>;
   }
 
+  // Valeurs présentes (normalisées pour l'affichage) → filtres + suggestions.
+  const presentCategories = uniq(elixirs.map((e) => lbl(CATEGORY_LABELS, e.category)));
+  const unitSuggestions = uniq([...Object.values(UNIT_LABELS), ...elixirs.map((e) => lbl(UNIT_LABELS, e.unit))]);
+  const categorySuggestions = uniq([...Object.values(CATEGORY_LABELS), ...presentCategories]);
+  const timingSuggestions = uniq([...Object.values(TIMING_LABELS), ...elixirs.map((e) => lbl(TIMING_LABELS, e.timing))]);
+
+  const filterButtons = ["ALL", ...presentCategories];
+  const shown = filter === "ALL" ? elixirs : elixirs.filter((e) => lbl(CATEGORY_LABELS, e.category) === filter);
+
   return (
     <div>
-      {/* Filtre catégorie */}
-      <div className="flex items-center gap-2 mb-6">
-        {["ALL", "ACTIVATION", "INTEGRATION", "SUPPORT"].map((cat) => (
+      {/* Datalists partagées (suggestions éditables) */}
+      <datalist id="unit-suggestions">{unitSuggestions.map((v) => <option key={v} value={v} />)}</datalist>
+      <datalist id="category-suggestions">{categorySuggestions.map((v) => <option key={v} value={v} />)}</datalist>
+      <datalist id="timing-suggestions">{timingSuggestions.map((v) => <option key={v} value={v} />)}</datalist>
+
+      {/* Filtre catégorie (dérivé des catégories réellement présentes) */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        {filterButtons.map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter(cat)}
@@ -146,7 +179,7 @@ export default function ElixirLibraryManager() {
                 : "text-brun-mid hover:text-brun-chaud bg-cire-chaude"
             }`}
           >
-            {cat === "ALL" ? "Tous" : CATEGORY_LABELS[cat]}
+            {cat === "ALL" ? "Tous" : cat}
           </button>
         ))}
 
@@ -198,33 +231,33 @@ export default function ElixirLibraryManager() {
               placeholder="Description de l'élixir" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
             <div>
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
                 Unité <span className="text-red-600">*</span>
               </label>
-              <select value={unit} onChange={(e) => setUnit(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
-                {Object.entries(UNIT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              <input type="text" list="unit-suggestions" value={unit} onChange={(e) => setUnit(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+                placeholder="Gouttes, carré, gélules…" />
             </div>
             <div>
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
                 Catégorie <span className="text-red-600">*</span>
               </label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
-                {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              <input type="text" list="category-suggestions" value={category} onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+                placeholder="Activation, Intégration…" />
             </div>
             <div>
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Timing</label>
-              <select value={timing} onChange={(e) => setTiming(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre">
-                {Object.entries(TIMING_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              <input type="text" list="timing-suggestions" value={timing} onChange={(e) => setTiming(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
+                placeholder="Matin, Soir, Flexible…" />
             </div>
           </div>
+          <p className="text-[11px] font-ui text-brun-mid/50 italic mb-4">
+            Choisis une valeur existante ou tape la tienne — elle sera proposée ensuite.
+          </p>
 
           <div className="mb-4">
             <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Notes</label>
@@ -239,7 +272,7 @@ export default function ElixirLibraryManager() {
             </p>
             <button
               onClick={handleSave}
-              disabled={saving || !name.trim() || !dosage.trim() || !description.trim()}
+              disabled={saving || !name.trim() || !dosage.trim() || !description.trim() || !unit.trim() || !category.trim()}
               className="px-5 py-2 text-sm font-ui bg-or-sacre text-white rounded-sharp hover:bg-ambre-vif transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Enregistrement..." : editId ? "Mettre à jour" : "Créer"}
@@ -249,28 +282,28 @@ export default function ElixirLibraryManager() {
       )}
 
       {/* Liste */}
-      {elixirs.length === 0 ? (
+      {shown.length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-8 text-center">
           <p className="text-sm text-brun-mid/60 font-ui">Aucun élixir dans la bibliothèque.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {elixirs.map((elixir) => (
+          {shown.map((elixir) => (
             <div key={elixir.id} className="bg-cire-chaude border border-or-pale rounded-sm p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-sm font-ui text-brun-chaud">{elixir.name}</span>
-                    <span className={`text-xs font-caps uppercase px-2 py-0.5 rounded-sharp ${CATEGORY_COLORS[elixir.category]}`}>
-                      {CATEGORY_LABELS[elixir.category]}
+                    <span className={`text-xs font-caps uppercase px-2 py-0.5 rounded-sharp ${CATEGORY_COLORS[lbl(CATEGORY_LABELS, elixir.category)] ?? "bg-brun-mid/10 text-brun-mid"}`}>
+                      {lbl(CATEGORY_LABELS, elixir.category)}
                     </span>
                     <span className="text-xs font-caps uppercase px-2 py-0.5 rounded-sharp bg-brun-mid/10 text-brun-mid">
-                      {TIMING_LABELS[elixir.timing]}
+                      {lbl(TIMING_LABELS, elixir.timing)}
                     </span>
                   </div>
                   <p className="text-xs font-ui text-brun-mid/70 mt-1">{elixir.description}</p>
                   <div className="flex gap-3 mt-1.5 text-xs font-ui text-brun-mid/50">
-                    <span>{elixir.dosage} · {UNIT_LABELS[elixir.unit]}</span>
+                    <span>{elixir.dosage} · {lbl(UNIT_LABELS, elixir.unit)}</span>
                     {elixir._count.phaseElixirs > 0 && (
                       <span>{elixir._count.phaseElixirs} assignation{elixir._count.phaseElixirs > 1 ? "s" : ""}</span>
                     )}
