@@ -34,8 +34,11 @@ export async function POST(req: Request) {
   });
 
   // lastReactivationAt en SQL direct (client Prisma généré parfois périmé sur ce champ récent)
-  const reacRows = await prisma.$queryRaw<{ id: string; lastReactivationAt: Date | null }[]>`SELECT id, "lastReactivationAt" FROM "Client"`;
-  const reacMap = new Map(reacRows.map((r) => [r.id, r.lastReactivationAt]));
+  let reacMap = new Map<string, Date | null>();
+  try {
+    const reacRows = await prisma.$queryRaw<{ id: string; lastReactivationAt: Date | null }[]>`SELECT id, "lastReactivationAt" FROM "Client"`;
+    reacMap = new Map(reacRows.map((r) => [r.id, r.lastReactivationAt]));
+  } catch { /* colonne absente */ }
 
   const sent: string[] = [];
   let checked = 0;

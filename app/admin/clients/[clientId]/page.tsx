@@ -149,8 +149,13 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
 
   // Calcul du jour du parcours — source canonique detoxStartDate, si produits reçus ET date atteinte
   // lastReactivationAt lu en SQL direct (le client Prisma généré au build est parfois périmé sur ce champ récent)
-  const _reacRows = await prisma.$queryRaw<{ lastReactivationAt: Date | null }[]>`SELECT "lastReactivationAt" FROM "Client" WHERE id = ${clientId}`;
-  const clientLastReactivationAt = _reacRows[0]?.lastReactivationAt ?? null;
+  let clientLastReactivationAt: Date | null = null;
+  try {
+    const _reacRows = await prisma.$queryRaw<{ lastReactivationAt: Date | null }[]>`SELECT "lastReactivationAt" FROM "Client" WHERE id = ${clientId}`;
+    clientLastReactivationAt = _reacRows[0]?.lastReactivationAt ?? null;
+  } catch {
+    clientLastReactivationAt = null; // colonne absente / souci lecture → la fiche se charge quand même
+  }
 
   const programStart = client.detoxStartDate;
   const programHasStarted =
