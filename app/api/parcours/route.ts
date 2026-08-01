@@ -13,6 +13,7 @@ export async function GET() {
     where: { userId: session.userId },
     select: {
       id: true,
+      parcoursType: true,
       detoxStartDate: true,
       programTotalDays: true,
       requiresElixirs: true,
@@ -33,7 +34,7 @@ export async function GET() {
   let phases: any[] = [];
   let activeInfo: any = null;
 
-  if (client.programTotalDays != null && client.clientPhases.length > 0) {
+  if (client.parcoursType === "CUSTOM" && client.clientPhases.length > 0) {
     // Parcours PERSONNALISÉ : la timeline vit dans les phases stockées (pas le 103j figé).
     const now0 = new Date(); now0.setHours(0, 0, 0, 0);
     const first = new Date(client.clientPhases[0].startDate); first.setHours(0, 0, 0, 0);
@@ -61,12 +62,28 @@ export async function GET() {
         phase: active,
         dayInPhase: Math.round((now0.getTime() - as.getTime()) / 86400000) + 1,
         dayInProgram: Math.round((now0.getTime() - first.getTime()) / 86400000) + 1,
-        totalDays: client.programTotalDays,
+        totalDays: client.programTotalDays ?? phases.reduce((a, p) => a + p.durationDays, 0),
       };
     }
   } else {
     phases = programStart ? computePhases(programStart) : [];
     activeInfo = programStart ? getActivePhaseInfo(programStart) : null;
+
+    // Passage (103j) : si l'admin a donné un « Nom affiché » à une phase, il remonte au client
+    // (le 103j calcule des libellés figés ; on les surcharge par le customName stocké). Dates/statut inchangés.
+    if (programStart && client.clientPhases.length > 0) {
+      const byKey = new Map(
+        client.clientPhases.map((p) => [`${p.phaseType}-${p.phaseNumber}`, p.customName]),
+      );
+      phases = phases.map((ph) => {
+        const name = byKey.get(`${ph.phaseType}-${ph.phaseNumber}`);
+        return name ? { ...ph, label: name } : ph;
+      });
+      if (activeInfo) {
+        const name = byKey.get(`${activeInfo.phase.phaseType}-${activeInfo.phase.phaseNumber}`);
+        if (name) activeInfo = { ...activeInfo, phase: { ...activeInfo.phase, label: name } };
+      }
+    }
   }
 
   // Trouver la phase active en base pour récupérer les élixirs/pratiques assignés

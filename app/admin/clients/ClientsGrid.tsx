@@ -79,6 +79,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
     firstName: "", lastName: "", email: "",
     offerType: "CONVERSATION_EXPLORATOIRE", language: "FR",
     isLegacy: false, startDate: "", dayDirect: "",
+    subscriptionDate: "", departDate: "",
   });
   const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; link?: string } | null>(null);
@@ -120,6 +121,8 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
           isLegacy: form.isLegacy,
           startDate: form.isLegacy && form.startDate ? form.startDate : null,
           dayDirect: form.isLegacy && form.dayDirect ? Number(form.dayDirect) : null,
+          subscriptionDate: form.subscriptionDate || null,
+          departDate: form.departDate || null,
           parcoursType,
           ...flags,
         }),
@@ -147,7 +150,7 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
           onClick={() => {
             setShowInvite(true);
             setResult(null);
-            setForm({ firstName: "", lastName: "", email: "", offerType: DEFAULT_OFFER, language: "FR", isLegacy: false, startDate: "", dayDirect: "" });
+            setForm({ firstName: "", lastName: "", email: "", offerType: DEFAULT_OFFER, language: "FR", isLegacy: false, startDate: "", dayDirect: "", subscriptionDate: "", departDate: "" });
             setParcoursType(getParcoursTypeForOffer(DEFAULT_OFFER));
             setFlags(getDefaultsForParcoursType(getParcoursTypeForOffer(DEFAULT_OFFER)));
           }}
@@ -309,6 +312,20 @@ export default function ClientsGrid({ clients }: { clients: SerializedClient[] }
                         <span className="text-brun-chaud">{FLAG_LABELS[flag]}</span>
                       </label>
                     ))}
+                  </div>
+                </div>
+
+                {/* Dates : abonnement pris le + départ du parcours */}
+                <div className="border-t border-or-pale/50 pt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-ui text-brun-mid/60 mb-1">Abonnement pris le</label>
+                    <input type="date" value={form.subscriptionDate} onChange={(e) => setForm({ ...form, subscriptionDate: e.target.value })} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
+                    <p className="text-[10px] font-ui text-brun-mid/40 mt-1">Vide = aujourd&apos;hui</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-ui text-brun-mid/60 mb-1">Départ du parcours (optionnel)</label>
+                    <input type="date" value={form.departDate} onChange={(e) => setForm({ ...form, departDate: e.target.value })} className="w-full px-3 py-2 bg-cire-chaude border border-or-pale rounded-sm text-sm font-ui text-brun-chaud" />
+                    <p className="text-[10px] font-ui text-brun-mid/40 mt-1">Vide = posé au démarrage</p>
                   </div>
                 </div>
 

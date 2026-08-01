@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { EDITABLE_FLAG_KEYS, getDefaultsForParcoursType, type ParcoursFlags } from "@/lib/parcours-defaults";
 import type { ParcoursType } from "@prisma/client";
 import { FLAG_LABELS, PARCOURS_TYPE_OPTIONS } from "@/lib/parcours-labels";
@@ -23,6 +24,7 @@ export default function ClientModulesSection({
   const [elixirAEnvoyer, setElixirAEnvoyer] = useState<boolean>(initialElixirAEnvoyer);
   const [saving, setSaving] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const router = useRouter();
 
   // Changement de type de parcours → PATCH + pré-coche les modules par défaut du type.
   async function changeParcoursType(next: ParcoursType) {
@@ -44,6 +46,7 @@ export default function ClientModulesSection({
       if (!res.ok) throw new Error();
       setMsg("Type de parcours mis à jour ✓");
       setTimeout(() => setMsg(""), 2500);
+      router.refresh(); // recharge la fiche : composeur custom apparaît/disparaît selon l'offre
     } catch {
       setParcoursType(prevType); // rollback
       setFlags(prevFlags);
@@ -91,6 +94,7 @@ export default function ClientModulesSection({
       if (!res.ok) throw new Error();
       setMsg("Enregistré ✓");
       setTimeout(() => setMsg(""), 2500);
+      router.refresh(); // requiresProgramTimeline pilote la zone timeline juste en dessous
     } catch {
       setFlags((f) => ({ ...f, [key]: !next })); // rollback si échec
       setMsg("Échec de l'enregistrement");
@@ -116,6 +120,7 @@ export default function ClientModulesSection({
       if (!res.ok) throw new Error();
       setMsg("Réinitialisé selon le parcours ✓");
       setTimeout(() => setMsg(""), 2500);
+      router.refresh();
     } catch {
       setFlags(initialFlags); // rollback grossier
       setMsg("Échec de la réinitialisation");

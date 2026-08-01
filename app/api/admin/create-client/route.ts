@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if (isErrorResponse(auth)) return auth;
 
   const {
-    firstName, lastName, email, offerType, language, isLegacy, startDate, dayDirect,
+    firstName, lastName, email, offerType, language, isLegacy, startDate, dayDirect, subscriptionDate, departDate,
     parcoursType,
     requiresConvention, requiresQuestionnaire,
     requiresPhaseVideos, requiresMorningCheckin, requiresEveningCheckin,
@@ -43,9 +43,11 @@ export async function POST(request: NextRequest) {
   const tempPassword = crypto.randomUUID().slice(0, 12);
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-  // Calculate start date for legacy
+  // Date d'abonnement (startDate) : subscriptionDate si fourni, sinon legacy, sinon aujourd'hui.
   let clientStartDate = new Date();
-  if (isLegacy) {
+  if (subscriptionDate) {
+    clientStartDate = new Date(subscriptionDate);
+  } else if (isLegacy) {
     if (startDate) {
       clientStartDate = new Date(startDate);
     } else if (dayDirect && dayDirect > 0) {
@@ -54,6 +56,12 @@ export async function POST(request: NextRequest) {
       clientStartDate.setDate(clientStartDate.getDate() - (dayDirect - 1));
     }
   }
+
+  // Date de DÉPART du parcours (detoxStartDate) : departDate si fourni, sinon legacy = démarrage
+  // direct, sinon null (posée plus tard par le flux d'onboarding, qui respecte une date déjà fixée).
+  let detoxStart: Date | null = null;
+  if (departDate) detoxStart = new Date(departDate);
+  else if (isLegacy) detoxStart = clientStartDate;
 
   // Binding offre → parcours (garde-fou serveur) + defaults flags
   const resolvedOffer = offerType || "CONVERSATION_EXPLORATOIRE";
@@ -127,8 +135,8 @@ export async function POST(request: NextRequest) {
         colisEnvoyeAt: new Date(),
         produitsRecus: true,
         produitsRecusAt: new Date(),
-        detoxStartDate: clientStartDate,
       } : {}),
+      ...(detoxStart ? { detoxStartDate: detoxStart } : {}),
     },
   });
 
