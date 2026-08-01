@@ -19,6 +19,7 @@ import QuestionnaireEntrySection from "@/components/admin/QuestionnaireEntrySect
 import ClientClaritySection from "@/components/admin/ClientClaritySection";
 import CheckinsTab from "@/components/admin/CheckinsTab";
 import ClientModulesSection from "@/components/admin/ClientModulesSection";
+import CustomTimelineComposer from "@/components/admin/CustomTimelineComposer";
 
 // Labels lisibles pour les offres
 const OFFER_LABELS: Record<string, string> = {
@@ -626,12 +627,14 @@ function ParcoursTab({ client }: { client: any }) {
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider mb-3">
           Timeline du parcours
         </h2>
-        {(client.requiresProgramTimeline ?? true) ? (
+        {client.parcoursType === "CUSTOM" ? (
+          <CustomTimelineComposer clientId={client.id} />
+        ) : (client.requiresProgramTimeline ?? true) ? (
           <ParcoursSection clientId={client.id} />
         ) : (
           <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-6 text-center">
             <p className="text-sm font-ui text-brun-mid/70">
-              Pas de timeline pour ce client. Active « Timeline programme jour-par-jour » ci-dessus pour la générer.
+              Pas de timeline pour ce client. Active « Timeline programme jour-par-jour » ci-dessus, ou passe l'offre en « Parcours personnalisé » pour composer une timeline sur mesure.
             </p>
           </div>
         )}
