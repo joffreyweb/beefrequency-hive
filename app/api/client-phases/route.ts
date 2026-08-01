@@ -23,7 +23,21 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.json({ phases });
+  // Statut recalculé EN DIRECT : les lignes ClientPhase stockent un statut figé à la
+  // génération (jamais rafraîchi ensuite). On le recompute à la date du jour pour
+  // l'affichage admin (le côté client calcule déjà en direct depuis detoxStartDate).
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const phasesLive = phases.map((p) => {
+    const s = new Date(p.startDate); s.setHours(0, 0, 0, 0);
+    const e = new Date(p.endDate); e.setHours(0, 0, 0, 0);
+    let status: "UPCOMING" | "ACTIVE" | "COMPLETED" = "UPCOMING";
+    if (now > e) status = "COMPLETED";
+    else if (now >= s) status = "ACTIVE";
+    return { ...p, status };
+  });
+
+  return NextResponse.json({ phases: phasesLive });
 }
 
 // DELETE — réinitialiser les phases d'un client (query: clientId)
