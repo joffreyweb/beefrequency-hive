@@ -14,9 +14,9 @@ interface ElixirLib {
   _count: { phaseElixirs: number };
 }
 
-// Libellés « intégrés » : servent à afficher joliment les valeurs historiques
-// (stockées en MAJUSCULES) ET à amorcer les suggestions. Les champs sont désormais
-// LIBRES : Joffrey peut taper/ajouter/renommer n'importe quelle valeur.
+// Libellés « intégrés » : affichent joliment les valeurs historiques (stockées en
+// MAJUSCULES) ET amorcent les listes déroulantes. Les valeurs sont désormais LIBRES :
+// via « + Autre… », Joffrey ajoute/renomme ses propres unités/catégories/timings/dosages.
 const CATEGORY_LABELS: Record<string, string> = {
   ACTIVATION: "Activation",
   INTEGRATION: "Intégration",
@@ -36,17 +36,61 @@ const UNIT_LABELS: Record<string, string> = {
   CAPUCHONS: "Capuchons",
 };
 
-// Couleurs de pastille par catégorie (clé = libellé affiché). Repli neutre pour toute
-// catégorie personnalisée que Joffrey ajoute.
 const CATEGORY_COLORS: Record<string, string> = {
   Activation: "bg-or-sacre/10 text-or-sacre",
   Intégration: "bg-foret/10 text-foret",
   Support: "bg-ambre-vif/10 text-ambre-profond",
 };
 
-// Repli d'affichage : un libellé connu → sa version jolie ; sinon la valeur telle quelle.
+// Repli d'affichage : un code connu → sa version jolie ; sinon la valeur telle quelle.
 const lbl = (map: Record<string, string>, v: string) => (v ? map[v] ?? v : v);
 const uniq = (arr: string[]) => Array.from(new Set(arr.filter((x) => x && x.trim())));
+
+const OTHER = "__OTHER__";
+
+// Menu déroulant + option « + Autre… » : on choisit dans la liste (zéro faute de frappe),
+// ou on saisit une nouvelle valeur qui sera ensuite proposée à son tour.
+function SelectOrAdd({
+  value,
+  onChange,
+  options,
+  addPlaceholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  addPlaceholder: string;
+}) {
+  const known = options.includes(value);
+  const inputCls =
+    "w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre";
+  return (
+    <>
+      <select
+        value={known ? value : OTHER}
+        onChange={(e) => onChange(e.target.value === OTHER ? "" : e.target.value)}
+        className={inputCls}
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+        <option value={OTHER}>+ Autre… (saisir)</option>
+      </select>
+      {!known && (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={addPlaceholder}
+          autoFocus
+          className={inputCls + " mt-2"}
+        />
+      )}
+    </>
+  );
+}
 
 export default function ElixirLibraryManager() {
   const [elixirs, setElixirs] = useState<ElixirLib[]>([]);
@@ -67,8 +111,6 @@ export default function ElixirLibraryManager() {
 
   async function loadElixirs() {
     try {
-      // On charge TOUT (le filtre est appliqué côté client pour regrouper proprement
-      // les valeurs historiques MAJUSCULE et les nouvelles valeurs libres).
       const res = await fetch("/api/elixir-library");
       const data = await res.json();
       setElixirs(data.elixirs ?? []);
@@ -99,7 +141,7 @@ export default function ElixirLibraryManager() {
     setName(e.name);
     setDescription(e.description);
     setDosage(e.dosage);
-    // On normalise à l'ouverture : éditer un élixir historique nettoie sa valeur.
+    // Normalisation à l'ouverture : éditer un élixir historique nettoie sa valeur.
     setUnit(lbl(UNIT_LABELS, e.unit));
     setCategory(lbl(CATEGORY_LABELS, e.category));
     setTiming(lbl(TIMING_LABELS, e.timing));
@@ -151,23 +193,18 @@ export default function ElixirLibraryManager() {
     return <p className="text-sm font-ui text-brun-mid/60 py-8">Chargement...</p>;
   }
 
-  // Valeurs présentes (normalisées pour l'affichage) → filtres + suggestions.
-  const presentCategories = uniq(elixirs.map((e) => lbl(CATEGORY_LABELS, e.category)));
-  const unitSuggestions = uniq([...Object.values(UNIT_LABELS), ...elixirs.map((e) => lbl(UNIT_LABELS, e.unit))]);
-  const categorySuggestions = uniq([...Object.values(CATEGORY_LABELS), ...presentCategories]);
-  const timingSuggestions = uniq([...Object.values(TIMING_LABELS), ...elixirs.map((e) => lbl(TIMING_LABELS, e.timing))]);
+  // Listes déroulantes = valeurs intégrées + toutes celles déjà utilisées (normalisées).
+  const unitOptions = uniq([...Object.values(UNIT_LABELS), ...elixirs.map((e) => lbl(UNIT_LABELS, e.unit))]);
+  const categoryOptions = uniq([...Object.values(CATEGORY_LABELS), ...elixirs.map((e) => lbl(CATEGORY_LABELS, e.category))]);
+  const timingOptions = uniq([...Object.values(TIMING_LABELS), ...elixirs.map((e) => lbl(TIMING_LABELS, e.timing))]);
+  const dosageOptions = uniq(elixirs.map((e) => e.dosage));
 
-  const filterButtons = ["ALL", ...presentCategories];
+  const filterButtons = ["ALL", ...categoryOptions];
   const shown = filter === "ALL" ? elixirs : elixirs.filter((e) => lbl(CATEGORY_LABELS, e.category) === filter);
 
   return (
     <div>
-      {/* Datalists partagées (suggestions éditables) */}
-      <datalist id="unit-suggestions">{unitSuggestions.map((v) => <option key={v} value={v} />)}</datalist>
-      <datalist id="category-suggestions">{categorySuggestions.map((v) => <option key={v} value={v} />)}</datalist>
-      <datalist id="timing-suggestions">{timingSuggestions.map((v) => <option key={v} value={v} />)}</datalist>
-
-      {/* Filtre catégorie (dérivé des catégories réellement présentes) */}
+      {/* Filtre catégorie (intégrées + celles réellement utilisées) */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         {filterButtons.map((cat) => (
           <button
@@ -216,9 +253,7 @@ export default function ElixirLibraryManager() {
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
                 Dosage <span className="text-red-600">*</span>
               </label>
-              <input type="text" value={dosage} onChange={(e) => setDosage(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
-                placeholder="Ex: 20 gouttes" />
+              <SelectOrAdd value={dosage} onChange={setDosage} options={dosageOptions} addPlaceholder="Ex : 20 gouttes, 1/2 carré…" />
             </div>
           </div>
 
@@ -236,27 +271,21 @@ export default function ElixirLibraryManager() {
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
                 Unité <span className="text-red-600">*</span>
               </label>
-              <input type="text" list="unit-suggestions" value={unit} onChange={(e) => setUnit(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
-                placeholder="Gouttes, carré, gélules…" />
+              <SelectOrAdd value={unit} onChange={setUnit} options={unitOptions} addPlaceholder="Nouvelle unité (ex : demi carré)…" />
             </div>
             <div>
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">
                 Catégorie <span className="text-red-600">*</span>
               </label>
-              <input type="text" list="category-suggestions" value={category} onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
-                placeholder="Activation, Intégration…" />
+              <SelectOrAdd value={category} onChange={setCategory} options={categoryOptions} addPlaceholder="Nouvelle catégorie…" />
             </div>
             <div>
               <label className="block text-xs font-caps text-brun-mid uppercase tracking-wider mb-1">Timing</label>
-              <input type="text" list="timing-suggestions" value={timing} onChange={(e) => setTiming(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-ui text-brun-chaud bg-creme-sacree border border-or-pale rounded-sharp focus:outline-none focus:border-or-sacre"
-                placeholder="Matin, Soir, Flexible…" />
+              <SelectOrAdd value={timing} onChange={setTiming} options={timingOptions} addPlaceholder="Nouveau timing…" />
             </div>
           </div>
           <p className="text-[11px] font-ui text-brun-mid/50 italic mb-4">
-            Choisis une valeur existante ou tape la tienne — elle sera proposée ensuite.
+            Choisis dans la liste, ou « + Autre… » pour ajouter une nouvelle valeur (elle sera proposée ensuite).
           </p>
 
           <div className="mb-4">
