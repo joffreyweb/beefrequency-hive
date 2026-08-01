@@ -104,6 +104,8 @@ model Client {
   userId              String       @unique
   user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   status              ClientStatus @default(ACTIVE)
+  lastReactivationAt  DateTime?    // Dernière relance « on pense à toi » (manuel ou cron)
+  reactivationCount   Int          @default(0) // Nb de relances envoyées
   offerType           OfferType
   charteSignee        Boolean      @default(false)
   charteSignature     String?
