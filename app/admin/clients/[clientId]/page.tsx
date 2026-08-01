@@ -283,6 +283,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         autoUsedSessions={client.appointments.filter((a) => new Date(a.scheduledAt).getTime() < Date.now()).length}
         subscriptionNotes={client.subscriptionNotes || null}
         startDate={client.startDate.toISOString()}
+        detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
         offerType={OFFER_LABELS[client.offerType] ?? client.offerType}
       />
 

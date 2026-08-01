@@ -10,6 +10,7 @@ interface Props {
   autoUsedSessions: number;
   subscriptionNotes: string | null;
   startDate: string;
+  detoxStartDate: string | null;
   offerType: string;
 }
 
@@ -20,6 +21,7 @@ export default function SubscriptionSection({
   autoUsedSessions,
   subscriptionNotes: initNotes,
   startDate: initStart,
+  detoxStartDate,
   offerType,
 }: Props) {
   const router = useRouter();
@@ -77,9 +79,17 @@ export default function SubscriptionSection({
             <p className="font-ui text-sm text-brun-chaud mt-0.5">{offerType}</p>
           </div>
           <div>
-            <p className="font-caps text-[10px] text-brun-mid/60 uppercase tracking-wider">Date de début</p>
+            <p className="font-caps text-[10px] text-brun-mid/60 uppercase tracking-wider">Abonnement pris le</p>
             <p className="font-ui text-sm text-brun-chaud mt-0.5">
               {new Date(initStart).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          </div>
+          <div>
+            <p className="font-caps text-[10px] text-brun-mid/60 uppercase tracking-wider">Départ du parcours</p>
+            <p className="font-ui text-sm text-brun-chaud mt-0.5">
+              {detoxStartDate
+                ? new Date(detoxStartDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+                : <span className="text-brun-mid/50">à définir</span>}
             </p>
           </div>
           <div>

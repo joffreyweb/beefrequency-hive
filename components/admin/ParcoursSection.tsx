@@ -227,7 +227,7 @@ export default function ParcoursSection({ clientId }: { clientId: string }) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs font-ui text-brun-mid/60">
           {phases.length} phases · 103 jours
-          {phases.length > 0 && ` · Début ${formatDateShort(phases[0].startDate)}`}
+          {phases.length > 0 && ` · Départ ${formatDateShort(phases[0].startDate)}`}
         </p>
         <div className="flex gap-2">
           <button
