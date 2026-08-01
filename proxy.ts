@@ -9,7 +9,7 @@ const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
 
 // Routes publiques qui ne nécessitent pas d'auth (cookie). Les endpoints cron ci-dessous
 // valident eux-mêmes leur secret partagé (x-cron-secret / CALDAV_WEBHOOK_SECRET) dans leur handler.
-const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth/login", "/blocked", "/client/booking", "/api/booking", "/api/availability", "/forgot-password", "/reset-password", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/newsletter/unsubscribe", "/api/public-uploads/journal", "/api/actions/sync", "/api/session-reminders", "/api/caldav/webhook", "/api/cron/kdrive-archive", "/api/cron/morning-brief", "/api/cron/evening-reminder", "/r/"];
+const publicPaths = ["/login", "/register", "/invite", "/api/invite", "/api/auth/login", "/blocked", "/client/booking", "/api/booking", "/api/availability", "/forgot-password", "/reset-password", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/newsletter/unsubscribe", "/api/public-uploads/journal", "/api/actions/sync", "/api/session-reminders", "/api/caldav/webhook", "/api/cron/kdrive-archive", "/api/cron/morning-brief", "/api/cron/evening-reminder", "/api/cron/reactivation", "/r/"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

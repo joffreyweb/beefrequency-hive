@@ -82,6 +82,8 @@ model User {
   blocked                Boolean   @default(false)
   lastLoginAt            DateTime? // Dernier login formulaire (POST /api/auth/login)
   lastSeenAt             DateTime? // Dernière activité authentifiée (update throttled 1h dans /api/auth/me)
+  lastReactivationAt     DateTime? // Dernière relance « on pense à toi » envoyée (manuel ou cron)
+  reactivationCount      Int       @default(0) // Nb de relances envoyées
   dailyRecapTime         String    @default("18:00") // Heure du récapitulatif de journée (HH:mm)
   morningReminderEnabled Boolean   @default(false)
   morningReminderTime    String    @default("07:00")

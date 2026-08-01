@@ -8,6 +8,7 @@ import AdminSetPasswordSection from "@/components/admin/AdminSetPasswordSection"
 import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
+import ReactivationButton from "@/components/admin/ReactivationButton";
 import { OFFER_LABELS } from "@/lib/offer-labels";
 
 // Labels lisibles pour les statuts
@@ -249,6 +250,10 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           >
             Envoyer un message
           </Link>
+          <ReactivationButton
+            clientId={clientId}
+            lastReactivationAt={client.lastReactivationAt ? client.lastReactivationAt.toISOString() : null}
+          />
         </div>
       </div>
 

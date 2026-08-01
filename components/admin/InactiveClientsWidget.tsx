@@ -8,6 +8,7 @@ interface InactiveClient {
   email: string;
   daysSinceActivity: number;
   lastActivityDate: string | null;
+  lastReactivationAt: string | null;
   alertLevel: "yellow" | "orange" | "red";
 }
 
@@ -16,6 +17,10 @@ const ALERT_COLORS = {
   orange: "bg-orange-500",
   red: "bg-red-500",
 };
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
 
 function getInitials(name: string): string {
   return name
@@ -90,6 +95,9 @@ export default function InactiveClientsWidget() {
                 <p className="text-xs font-ui text-brun-mid/50">
                   {client.daysSinceActivity} jour{client.daysSinceActivity > 1 ? "s" : ""} sans activit&eacute;
                 </p>
+                {client.lastReactivationAt && (
+                  <p className="text-[10px] font-ui text-foret/70">Relanc&eacute; le {fmtDate(client.lastReactivationAt)}</p>
+                )}
               </div>
             </a>
 

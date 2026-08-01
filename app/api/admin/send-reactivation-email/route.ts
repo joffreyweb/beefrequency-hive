@@ -35,7 +35,14 @@ export async function POST(request: NextRequest) {
       language: lang,
     });
 
-    return NextResponse.json({ ok: true });
+    // Tracer la relance : anti-doublon (cron) + affichage « dernière relance »
+    const updated = await prisma.client.update({
+      where: { id: clientId },
+      data: { lastReactivationAt: new Date(), reactivationCount: { increment: 1 } },
+      select: { lastReactivationAt: true },
+    });
+
+    return NextResponse.json({ ok: true, lastReactivationAt: updated.lastReactivationAt });
   } catch (error) {
     console.error("Erreur envoi relance:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

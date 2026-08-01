@@ -43,9 +43,9 @@ export async function GET() {
         ? new Date(c.journalEntries[0].createdAt).getTime()
         : 0;
       const lastActivity = Math.max(lastCheckin, lastJournal);
-      const daysSince = lastActivity > 0
-        ? Math.floor((now - lastActivity) / 86400000)
-        : 999;
+      // Repli sur la date d'inscription si jamais actif (pas de 999j fictif → cohérent avec le cron de relance)
+      const ref = lastActivity > 0 ? lastActivity : new Date(c.createdAt).getTime();
+      const daysSince = Math.floor((now - ref) / 86400000);
 
       return {
         clientId: c.id,
@@ -53,6 +53,7 @@ export async function GET() {
         email: c.user.email,
         daysSinceActivity: daysSince,
         lastActivityDate: lastActivity > 0 ? new Date(lastActivity).toISOString() : null,
+        lastReactivationAt: c.lastReactivationAt ? new Date(c.lastReactivationAt).toISOString() : null,
         alertLevel: getAlertLevel(daysSince) as AlertLevel,
       };
     })
