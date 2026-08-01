@@ -252,7 +252,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           </Link>
           <ReactivationButton
             clientId={clientId}
-            lastReactivationAt={client.lastReactivationAt ? client.lastReactivationAt.toISOString() : null}
+            lastReactivationAt={(client as { lastReactivationAt: Date | null }).lastReactivationAt?.toISOString() ?? null}
           />
         </div>
       </div>

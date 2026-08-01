@@ -48,8 +48,9 @@ export async function POST(req: Request) {
     if (daysSince < INACTIVE_DAYS) continue;
 
     // Anti-doublon : pas de relance si une a été envoyée il y a moins de COOLDOWN_DAYS
-    if (c.lastReactivationAt) {
-      const sinceRelance = (now - new Date(c.lastReactivationAt).getTime()) / DAY;
+    const lastReac = (c as { lastReactivationAt: Date | null }).lastReactivationAt;
+    if (lastReac) {
+      const sinceRelance = (now - new Date(lastReac).getTime()) / DAY;
       if (sinceRelance < COOLDOWN_DAYS) continue;
     }
 
@@ -63,7 +64,8 @@ export async function POST(req: Request) {
       });
       await prisma.client.update({
         where: { id: c.id },
-        data: { lastReactivationAt: new Date(), reactivationCount: { increment: 1 } },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: { lastReactivationAt: new Date(), reactivationCount: { increment: 1 } } as any,
       });
       sent.push(c.intake?.firstName || c.user.email);
     } catch (e) {

@@ -53,7 +53,7 @@ export async function GET() {
         email: c.user.email,
         daysSinceActivity: daysSince,
         lastActivityDate: lastActivity > 0 ? new Date(lastActivity).toISOString() : null,
-        lastReactivationAt: c.lastReactivationAt ? new Date(c.lastReactivationAt).toISOString() : null,
+        lastReactivationAt: (c as { lastReactivationAt: Date | null }).lastReactivationAt?.toISOString() ?? null,
         alertLevel: getAlertLevel(daysSince) as AlertLevel,
       };
     })
