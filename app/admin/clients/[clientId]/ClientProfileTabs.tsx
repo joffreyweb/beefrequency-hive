@@ -755,16 +755,10 @@ function DocumentsTab({
           </span>
         )}
       </div>
-      {client.documents.length === 0 ? (
-        <div className="bg-cire-chaude border border-or-pale rounded-[10px] p-8 text-center">
-          <p className="text-sm text-brun-mid/60 font-ui">Aucun document.</p>
-        </div>
-      ) : (
-        <DocumentsSection
-          documents={client.documents}
-          clientId={client.id}
-        />
-      )}
+      <DocumentsSection
+        documents={client.documents}
+        clientId={client.id}
+      />
     </div>
   );
 }

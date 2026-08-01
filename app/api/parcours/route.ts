@@ -14,6 +14,7 @@ export async function GET() {
     select: {
       id: true,
       detoxStartDate: true,
+      programTotalDays: true,
       requiresElixirs: true,
       clientPhases: {
         orderBy: [{ startDate: "asc" }],
@@ -29,8 +30,44 @@ export async function GET() {
 
   // Source de date canonique : detoxStartDate. Si non défini, le programme n'a pas démarré.
   const programStart = client.detoxStartDate;
-  const phases = programStart ? computePhases(programStart) : [];
-  const activeInfo = programStart ? getActivePhaseInfo(programStart) : null;
+  let phases: any[] = [];
+  let activeInfo: any = null;
+
+  if (client.programTotalDays != null && client.clientPhases.length > 0) {
+    // Parcours PERSONNALISÉ : la timeline vit dans les phases stockées (pas le 103j figé).
+    const now0 = new Date(); now0.setHours(0, 0, 0, 0);
+    const first = new Date(client.clientPhases[0].startDate); first.setHours(0, 0, 0, 0);
+    phases = client.clientPhases.map((p) => {
+      const s = new Date(p.startDate); s.setHours(0, 0, 0, 0);
+      const e = new Date(p.endDate); e.setHours(0, 0, 0, 0);
+      let status: "UPCOMING" | "ACTIVE" | "COMPLETED" = "UPCOMING";
+      if (now0 > e) status = "COMPLETED";
+      else if (now0 >= s) status = "ACTIVE";
+      return {
+        phaseType: p.phaseType,
+        phaseNumber: p.phaseNumber,
+        durationDays: Math.round((e.getTime() - s.getTime()) / 86400000) + 1,
+        startDay: Math.round((s.getTime() - first.getTime()) / 86400000),
+        label: p.customName || p.phaseType,
+        startDate: p.startDate,
+        endDate: p.endDate,
+        status,
+      };
+    });
+    const active = phases.find((p) => p.status === "ACTIVE");
+    if (active) {
+      const as = new Date(active.startDate); as.setHours(0, 0, 0, 0);
+      activeInfo = {
+        phase: active,
+        dayInPhase: Math.round((now0.getTime() - as.getTime()) / 86400000) + 1,
+        dayInProgram: Math.round((now0.getTime() - first.getTime()) / 86400000) + 1,
+        totalDays: client.programTotalDays,
+      };
+    }
+  } else {
+    phases = programStart ? computePhases(programStart) : [];
+    activeInfo = programStart ? getActivePhaseInfo(programStart) : null;
+  }
 
   // Trouver la phase active en base pour récupérer les élixirs/pratiques assignés
   let todayElixirs: any[] = [];
