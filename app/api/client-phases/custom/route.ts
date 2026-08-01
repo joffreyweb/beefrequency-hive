@@ -57,17 +57,27 @@ export async function POST(req: Request) {
   const total = totalDaysOf(clean);
 
   const phases = await prisma.$transaction(async (tx) => {
-    // Régénération = remplacement : le composeur est la source de vérité.
-    await tx.clientPhase.deleteMany({ where: { clientId } });
     await tx.client.update({
       where: { id: clientId },
       data: { detoxStartDate: start, programTotalDays: total, requiresProgramTimeline: true },
     });
-    const created = [];
+    // NON DESTRUCTIF : upsert par (phaseType, phaseNumber). Les phases conservées gardent
+    // leurs élixirs / check-ins. On ne supprime QUE les phases retirées de la structure.
+    const keep = new Set<string>();
+    const result = [];
     for (const p of computed) {
-      created.push(
-        await tx.clientPhase.create({
-          data: {
+      keep.add(`${p.phaseType}-${p.phaseNumber}`);
+      result.push(
+        await tx.clientPhase.upsert({
+          where: {
+            clientId_phaseType_phaseNumber: {
+              clientId,
+              phaseType: p.phaseType as PhaseType,
+              phaseNumber: p.phaseNumber,
+            },
+          },
+          update: { startDate: p.startDate, endDate: p.endDate, status: p.status, customName: p.label },
+          create: {
             clientId,
             phaseType: p.phaseType as PhaseType,
             phaseNumber: p.phaseNumber,
@@ -79,7 +89,17 @@ export async function POST(req: Request) {
         }),
       );
     }
-    return created;
+    const existing = await tx.clientPhase.findMany({
+      where: { clientId },
+      select: { id: true, phaseType: true, phaseNumber: true },
+    });
+    const toDelete = existing
+      .filter((e) => !keep.has(`${e.phaseType}-${e.phaseNumber}`))
+      .map((e) => e.id);
+    if (toDelete.length > 0) {
+      await tx.clientPhase.deleteMany({ where: { id: { in: toDelete } } });
+    }
+    return result;
   });
 
   return NextResponse.json({ phases, programStart: start, totalDays: total }, { status: 201 });

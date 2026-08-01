@@ -88,7 +88,7 @@ export default function CustomTimelineComposer({ clientId }: { clientId: string 
       setMsg("Ajoute au moins un module.");
       return;
     }
-    if (!confirm("Régénérer la timeline ? Les phases actuelles (et leurs élixirs/check-ins) seront remplacées.")) return;
+    if (!confirm("Régénérer la timeline ? Les phases conservées gardent leurs élixirs ; seules les phases retirées sont supprimées.")) return;
     setSaving(true);
     setMsg("");
     try {

@@ -212,10 +212,12 @@ export const PARCOURS_CONFIG: Record<ParcoursType, ParcoursConfig> = {
     flags: mkFlags({ welcome: false, convention: false, questionnaire: false, phaseVideos: false, morning: false, evening: false, journal: true, timeline: false, elixirs: true }),
   },
   CUSTOM: {
-    requiresQuestionnaire: false, // modulaire — activé par l'admin
-    questionnaireSections: [],
-    hasElixirs: false, hasCheckinMorning: false, hasCheckinEvening: false,
-    hasPhases: false, hasJournal: false, hasZoomIntegration: true,
+    // Personnalisé = TOUT est disponible (toutes les sections, toutes les briques),
+    // mais RIEN n'est forcé : les flags par défaut sont tous à false, l'admin coche ce qu'il veut.
+    requiresQuestionnaire: false, // pas auto-bloquant ; l'admin l'active s'il veut
+    questionnaireSections: ["identity", "postal_address", "hd_astro", "life_story", "physical_health", "emotional_health", "habits", "intentions", "engagement", "ceremony_prep", "group_dynamic"],
+    hasElixirs: true, hasCheckinMorning: true, hasCheckinEvening: true,
+    hasPhases: true, hasJournal: true, hasZoomIntegration: true,
     sendBirthdayNotif: true, pwaAccessLevel: "FULL",
     flags: mkFlags({ welcome: false, convention: false, questionnaire: false, phaseVideos: false, morning: false, evening: false, journal: false, timeline: false }),
   },
