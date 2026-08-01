@@ -43,3 +43,6 @@ next-env.d.ts
 # Swiss Ephemeris data files — tracked in repo (3.5MB, needed for HD/astro calculations)
 
 _to_delete/
+
+# Répertoire de session Cowork (ne pas versionner)
+.claude/
