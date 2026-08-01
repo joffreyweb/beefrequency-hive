@@ -33,6 +33,10 @@ export async function POST(req: Request) {
     },
   });
 
+  // lastReactivationAt en SQL direct (client Prisma généré parfois périmé sur ce champ récent)
+  const reacRows = await prisma.$queryRaw<{ id: string; lastReactivationAt: Date | null }[]>`SELECT id, "lastReactivationAt" FROM "Client"`;
+  const reacMap = new Map(reacRows.map((r) => [r.id, r.lastReactivationAt]));
+
   const sent: string[] = [];
   let checked = 0;
 
@@ -48,7 +52,7 @@ export async function POST(req: Request) {
     if (daysSince < INACTIVE_DAYS) continue;
 
     // Anti-doublon : pas de relance si une a été envoyée il y a moins de COOLDOWN_DAYS
-    const lastReac = (c as { lastReactivationAt: Date | null }).lastReactivationAt;
+    const lastReac = reacMap.get(c.id) ?? null;
     if (lastReac) {
       const sinceRelance = (now - new Date(lastReac).getTime()) / DAY;
       if (sinceRelance < COOLDOWN_DAYS) continue;
@@ -62,11 +66,7 @@ export async function POST(req: Request) {
         firstName: c.intake?.firstName || undefined,
         language: (c.language as "FR" | "EN") || "FR",
       });
-      await prisma.client.update({
-        where: { id: c.id },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: { lastReactivationAt: new Date(), reactivationCount: { increment: 1 } } as any,
-      });
+      await prisma.$executeRaw`UPDATE "Client" SET "lastReactivationAt" = NOW(), "reactivationCount" = COALESCE("reactivationCount", 0) + 1 WHERE id = ${c.id}`;
       sent.push(c.intake?.firstName || c.user.email);
     } catch (e) {
       console.error("Relance échouée pour", c.id, e);

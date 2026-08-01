@@ -32,6 +32,10 @@ export async function GET() {
     },
   });
 
+  // lastReactivationAt en SQL direct (client Prisma généré parfois périmé sur ce champ récent)
+  const reacRows = await prisma.$queryRaw<{ id: string; lastReactivationAt: Date | null }[]>`SELECT id, "lastReactivationAt" FROM "Client"`;
+  const reacMap = new Map(reacRows.map((r) => [r.id, r.lastReactivationAt]));
+
   const now = Date.now();
 
   const inactive = clients
@@ -53,7 +57,7 @@ export async function GET() {
         email: c.user.email,
         daysSinceActivity: daysSince,
         lastActivityDate: lastActivity > 0 ? new Date(lastActivity).toISOString() : null,
-        lastReactivationAt: (c as { lastReactivationAt: Date | null }).lastReactivationAt?.toISOString() ?? null,
+        lastReactivationAt: reacMap.get(c.id)?.toISOString() ?? null,
         alertLevel: getAlertLevel(daysSince) as AlertLevel,
       };
     })

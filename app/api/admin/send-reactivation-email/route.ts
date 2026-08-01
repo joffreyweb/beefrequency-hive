@@ -36,11 +36,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Tracer la relance : anti-doublon (cron) + affichage « dernière relance »
-    await prisma.client.update({
-      where: { id: clientId },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: { lastReactivationAt: new Date(), reactivationCount: { increment: 1 } } as any,
-    });
+    await prisma.$executeRaw`UPDATE "Client" SET "lastReactivationAt" = NOW(), "reactivationCount" = COALESCE("reactivationCount", 0) + 1 WHERE id = ${clientId}`;
 
     return NextResponse.json({ ok: true, lastReactivationAt: new Date().toISOString() });
   } catch (error) {
