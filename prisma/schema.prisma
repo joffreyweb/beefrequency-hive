@@ -167,6 +167,7 @@ model Client {
   produitsRecus   Boolean   @default(false)
   produitsRecusAt DateTime?
   detoxStartDate  DateTime? // Début détox (10 jours) — SOURCE DE DATE CANONIQUE du parcours
+  programTotalDays Int? // Durée totale d'un parcours personnalisé (jours) · null = Passage 103j
 
   // Suivi de continuité (parcoursType FIL_RUCHE)
   followUpActive            Boolean   @default(false)
@@ -689,6 +690,7 @@ enum PhaseType {
   DETOX
   CYCLE
   BREAK
+  CUSTOM
 }
 
 enum PhaseStatus {

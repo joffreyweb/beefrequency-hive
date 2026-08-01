@@ -2,7 +2,7 @@
 // Logique métier — Parcours 3 mois
 // ═══════════════════════════════════════
 
-export type PhaseType = "DETOX" | "CYCLE" | "BREAK";
+export type PhaseType = "DETOX" | "CYCLE" | "BREAK" | "CUSTOM";
 export type PhaseStatus = "UPCOMING" | "ACTIVE" | "COMPLETED";
 
 export interface PhaseDefinition {
@@ -87,6 +87,64 @@ export function getActivePhaseInfo(startDate: Date | string, today?: Date): Acti
     dayInProgram,
     totalDays: TOTAL_PROGRAM_DAYS,
   };
+}
+
+// ═══════════════════════════════════════
+// Parcours PERSONNALISÉ (non-103j) — génération à durées libres.
+// Le 103j (computePhases) n'est JAMAIS touché : ceci est un chemin parallèle.
+// ═══════════════════════════════════════
+
+export interface CustomModuleInput {
+  phaseType: PhaseType;
+  label: string;
+  days: number;
+}
+
+/** Somme des durées (jours) d'une liste de modules. */
+export function totalDaysOf(modules: { days: number }[]): number {
+  return modules.reduce((acc, m) => acc + Math.max(1, Math.floor(m.days)), 0);
+}
+
+/** Génère des phases à dates absolues à partir d'une liste de modules à durées libres.
+ *  phaseNumber est attribué par type (1, 2, 3…) → garde (clientId, phaseType, phaseNumber) unique. */
+export function computeCustomPhases(
+  modules: CustomModuleInput[],
+  startDate: Date | string,
+  today?: Date,
+): ComputedPhase[] {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const now = today ?? new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const result: ComputedPhase[] = [];
+  const typeCounts: Record<string, number> = {};
+  let cursor = 0;
+
+  for (const m of modules) {
+    const days = Math.max(1, Math.floor(m.days));
+    typeCounts[m.phaseType] = (typeCounts[m.phaseType] ?? 0) + 1;
+
+    const phaseStart = addDays(start, cursor);
+    const phaseEnd = addDays(start, cursor + days - 1);
+
+    let status: PhaseStatus = "UPCOMING";
+    if (now > phaseEnd) status = "COMPLETED";
+    else if (now >= phaseStart) status = "ACTIVE";
+
+    result.push({
+      phaseType: m.phaseType,
+      phaseNumber: typeCounts[m.phaseType],
+      durationDays: days,
+      startDay: cursor,
+      label: m.label,
+      startDate: phaseStart,
+      endDate: phaseEnd,
+      status,
+    });
+    cursor += days;
+  }
+  return result;
 }
 
 /** Vérifie si un élixir doit être pris un jour donné selon sa fréquence */
