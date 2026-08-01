@@ -73,13 +73,15 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── Rappels Appointments (nouveau systeme RDV) ──
-  const in47h = new Date(now.getTime() + 47 * 60 * 60 * 1000);
+  // ── Rappels Appointments (nouveau systeme RDV) — 24h avant, robuste ──
+  // Fenêtre "dans les 24 prochaines heures + pas encore rappelé" : le rappel part une seule
+  // fois (reminderSent), ~24h avant, et ne saute pas si le cron rate un passage.
+  const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const appointments = await prisma.appointment.findMany({
     where: {
       status: "CONFIRMED",
       reminderSent: false,
-      scheduledAt: { gte: in47h, lte: in48h },
+      scheduledAt: { gte: now, lte: in24h },
     },
     include: {
       client: { include: { user: { select: { email: true, name: true } } } },
