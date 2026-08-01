@@ -34,10 +34,10 @@ interface PhasePractice {
   frequency: string;
 }
 
-interface ClientPhase {
+export interface ClientPhase {
   id: string;
   clientId: string;
-  phaseType: "DETOX" | "CYCLE" | "BREAK";
+  phaseType: "DETOX" | "CYCLE" | "BREAK" | "CUSTOM";
   phaseNumber: number;
   startDate: string;
   endDate: string;
@@ -59,6 +59,7 @@ const PHASE_LABELS: Record<string, string> = {
   DETOX: "Detox",
   CYCLE: "Cycle",
   BREAK: "Intégration",
+  CUSTOM: "Phase",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -312,7 +313,7 @@ const TAB_LABELS: Record<PhaseTab, string> = {
   jours: "Jours",
 };
 
-function PhaseDetail({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
+export function PhaseDetail({ phase, allPhases, onUpdate }: { phase: ClientPhase; allPhases: ClientPhase[]; onUpdate: () => void }) {
   const [activeTab, setActiveTab] = useState<PhaseTab>("general");
 
   return (
