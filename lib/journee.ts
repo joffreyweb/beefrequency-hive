@@ -249,6 +249,7 @@ export async function getDayPlan(now: Date = new Date()): Promise<DayPlan> {
     durationMin: e.durationMin,
     meetingType: "perso",
     clientName: null,
+    zoomLink: null,
   }));
   const agenda: ApptLite[] = [...appointments, ...personal].sort((a, b) =>
     a.scheduledAt.localeCompare(b.scheduledAt),

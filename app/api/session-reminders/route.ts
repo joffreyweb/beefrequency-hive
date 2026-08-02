@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendInvitationEmail } from "@/lib/mailer";
+import { sendPushToClient } from "@/lib/push";
 
 // POST /api/session-reminders — Envoyer les rappels pour les sessions dans les prochaines 48h
 // A appeler via cron job (ex: toutes les heures)
@@ -73,15 +74,14 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── Rappels Appointments (nouveau systeme RDV) — 24h avant, robuste ──
-  // Fenêtre "dans les 24 prochaines heures + pas encore rappelé" : le rappel part une seule
-  // fois (reminderSent), ~24h avant, et ne saute pas si le cron rate un passage.
-  const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  // ── Rappels Appointments (nouveau systeme RDV) — 48h avant, robuste ──
+  // Fenêtre "dans les 48 prochaines heures + pas encore rappelé" : le rappel part une seule
+  // fois (reminderSent), ~48h avant, et ne saute pas si le cron rate un passage.
   const appointments = await prisma.appointment.findMany({
     where: {
       status: "CONFIRMED",
       reminderSent: false,
-      scheduledAt: { gte: now, lte: in24h },
+      scheduledAt: { gte: now, lte: in48h },
     },
     include: {
       client: { include: { user: { select: { email: true, name: true } } } },
@@ -117,6 +117,13 @@ export async function POST(req: Request) {
       await prisma.appointment.update({
         where: { id: appt.id },
         data: { reminderSent: true },
+      });
+
+      // Notification push au client (en plus de l'email) — fire-and-forget, ne bloque rien
+      await sendPushToClient(appt.clientId, {
+        title: lang === "EN" ? "Session reminder" : "Rappel de séance",
+        body: lang === "EN" ? `Your session: ${dateStr}` : `Ta séance : ${dateStr}`,
+        url: "/client/home",
       });
 
       appointmentsSent++;
