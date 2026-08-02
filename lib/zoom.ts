@@ -54,6 +54,20 @@ export interface ZoomMeeting {
   startUrl: string;
 }
 
+// Formate un instant (Date UTC) en heure locale Europe/Bruxelles au format Zoom
+// "YYYY-MM-DDTHH:mm:ss" (SANS Z). Envoyé avec timezone:"Europe/Brussels", Zoom l'interprète
+// dans le bon fuseau (sinon, avec un start_time GMT, Zoom affiche l'heure en UTC → décalage 2h).
+function zoomLocalTime(d: Date): string {
+  const p = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Brussels",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const g = (t: string) => p.find((x) => x.type === t)?.value ?? "00";
+  return `${g("year")}-${g("month")}-${g("day")}T${g("hour")}:${g("minute")}:${g("second")}`;
+}
+
 export async function createZoomMeeting(
   title: string,
   startTime: Date,
@@ -74,9 +88,9 @@ export async function createZoomMeeting(
     body: JSON.stringify({
       topic: title,
       type: 2, // Scheduled meeting
-      start_time: startTime.toISOString(),
+      start_time: zoomLocalTime(startTime),
       duration: durationMin,
-      timezone: "Europe/Paris",
+      timezone: "Europe/Brussels",
       settings: {
         join_before_host: true,
         waiting_room: false,
@@ -109,8 +123,8 @@ export async function updateZoomMeeting(
   const token = await getAccessToken();
 
   const body: Record<string, unknown> = {
-    start_time: newStartTime.toISOString(),
-    timezone: "Europe/Paris",
+    start_time: zoomLocalTime(newStartTime),
+    timezone: "Europe/Brussels",
   };
   if (durationMin) body.duration = durationMin;
 
