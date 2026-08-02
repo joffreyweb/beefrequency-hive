@@ -100,6 +100,7 @@ export interface ApptLite {
   durationMin: number;
   meetingType: string;
   clientName: string | null;
+  zoomLink: string | null;
 }
 
 export interface PostLite {
@@ -237,6 +238,7 @@ export async function getDayPlan(now: Date = new Date()): Promise<DayPlan> {
     durationMin: a.durationMin,
     meetingType: a.meetingType,
     clientName: a.client?.user?.name ?? null,
+    zoomLink: a.zoomStartUrl ?? a.zoomJoinUrl ?? null,
   }));
 
   const personal: ApptLite[] = personalRaw.map((e) => ({

@@ -226,6 +226,17 @@ export default function AgendaPage() {
                         <br />
                         <span className="truncate block">{appt.client.user.name.split(" ")[0]}</span>
                       </Link>
+                      {(appt.zoomStartUrl || appt.zoomJoinUrl) && appt.status !== "CANCELLED" && (
+                        <a
+                          href={appt.zoomStartUrl || appt.zoomJoinUrl || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-1.5 py-1 text-or-sacre/70 hover:text-or-sacre hover:bg-or-sacre/10 rounded transition-colors text-[10px]"
+                          title="Rejoindre Zoom (hôte)"
+                        >
+                          🎥
+                        </a>
+                      )}
                       {appt.status !== "CANCELLED" && appt.status !== "COMPLETED" && (
                         <button
                           onClick={() => setEditing(appt)}

@@ -178,6 +178,7 @@ export default async function AdminDashboard() {
     clientName: a.client.user.name ?? "",
     duration: a.durationMin,
     typeLabel: APPT_TYPE_LABELS[a.meetingType] ?? a.meetingType,
+    zoomLink: a.zoomStartUrl ?? a.zoomJoinUrl ?? null,
   }));
 
   pendingActions.sort((a, b) => {
@@ -583,7 +584,12 @@ export default async function AdminDashboard() {
                           {sessionDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" })}
                         </p>
                       </div>
-                      <span className="text-xs text-brun-mid/60">{session.duration} min</span>
+                      <div className="flex flex-col items-end gap-0.5 shrink-0">
+                        <span className="text-xs text-brun-mid/60">{session.duration} min</span>
+                        {session.zoomLink && (
+                          <a href={session.zoomLink} target="_blank" rel="noopener noreferrer" className="text-[11px] font-ui text-or-sacre hover:text-ambre-vif underline">🎥 Zoom</a>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

@@ -166,6 +166,9 @@ export default function JourneeClient({ initialPlan }: { initialPlan: DayPlan })
                       <p className="font-ui text-sm text-brun-chaud truncate">{a.clientName ?? a.title}</p>
                       <p className="text-[11px] font-ui text-brun-mid/60">{a.durationMin} min · {a.meetingType}</p>
                     </div>
+                    {a.zoomLink && (
+                      <a href={a.zoomLink} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-ui text-or-sacre hover:text-ambre-vif underline">🎥 Zoom</a>
+                    )}
                   </li>
                 ))}
               </ul>
