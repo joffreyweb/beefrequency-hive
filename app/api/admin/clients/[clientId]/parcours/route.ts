@@ -3,6 +3,34 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { getActiveParcours } from "@/lib/parcours-instance";
 
+// GET /api/admin/clients/[clientId]/parcours
+// Historique lecture seule — tous les parcours du client (actif + terminés) avec phases/élixirs.
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ clientId: string }> },
+) {
+  const auth = await requireAdmin();
+  if (isErrorResponse(auth)) return auth;
+
+  const { clientId } = await params;
+  const parcours = await prisma.clientParcours.findMany({
+    where: { clientId },
+    orderBy: [{ startedAt: "desc" }],
+    include: {
+      phases: {
+        orderBy: { startDate: "asc" },
+        include: {
+          phaseElixirs: {
+            include: { elixirLibrary: { select: { name: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  return NextResponse.json({ parcours });
+}
+
 // POST /api/admin/clients/[clientId]/parcours
 // Cycle de vie d'un parcours — refonte Parcours (Étape 2B-β).
 //   { action: "close" }   → passe le parcours ACTIF en TERMINÉ (jamais client.status).

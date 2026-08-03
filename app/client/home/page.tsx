@@ -83,6 +83,10 @@ export default async function ClientHomePage() {
   // + détection « parcours terminé » pour figer le compteur et afficher l'état final.
   const currentParcours = await getCurrentParcours(client.id);
   const parcoursCompleted = currentParcours?.status === "COMPLETED";
+  // Historique lecture seule (Étape 2C) : nb de parcours terminés → lien « Mes parcours passés ».
+  const pastParcoursCount = await prisma.clientParcours.count({
+    where: { clientId: client.id, status: "COMPLETED" },
+  });
   const allPhases = currentParcours
     ? await prisma.clientPhase.findMany({
         where: { clientParcoursId: currentParcours.id },
@@ -384,6 +388,14 @@ export default async function ClientHomePage() {
               FR: "Ton espace reste accessible : Journal, Messages, Pratiques.",
             })}
           </p>
+          {pastParcoursCount > 0 && (
+            <Link
+              href="/client/parcours-passes"
+              className="inline-block pt-3 font-caps text-[10px] uppercase tracking-wider text-or-sacre hover:text-ambre-vif transition-colors"
+            >
+              {T({ EN: "My past journeys", FR: "Mes parcours passés" })} ({pastParcoursCount}) →
+            </Link>
+          )}
           <p className="font-display text-base text-brun-chaud pt-4">— Joffrey</p>
         </div>
       </div>
@@ -664,6 +676,18 @@ export default async function ClientHomePage() {
 
       {/* Share a document */}
       <DocumentUploadButton />
+
+      {/* Mes parcours passés — lecture seule (Étape 2C) */}
+      {pastParcoursCount > 0 && (
+        <div className="text-center pt-2">
+          <Link
+            href="/client/parcours-passes"
+            className="font-caps text-[10px] uppercase tracking-wider text-brun-mid/60 hover:text-or-sacre transition-colors"
+          >
+            {T({ EN: "My past journeys", FR: "Mes parcours passés" })} ({pastParcoursCount}) →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

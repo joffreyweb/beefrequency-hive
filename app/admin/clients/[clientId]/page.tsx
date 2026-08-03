@@ -10,6 +10,7 @@ import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
 import ReactivationButton from "@/components/admin/ReactivationButton";
 import ParcoursLifecycleActions from "@/components/admin/ParcoursLifecycleActions";
+import ParcoursHistory from "@/components/admin/ParcoursHistory";
 import { getCurrentParcours } from "@/lib/parcours-instance";
 import { OFFER_LABELS } from "@/lib/offer-labels";
 
@@ -228,9 +229,11 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
             <span className="text-xs font-ui px-2 py-0.5 rounded-full bg-or-sacre/10 text-or-sacre">
               {OFFER_LABELS[client.offerType]}
             </span>
-            <span className={`text-xs font-ui px-2 py-0.5 rounded-full ${statusStyle}`}>
-              {STATUS_LABELS[client.status]}
-            </span>
+            {client.status !== "ACTIVE" && (
+              <span className={`text-xs font-ui px-2 py-0.5 rounded-full ${statusStyle}`}>
+                {STATUS_LABELS[client.status]}
+              </span>
+            )}
             <span className="text-xs font-ui text-brun-mid/50">
               {currentParcours?.status === "COMPLETED"
                 ? "Terminé"
@@ -298,6 +301,9 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           currentStatus={currentParcours?.status ?? null}
         />
       )}
+
+      {/* Historique des parcours passés (lecture seule) */}
+      <ParcoursHistory clientId={clientId} />
 
       {/* Actions requises */}
       <ClientActionBanner
