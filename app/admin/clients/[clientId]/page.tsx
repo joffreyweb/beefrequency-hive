@@ -232,7 +232,11 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
               {STATUS_LABELS[client.status]}
             </span>
             <span className="text-xs font-ui text-brun-mid/50">
-              {dayNumber > 0 ? `J+${dayNumber}` : "Pré-démarrage"}
+              {currentParcours?.status === "COMPLETED"
+                ? "Terminé"
+                : dayNumber > 0
+                  ? `J+${dayNumber}`
+                  : "Pré-démarrage"}
             </span>
             {client.isLegacy && (
               <span className="text-[9px] font-ui px-1.5 py-0.5 rounded-full bg-brun-mid/10 text-brun-mid">Legacy</span>

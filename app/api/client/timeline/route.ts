@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireClient, isErrorResponse } from "@/lib/api-utils";
 import { computePhases, getActivePhaseInfo, TOTAL_PROGRAM_DAYS } from "@/lib/parcours";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 
 // GET /api/client/timeline — Données timeline du parcours client
 export async function GET() {
@@ -24,13 +25,18 @@ export async function GET() {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
   }
 
+  // Refonte Parcours (Étape 2B) : source = instance de parcours COURANTE + état terminé.
+  const parcours = await getCurrentParcours(client.id);
+  const parcoursCompleted = parcours?.status === "COMPLETED";
+  const detoxDate = parcours?.detoxStartDate ?? null;
+
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
   // Phase Détox initiale (10 jours avant le programme)
   let detox = null;
-  if (client.detoxStartDate) {
-    const detoxStart = new Date(client.detoxStartDate);
+  if (detoxDate) {
+    const detoxStart = new Date(detoxDate);
     detoxStart.setHours(0, 0, 0, 0);
     const detoxDay = Math.floor((now.getTime() - detoxStart.getTime()) / 86400000) + 1;
     detox = {
@@ -44,8 +50,8 @@ export async function GET() {
   // Phases du programme (7 phases : detox + 3 cycles + 3 intégrations)
   let phases = null;
   let activeInfo = null;
-  // Source de date canonique : detoxStartDate (jour 0 du parcours, détox incluse)
-  const programmeStart = client.detoxStartDate || null;
+  // Source de date canonique : detoxStartDate de l'instance courante (jour 0, détox incluse)
+  const programmeStart = detoxDate;
 
   if (programmeStart) {
     const computed = computePhases(programmeStart);
@@ -77,6 +83,12 @@ export async function GET() {
 
   globalProgress = Math.min(Math.round((globalDay / totalDaysWithDetox) * 100), 100);
 
+  // Parcours terminé : compteur figé à 100 % (fin du « J+X qui grimpe indéfiniment »).
+  if (parcoursCompleted) {
+    globalDay = totalDaysWithDetox;
+    globalProgress = 100;
+  }
+
   return NextResponse.json({
     detox,
     phases,
@@ -98,6 +110,7 @@ export async function GET() {
     globalDay,
     globalProgress,
     totalDays: totalDaysWithDetox,
-    hasStarted: !!client.detoxStartDate || !!programmeStart,
+    hasStarted: !!programmeStart,
+    completed: parcoursCompleted,
   });
 }

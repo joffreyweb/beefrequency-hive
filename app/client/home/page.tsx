@@ -14,6 +14,7 @@ import AppointmentActions from "@/components/client/AppointmentActions";
 import type { Lang } from "@/lib/translations";
 import { t } from "@/lib/translations";
 import { isElixirDayMatch } from "@/lib/parcours";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 
 export default async function ClientHomePage() {
   const session = await getSession();
@@ -78,16 +79,20 @@ export default async function ClientHomePage() {
 
   if (!client) redirect("/login");
 
-  // Élixirs de la phase actuelle (PhaseElixir)
-  // Récupérer toutes les phases et trouver l'active côté JS (évite les problèmes de timezone)
-  const allPhases = await prisma.clientPhase.findMany({
-    where: { clientId: client.id },
-    orderBy: { startDate: "asc" },
-    include: {
-      phaseElixirs: { include: { elixirLibrary: true } },
-      phasePractices: true,
-    },
-  });
+  // Refonte Parcours (Étape 2B) : phases du parcours COURANT uniquement (jamais un mélange),
+  // + détection « parcours terminé » pour figer le compteur et afficher l'état final.
+  const currentParcours = await getCurrentParcours(client.id);
+  const parcoursCompleted = currentParcours?.status === "COMPLETED";
+  const allPhases = currentParcours
+    ? await prisma.clientPhase.findMany({
+        where: { clientParcoursId: currentParcours.id },
+        orderBy: { startDate: "asc" },
+        include: {
+          phaseElixirs: { include: { elixirLibrary: true } },
+          phasePractices: true,
+        },
+      })
+    : [];
 
   const today = new Date();
   today.setHours(12, 0, 0, 0); // Midi pour éviter les problèmes de timezone
@@ -405,6 +410,23 @@ export default async function ClientHomePage() {
       {clarityBanner}
       {clarityReportBanner}
 
+      {/* Parcours terminé — état final (refonte Étape 2B-β-1b) : le compteur est figé,
+          l'espace reste pleinement accessible. */}
+      {parcoursCompleted && (
+        <div className="bg-foret/10 border-2 border-foret rounded-sm p-6 text-center">
+          <div className="text-4xl mb-3">🎉</div>
+          <p className="font-display text-xl text-brun-chaud">
+            {T({ EN: "Your journey is complete", FR: "Ton parcours est terminé" })}
+          </p>
+          <p className="font-ui text-sm text-brun-mid mt-2 max-w-md mx-auto">
+            {T({
+              EN: "Your space stays open — journal, messages, practices, and everything you've accomplished remain here.",
+              FR: "Ton espace reste ouvert — journal, messages, pratiques, et tout ce que tu as accompli restent ici.",
+            })}
+          </p>
+        </div>
+      )}
+
       {/* Élixirs reçus banner — jamais pour un CUSTOM */}
       {!isCustom && <ElixirReceivedBanner />}
 
@@ -464,9 +486,11 @@ export default async function ClientHomePage() {
       <div className="text-center">
         <h1 className="font-display text-2xl text-brun-chaud">
           {displayName}
-          {dayNumber > 0 && (
+          {parcoursCompleted ? (
+            <> · <span className="text-foret">{T({ EN: "Completed", FR: "Terminé" })}</span></>
+          ) : dayNumber > 0 ? (
             <> · <span className="text-or-sacre">{T(t.home.day)} {dayNumber}</span></>
-          )}
+          ) : null}
         </h1>
       </div>
 
