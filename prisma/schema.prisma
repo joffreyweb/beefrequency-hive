@@ -211,6 +211,7 @@ model Client {
   clientPractices        ClientPractice[]
   seenMessages           ClientMessageSeen[]
   clientPhases           ClientPhase[]
+  clientParcours         ClientParcours[]
   dailyCheckins          DailyCheckin[]
   openWebuiQueue         OpenWebuiQueue[]
   pushSubscriptions      PushSubscription[]
@@ -684,6 +685,44 @@ enum PhaseStatus {
   COMPLETED
 }
 
+// Cycle de vie d'une instance de parcours.
+// COMPLETED = terminé/archivé (lecture seule) — NE touche JAMAIS user.blocked :
+// le client garde l'accès complet à son compte entre deux parcours.
+enum ParcoursLifecycle {
+  ACTIVE
+  COMPLETED
+}
+
+// Instance de parcours d'un client — BASE COMMUNE à tous les programmes
+// (Le Passage, custom, offres futures). Porte ce qui était éparpillé en
+// colonnes sur Client. Règle : un seul parcours ACTIVE à la fois par client
+// (contrôle applicatif) + historique illimité de parcours COMPLETED.
+// On ne supprime jamais une instance → l'historique CheckinElixir est préservé.
+model ClientParcours {
+  id               String            @id @default(uuid())
+  clientId         String
+  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  parcoursType     ParcoursType      @default(LE_PASSAGE)
+  detoxStartDate   DateTime? // date canonique du parcours — déplacée depuis Client
+  programTotalDays Int? // durée custom (jours) · null = Passage 103j
+
+  status           ParcoursLifecycle @default(ACTIVE)
+  seq              Int               @default(1) // 1er, 2e, 3e parcours du client
+  startedAt        DateTime          @default(now())
+  completedAt      DateTime? // horodatage du passage en TERMINÉ
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  phases        ClientPhase[]
+  dailyCheckins DailyCheckin[]
+  detoxDays     DetoxDay[]
+
+  @@index([clientId])
+  @@index([clientId, status])
+}
+
 model ClientPhase {
   id          String      @id @default(uuid())
   clientId    String
@@ -703,11 +742,17 @@ model ClientPhase {
 
   createdAt DateTime @default(now())
 
+  // Rattachement à l'instance de parcours (Étape 1 : nullable + backfill).
+  // Étape 2 : @@unique passera sur [clientParcoursId, phaseType, phaseNumber].
+  clientParcoursId String?
+  clientParcours   ClientParcours? @relation(fields: [clientParcoursId], references: [id], onDelete: Cascade)
+
   phaseElixirs   PhaseElixir[]
   phasePractices PhasePractice[]
   checkinConfigs PhaseCheckinConfig[]
 
   @@unique([clientId, phaseType, phaseNumber])
+  @@index([clientParcoursId])
 }
 
 // Config personnalisée des questions check-in par phase
@@ -824,9 +869,15 @@ model DailyCheckin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Rattachement à l'instance de parcours (attribution de l'historique).
+  // L'unique reste [clientId, date] : deux parcours ne partagent jamais une date.
+  clientParcoursId String?
+  clientParcours   ClientParcours? @relation(fields: [clientParcoursId], references: [id], onDelete: Cascade)
+
   checkinElixirs CheckinElixir[]
 
   @@unique([clientId, date])
+  @@index([clientParcoursId])
 }
 
 // Messages aléatoires du matin — gérés depuis l'admin
@@ -1065,10 +1116,16 @@ model DetoxDay {
   pratiqueDone Boolean  @default(false)
   notes        String?  @db.Text
 
+  // Rattachement à l'instance de parcours (Étape 1 : nullable + backfill).
+  // Étape 2 : @@unique passera sur [clientParcoursId, dayNumber] (détox réutilisable).
+  clientParcoursId String?
+  clientParcours   ClientParcours? @relation(fields: [clientParcoursId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([clientId, dayNumber])
+  @@index([clientParcoursId])
 }
 
 // ═══════════════════════════════════════
