@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
+import { getOrCreateActiveParcours } from "@/lib/parcours-instance";
 
 // GET /api/admin/detox-days?clientId=xxx — Récupère les 10 jours détox d'un client
 export async function GET(request: NextRequest) {
@@ -38,6 +39,9 @@ export async function GET(request: NextRequest) {
     const detoxStart = new Date(client.detoxStartDate);
     detoxStart.setHours(0, 0, 0, 0);
 
+    // Instance de parcours active (refonte — Étape 2B) : rattachement des jours détox.
+    const parcours = await getOrCreateActiveParcours(clientId);
+
     const toCreate = [];
     for (let i = 1; i <= 10; i++) {
       if (!existingDayNumbers.has(i)) {
@@ -45,6 +49,7 @@ export async function GET(request: NextRequest) {
         dayDate.setDate(dayDate.getDate() + i - 1);
         toCreate.push({
           clientId,
+          clientParcoursId: parcours?.id ?? null,
           dayNumber: i,
           date: dayDate,
         });

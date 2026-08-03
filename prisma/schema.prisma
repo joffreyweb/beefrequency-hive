@@ -743,7 +743,7 @@ model ClientPhase {
   createdAt DateTime @default(now())
 
   // Rattachement à l'instance de parcours (Étape 1 : nullable + backfill).
-  // Étape 2 : @@unique passera sur [clientParcoursId, phaseType, phaseNumber].
+  // Étape 2B : @@unique scopé au parcours → un nouveau parcours peut réutiliser DETOX/0.
   clientParcoursId String?
   clientParcours   ClientParcours? @relation(fields: [clientParcoursId], references: [id], onDelete: Cascade)
 
@@ -751,7 +751,7 @@ model ClientPhase {
   phasePractices PhasePractice[]
   checkinConfigs PhaseCheckinConfig[]
 
-  @@unique([clientId, phaseType, phaseNumber])
+  @@unique([clientParcoursId, phaseType, phaseNumber])
   @@index([clientParcoursId])
 }
 
@@ -1117,14 +1117,14 @@ model DetoxDay {
   notes        String?  @db.Text
 
   // Rattachement à l'instance de parcours (Étape 1 : nullable + backfill).
-  // Étape 2 : @@unique passera sur [clientParcoursId, dayNumber] (détox réutilisable).
+  // Étape 2B : @@unique scopé au parcours (détox réutilisable au redémarrage).
   clientParcoursId String?
   clientParcours   ClientParcours? @relation(fields: [clientParcoursId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([clientId, dayNumber])
+  @@unique([clientParcoursId, dayNumber])
   @@index([clientParcoursId])
 }
 

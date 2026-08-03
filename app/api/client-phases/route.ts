@@ -97,8 +97,11 @@ export async function POST(req: Request) {
 
   const computed = computePhases(programStart);
 
-  // Instance de parcours active (refonte — Étape 2A) : rattachement des phases + miroir.
+  // Instance de parcours active (refonte — Étape 2A/2B) : rattachement + clé d'upsert.
   const parcours = await getOrCreateActiveParcours(clientId);
+  if (!parcours) {
+    return NextResponse.json({ error: "Parcours introuvable" }, { status: 404 });
+  }
 
   // Sauvegarder detoxStartDate si pas encore définie (Client + instance active).
   if (!client.detoxStartDate) {
@@ -116,8 +119,8 @@ export async function POST(req: Request) {
     computed.map((p) =>
       prisma.clientPhase.upsert({
         where: {
-          clientId_phaseType_phaseNumber: {
-            clientId,
+          clientParcoursId_phaseType_phaseNumber: {
+            clientParcoursId: parcours.id,
             phaseType: p.phaseType,
             phaseNumber: p.phaseNumber,
           },
@@ -125,7 +128,7 @@ export async function POST(req: Request) {
         update: { startDate: p.startDate, endDate: p.endDate, status: p.status },
         create: {
           clientId,
-          clientParcoursId: parcours?.id ?? null,
+          clientParcoursId: parcours.id,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
           startDate: p.startDate,
@@ -154,8 +157,11 @@ export async function PATCH(req: Request) {
   const newStart = new Date(startDate);
   const computed = computePhases(newStart);
 
-  // Instance de parcours active (refonte — Étape 2A).
+  // Instance de parcours active (refonte — Étape 2A/2B).
   const parcours = await getOrCreateActiveParcours(clientId);
+  if (!parcours) {
+    return NextResponse.json({ error: "Parcours introuvable" }, { status: 404 });
+  }
 
   // Mettre à jour detoxStartDate sur le client + miroir sur l'instance active.
   await prisma.client.update({
@@ -170,8 +176,8 @@ export async function PATCH(req: Request) {
     computed.map((p) =>
       prisma.clientPhase.upsert({
         where: {
-          clientId_phaseType_phaseNumber: {
-            clientId,
+          clientParcoursId_phaseType_phaseNumber: {
+            clientParcoursId: parcours.id,
             phaseType: p.phaseType,
             phaseNumber: p.phaseNumber,
           },
@@ -179,7 +185,7 @@ export async function PATCH(req: Request) {
         update: { startDate: p.startDate, endDate: p.endDate, status: p.status },
         create: {
           clientId,
-          clientParcoursId: parcours?.id ?? null,
+          clientParcoursId: parcours.id,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
           startDate: p.startDate,
