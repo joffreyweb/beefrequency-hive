@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { FLAG_KEYS, type ParcoursFlags } from "@/lib/parcours-defaults";
+import { syncActiveParcours } from "@/lib/parcours-instance";
 import { ParcoursType } from "@prisma/client";
 
 // Dérivé de l'enum Prisma — tous les parcoursType valides (fini la liste figée obsolète).
@@ -99,6 +100,12 @@ export async function PATCH(
         ...Object.fromEntries(FLAG_KEYS.map((k) => [k, true])),
       },
     });
+
+    // Miroir du type de parcours sur l'instance active (refonte — Étape 2A).
+    if (updateData.parcoursType !== undefined) {
+      await syncActiveParcours(clientId, { parcoursType: updateData.parcoursType });
+    }
+
     return NextResponse.json({ client: updated });
   } catch {
     return NextResponse.json(

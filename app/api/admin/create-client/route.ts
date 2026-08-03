@@ -4,6 +4,7 @@ import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import * as bcrypt from "bcryptjs";
 import { getParcoursTypeForOffer, requiresQuestionnaire as parcoursNeedsQuestionnaire, welcomeVideoForOffer } from "@/lib/offer-parcours-binding";
 import { getDefaultsForParcoursType } from "@/lib/parcours-defaults";
+import { getOrCreateActiveParcours } from "@/lib/parcours-instance";
 import type { ParcoursType } from "@prisma/client";
 
 // POST /api/admin/create-client — Creer un client directement (avec ou sans legacy)
@@ -199,10 +200,13 @@ export async function POST(request: NextRequest) {
     try {
       const { computePhases } = await import("@/lib/parcours");
       const phases = computePhases(clientStartDate);
+      // Instance de parcours active (refonte — Étape 2A) : rattachement des phases.
+      const parcours = await getOrCreateActiveParcours(client.id);
       for (const phase of phases) {
         await prisma.clientPhase.create({
           data: {
             clientId: client.id,
+            clientParcoursId: parcours?.id ?? null,
             phaseType: phase.phaseType,
             phaseNumber: phase.phaseNumber,
             startDate: phase.startDate,

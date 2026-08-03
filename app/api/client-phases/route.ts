@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { computePhases, getNextMonday } from "@/lib/parcours";
+import { getOrCreateActiveParcours, syncActiveParcours } from "@/lib/parcours-instance";
 
 // GET — phases d'un client (query: clientId)
 export async function GET(req: Request) {
@@ -96,12 +97,16 @@ export async function POST(req: Request) {
 
   const computed = computePhases(programStart);
 
-  // Sauvegarder detoxStartDate si pas encore définie
+  // Instance de parcours active (refonte — Étape 2A) : rattachement des phases + miroir.
+  const parcours = await getOrCreateActiveParcours(clientId);
+
+  // Sauvegarder detoxStartDate si pas encore définie (Client + instance active).
   if (!client.detoxStartDate) {
     await prisma.client.update({
       where: { id: clientId },
       data: { detoxStartDate: programStart },
     });
+    await syncActiveParcours(clientId, { detoxStartDate: programStart });
   }
 
   // Upsert par (clientId, phaseType, phaseNumber) : crée les phases manquantes,
@@ -120,6 +125,7 @@ export async function POST(req: Request) {
         update: { startDate: p.startDate, endDate: p.endDate, status: p.status },
         create: {
           clientId,
+          clientParcoursId: parcours?.id ?? null,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
           startDate: p.startDate,
@@ -148,11 +154,15 @@ export async function PATCH(req: Request) {
   const newStart = new Date(startDate);
   const computed = computePhases(newStart);
 
-  // Mettre à jour detoxStartDate sur le client
+  // Instance de parcours active (refonte — Étape 2A).
+  const parcours = await getOrCreateActiveParcours(clientId);
+
+  // Mettre à jour detoxStartDate sur le client + miroir sur l'instance active.
   await prisma.client.update({
     where: { id: clientId },
     data: { detoxStartDate: newStart },
   });
+  await syncActiveParcours(clientId, { detoxStartDate: newStart });
 
   // Upsert (pas de deleteMany) : recalcule les dates des 7 phases en conservant
   // les mêmes lignes ClientPhase → les PhaseElixir assignés NE SONT PAS effacés.
@@ -169,6 +179,7 @@ export async function PATCH(req: Request) {
         update: { startDate: p.startDate, endDate: p.endDate, status: p.status },
         create: {
           clientId,
+          clientParcoursId: parcours?.id ?? null,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
           startDate: p.startDate,

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { computePhases } from "@/lib/parcours";
 import { getConfigForParcours } from "@/lib/offer-parcours-binding";
+import { getActiveParcours, getOrCreateActiveParcours } from "@/lib/parcours-instance";
 
 export type EnsurePhasesResult = {
   created: number;
@@ -35,8 +36,22 @@ export async function ensureClientPhases(clientId: string): Promise<EnsurePhases
   }
   if (!client.detoxStartDate) return { created: 0, reason: "pas_de_detox" };
 
-  const existing = await prisma.clientPhase.count({ where: { clientId } });
-  if (existing > 0) return { created: 0, reason: "phases_existantes" };
+  // Résolution de l'instance de parcours à rattacher (refonte Parcours — Étape 2A).
+  // Garde-fou anti-régénération : on ne génère JAMAIS pour un client qui a déjà
+  // des phases (même sur un parcours terminé) sans geste explicite → invisible.
+  let parcoursId: string;
+  const active = await getActiveParcours(clientId);
+  if (active) {
+    const existing = await prisma.clientPhase.count({ where: { clientParcoursId: active.id } });
+    if (existing > 0) return { created: 0, reason: "phases_existantes" };
+    parcoursId = active.id;
+  } else {
+    const anyPhase = await prisma.clientPhase.count({ where: { clientId } });
+    if (anyPhase > 0) return { created: 0, reason: "phases_existantes" };
+    const created = await getOrCreateActiveParcours(clientId);
+    if (!created) return { created: 0, reason: "client_introuvable" };
+    parcoursId = created.id;
+  }
 
   const computed = computePhases(client.detoxStartDate);
   await prisma.$transaction(
@@ -44,6 +59,7 @@ export async function ensureClientPhases(clientId: string): Promise<EnsurePhases
       prisma.clientPhase.create({
         data: {
           clientId,
+          clientParcoursId: parcoursId,
           phaseType: p.phaseType,
           phaseNumber: p.phaseNumber,
           startDate: p.startDate,

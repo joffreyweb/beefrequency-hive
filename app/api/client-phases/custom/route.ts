@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { computeCustomPhases, totalDaysOf, type CustomModuleInput, type PhaseType } from "@/lib/parcours";
+import { getOrCreateActiveParcours } from "@/lib/parcours-instance";
 
 const VALID_TYPES = ["DETOX", "CYCLE", "BREAK", "CUSTOM"];
 
@@ -56,11 +57,20 @@ export async function POST(req: Request) {
   const computed = computeCustomPhases(clean, start);
   const total = totalDaysOf(clean);
 
+  // Instance de parcours active (refonte — Étape 2A) : rattachement + miroir.
+  const parcours = await getOrCreateActiveParcours(clientId);
+
   const phases = await prisma.$transaction(async (tx) => {
     await tx.client.update({
       where: { id: clientId },
       data: { detoxStartDate: start, programTotalDays: total, requiresProgramTimeline: true },
     });
+    if (parcours) {
+      await tx.clientParcours.update({
+        where: { id: parcours.id },
+        data: { detoxStartDate: start, programTotalDays: total },
+      });
+    }
     // NON DESTRUCTIF : upsert par (phaseType, phaseNumber). Les phases conservées gardent
     // leurs élixirs / check-ins. On ne supprime QUE les phases retirées de la structure.
     const keep = new Set<string>();
@@ -79,6 +89,7 @@ export async function POST(req: Request) {
           update: { startDate: p.startDate, endDate: p.endDate, status: p.status, customName: p.label },
           create: {
             clientId,
+            clientParcoursId: parcours?.id ?? null,
             phaseType: p.phaseType as PhaseType,
             phaseNumber: p.phaseNumber,
             startDate: p.startDate,

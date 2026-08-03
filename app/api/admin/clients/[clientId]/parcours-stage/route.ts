@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { ensureClientPhases } from "@/lib/parcours-phases";
+import { syncActiveParcours } from "@/lib/parcours-instance";
 
 // PATCH /api/admin/clients/[clientId]/parcours-stage — Mettre a jour les etapes du parcours
 export async function PATCH(
@@ -55,6 +56,13 @@ export async function PATCH(
     where: { id: clientId },
     data: updateData,
   });
+
+  // Miroir sur l'instance de parcours active (refonte — Étape 2A).
+  if (body.detoxStartDate !== undefined) {
+    await syncActiveParcours(clientId, {
+      detoxStartDate: updateData.detoxStartDate as Date | null,
+    });
+  }
 
   // Auto-création des 7 phases si une detoxStartDate vient d'être posée (idempotent).
   let phasesCreated = 0;
