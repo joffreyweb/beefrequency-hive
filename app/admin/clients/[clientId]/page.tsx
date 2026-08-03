@@ -9,6 +9,8 @@ import ParcoursStatusBanner from "@/components/admin/ParcoursStatusBanner";
 import ClientActionBanner from "@/components/admin/ClientActionBanner";
 import SubscriptionSection from "@/components/admin/SubscriptionSection";
 import ReactivationButton from "@/components/admin/ReactivationButton";
+import ParcoursLifecycleActions from "@/components/admin/ParcoursLifecycleActions";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 import { OFFER_LABELS } from "@/lib/offer-labels";
 
 // Labels lisibles pour les statuts
@@ -157,6 +159,10 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
     clientLastReactivationAt = null; // colonne absente / souci lecture → la fiche se charge quand même
   }
 
+  // Cycle de vie du parcours (refonte — Étape 2B-β) : parcours courant + s'il est actif.
+  const currentParcours = await getCurrentParcours(clientId);
+  const hasActiveParcours = currentParcours?.status === "ACTIVE";
+
   const programStart = client.detoxStartDate;
   const programHasStarted =
     client.produitsRecus &&
@@ -278,6 +284,15 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
       />
+      )}
+
+      {/* Cycle de vie du parcours — clôturer / démarrer un nouveau parcours */}
+      {client.requiresProgramTimeline && (
+        <ParcoursLifecycleActions
+          clientId={clientId}
+          hasActiveParcours={hasActiveParcours}
+          currentStatus={currentParcours?.status ?? null}
+        />
       )}
 
       {/* Actions requises */}

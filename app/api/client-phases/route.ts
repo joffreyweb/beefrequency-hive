@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { computePhases, getNextMonday } from "@/lib/parcours";
-import { getOrCreateActiveParcours, syncActiveParcours, getCurrentParcours } from "@/lib/parcours-instance";
+import { getOrCreateActiveParcours, syncActiveParcours, getCurrentParcours, getActiveParcours } from "@/lib/parcours-instance";
 
 // GET — phases d'un client (query: clientId)
 export async function GET(req: Request) {
@@ -56,7 +56,13 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "clientId requis" }, { status: 400 });
   }
 
-  await prisma.clientPhase.deleteMany({ where: { clientId } });
+  // Refonte Parcours (Étape 2B-β) : la réinitialisation ne touche QUE le parcours ACTIF.
+  // Un parcours passé (terminé/archivé) n'est JAMAIS supprimé → historique protégé.
+  const active = await getActiveParcours(clientId);
+  if (!active) {
+    return NextResponse.json({ ok: true, deleted: 0, reason: "aucun parcours actif" });
+  }
+  await prisma.clientPhase.deleteMany({ where: { clientParcoursId: active.id } });
 
   return NextResponse.json({ ok: true });
 }
