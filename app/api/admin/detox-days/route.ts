@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
-import { getOrCreateActiveParcours } from "@/lib/parcours-instance";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 
 // GET /api/admin/detox-days?clientId=xxx — Récupère les 10 jours détox d'un client
 export async function GET(request: NextRequest) {
@@ -27,9 +27,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ days: [], detoxStartDate: null });
   }
 
+  // Refonte Parcours (Étape 2B) : jours détox du parcours COURANT (jamais un mélange,
+  // et sans créer d'instance parasite pour un client dont le parcours est terminé).
+  const parcours = await getCurrentParcours(clientId);
+  const detoxWhere = parcours ? { clientParcoursId: parcours.id } : { clientId };
+
   // Récupérer ou initialiser les 10 jours
   let days = await prisma.detoxDay.findMany({
-    where: { clientId },
+    where: detoxWhere,
     orderBy: { dayNumber: "asc" },
   });
 
@@ -38,9 +43,6 @@ export async function GET(request: NextRequest) {
     const existingDayNumbers = new Set(days.map((d) => d.dayNumber));
     const detoxStart = new Date(client.detoxStartDate);
     detoxStart.setHours(0, 0, 0, 0);
-
-    // Instance de parcours active (refonte — Étape 2B) : rattachement des jours détox.
-    const parcours = await getOrCreateActiveParcours(clientId);
 
     const toCreate = [];
     for (let i = 1; i <= 10; i++) {
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
     if (toCreate.length > 0) {
       await prisma.detoxDay.createMany({ data: toCreate });
       days = await prisma.detoxDay.findMany({
-        where: { clientId },
+        where: detoxWhere,
         orderBy: { dayNumber: "asc" },
       });
     }

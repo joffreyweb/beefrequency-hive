@@ -16,6 +16,19 @@ export async function getActiveParcours(clientId: string) {
   });
 }
 
+// Parcours « courant » à AFFICHER : l'ACTIF s'il existe, sinon le plus récent
+// (typiquement un parcours terminé). Permet aux lectures de rester correctes avant
+// ET après un redémarrage : dès qu'un nouveau parcours est actif, il prend la main ;
+// tant qu'il n'y en a pas, on montre le dernier en date (jamais un mélange).
+export async function getCurrentParcours(clientId: string) {
+  const active = await getActiveParcours(clientId);
+  if (active) return active;
+  return prisma.clientParcours.findFirst({
+    where: { clientId },
+    orderBy: { startedAt: "desc" },
+  });
+}
+
 // Retourne le parcours actif ; en crée un depuis les scalaires Client si aucun ACTIF.
 // Utilisé par les gestes admin explicites (génération / recalcul de parcours) et pour
 // couvrir les clients créés APRÈS le backfill de l'Étape 1 (pas encore d'instance).

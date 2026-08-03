@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireClient, isErrorResponse } from "@/lib/api-utils";
 import { isElixirDayMatch } from "@/lib/parcours";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 
 // GET /api/client/current-phase — Phase active avec élixirs et pratiques du jour
 export async function GET() {
@@ -18,15 +19,18 @@ export async function GET() {
     return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
   }
 
-  // Récupérer toutes les phases et trouver l'active côté JS (évite les problèmes de timezone)
-  const allPhases = await prisma.clientPhase.findMany({
-    where: { clientId: client.id },
-    orderBy: { startDate: "asc" },
-    include: {
-      phaseElixirs: { include: { elixirLibrary: true } },
-      phasePractices: true,
-    },
-  });
+  // Refonte Parcours (Étape 2B) : phases du parcours COURANT uniquement (jamais un mélange).
+  const parcours = await getCurrentParcours(client.id);
+  const allPhases = parcours
+    ? await prisma.clientPhase.findMany({
+        where: { clientParcoursId: parcours.id },
+        orderBy: { startDate: "asc" },
+        include: {
+          phaseElixirs: { include: { elixirLibrary: true } },
+          phasePractices: true,
+        },
+      })
+    : [];
 
   const now = new Date();
   now.setHours(12, 0, 0, 0);

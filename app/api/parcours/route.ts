@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireClient, isErrorResponse } from "@/lib/api-utils";
 import { computePhases, getActivePhaseInfo, isElixirDayMatch } from "@/lib/parcours";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 
 // GET — données parcours complètes pour le client connecté
 export async function GET() {
@@ -11,34 +12,37 @@ export async function GET() {
   const { session } = result;
   const client = await prisma.client.findUnique({
     where: { userId: session.userId },
-    select: {
-      id: true,
-      parcoursType: true,
-      detoxStartDate: true,
-      programTotalDays: true,
-      requiresElixirs: true,
-      clientPhases: {
+    select: { id: true, requiresElixirs: true },
+  });
+
+  if (!client) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
+
+  // Refonte Parcours (Étape 2B) : tout est lu depuis l'instance de parcours COURANTE
+  // (l'active, sinon la plus récente) — jamais un mélange ancien/nouveau parcours.
+  const parcours = await getCurrentParcours(client.id);
+  const parcoursType = parcours?.parcoursType ?? "LE_PASSAGE";
+  const programTotalDays = parcours?.programTotalDays ?? null;
+  // Source de date canonique : detoxStartDate de l'instance. Si absente, pas démarré.
+  const programStart = parcours?.detoxStartDate ?? null;
+
+  const clientPhases = parcours
+    ? await prisma.clientPhase.findMany({
+        where: { clientParcoursId: parcours.id },
         orderBy: [{ startDate: "asc" }],
         include: {
           phaseElixirs: { include: { elixirLibrary: true } },
           phasePractices: true,
         },
-      },
-    },
-  });
-
-  if (!client) return NextResponse.json({ error: "Client introuvable" }, { status: 404 });
-
-  // Source de date canonique : detoxStartDate. Si non défini, le programme n'a pas démarré.
-  const programStart = client.detoxStartDate;
+      })
+    : [];
   let phases: any[] = [];
   let activeInfo: any = null;
 
-  if (client.parcoursType === "CUSTOM" && client.clientPhases.length > 0) {
+  if (parcoursType === "CUSTOM" && clientPhases.length > 0) {
     // Parcours PERSONNALISÉ : la timeline vit dans les phases stockées (pas le 103j figé).
     const now0 = new Date(); now0.setHours(0, 0, 0, 0);
-    const first = new Date(client.clientPhases[0].startDate); first.setHours(0, 0, 0, 0);
-    phases = client.clientPhases.map((p) => {
+    const first = new Date(clientPhases[0].startDate); first.setHours(0, 0, 0, 0);
+    phases = clientPhases.map((p) => {
       const s = new Date(p.startDate); s.setHours(0, 0, 0, 0);
       const e = new Date(p.endDate); e.setHours(0, 0, 0, 0);
       let status: "UPCOMING" | "ACTIVE" | "COMPLETED" = "UPCOMING";
@@ -62,7 +66,7 @@ export async function GET() {
         phase: active,
         dayInPhase: Math.round((now0.getTime() - as.getTime()) / 86400000) + 1,
         dayInProgram: Math.round((now0.getTime() - first.getTime()) / 86400000) + 1,
-        totalDays: client.programTotalDays ?? phases.reduce((a, p) => a + p.durationDays, 0),
+        totalDays: programTotalDays ?? phases.reduce((a, p) => a + p.durationDays, 0),
       };
     }
   } else {
@@ -71,9 +75,9 @@ export async function GET() {
 
     // Passage (103j) : si l'admin a donné un « Nom affiché » à une phase, il remonte au client
     // (le 103j calcule des libellés figés ; on les surcharge par le customName stocké). Dates/statut inchangés.
-    if (programStart && client.clientPhases.length > 0) {
+    if (programStart && clientPhases.length > 0) {
       const byKey = new Map(
-        client.clientPhases.map((p) => [`${p.phaseType}-${p.phaseNumber}`, p.customName]),
+        clientPhases.map((p) => [`${p.phaseType}-${p.phaseNumber}`, p.customName]),
       );
       phases = phases.map((ph) => {
         const name = byKey.get(`${ph.phaseType}-${ph.phaseNumber}`);
@@ -92,7 +96,7 @@ export async function GET() {
   const today = new Date();
 
   if (activeInfo) {
-    const activeDbPhase = client.clientPhases.find(
+    const activeDbPhase = clientPhases.find(
       (p) =>
         p.phaseType === activeInfo.phase.phaseType &&
         p.phaseNumber === activeInfo.phase.phaseNumber
@@ -134,7 +138,7 @@ export async function GET() {
     todayElixirs,
     todayPractices,
     todayCheckin,
-    clientPhases: client.clientPhases,
+    clientPhases: clientPhases,
     requiresElixirs: client.requiresElixirs,
   });
 }

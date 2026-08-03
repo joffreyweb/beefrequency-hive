@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isErrorResponse } from "@/lib/api-utils";
 import { computePhases, getNextMonday } from "@/lib/parcours";
-import { getOrCreateActiveParcours, syncActiveParcours } from "@/lib/parcours-instance";
+import { getOrCreateActiveParcours, syncActiveParcours, getCurrentParcours } from "@/lib/parcours-instance";
 
 // GET — phases d'un client (query: clientId)
 export async function GET(req: Request) {
@@ -15,14 +15,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "clientId requis" }, { status: 400 });
   }
 
-  const phases = await prisma.clientPhase.findMany({
-    where: { clientId },
-    orderBy: { startDate: "asc" },
-    include: {
-      phaseElixirs: { include: { elixirLibrary: true } },
-      phasePractices: true,
-    },
-  });
+  // Refonte Parcours (Étape 2B) : phases du parcours COURANT (actif, sinon le plus récent).
+  const parcours = await getCurrentParcours(clientId);
+  const phases = parcours
+    ? await prisma.clientPhase.findMany({
+        where: { clientParcoursId: parcours.id },
+        orderBy: { startDate: "asc" },
+        include: {
+          phaseElixirs: { include: { elixirLibrary: true } },
+          phasePractices: true,
+        },
+      })
+    : [];
 
   // Statut recalculé EN DIRECT : les lignes ClientPhase stockent un statut figé à la
   // génération (jamais rafraîchi ensuite). On le recompute à la date du jour pour

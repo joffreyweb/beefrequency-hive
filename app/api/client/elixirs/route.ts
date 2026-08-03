@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireClient, isErrorResponse } from "@/lib/api-utils";
 import { isElixirDayMatch } from "@/lib/parcours";
+import { getCurrentParcours } from "@/lib/parcours-instance";
 
 // GET /api/client/elixirs — Élixirs du jour assignés au client (phase active, filtrés par fréquence).
 // Source unique : PhaseElixir de la phase active (l'id renvoyé est l'id du PhaseElixir,
@@ -24,12 +25,16 @@ export async function GET() {
     return NextResponse.json({ elixirs: [] });
   }
 
+  // Refonte Parcours (Étape 2B) : phases du parcours COURANT uniquement (jamais un mélange).
   // Phase active = celle dont [startDate, endDate] contient aujourd'hui (calcul JS, robuste aux TZ)
-  const allPhases = await prisma.clientPhase.findMany({
-    where: { clientId: client.id },
-    orderBy: { startDate: "asc" },
-    include: { phaseElixirs: { include: { elixirLibrary: true } } },
-  });
+  const parcours = await getCurrentParcours(client.id);
+  const allPhases = parcours
+    ? await prisma.clientPhase.findMany({
+        where: { clientParcoursId: parcours.id },
+        orderBy: { startDate: "asc" },
+        include: { phaseElixirs: { include: { elixirLibrary: true } } },
+      })
+    : [];
 
   const ref = new Date();
   ref.setHours(12, 0, 0, 0);
