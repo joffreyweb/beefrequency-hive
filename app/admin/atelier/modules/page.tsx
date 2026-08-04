@@ -41,8 +41,8 @@ export default function ModulesPage() {
 
   return (
     <div>
-      <Link href="/admin/dashboard" className="text-[13px] font-ui text-brun-mid/50 hover:text-or-sacre transition-colors mb-4 inline-block">
-        &larr; Cockpit
+      <Link href="/admin/atelier" className="text-[13px] font-ui text-brun-mid/50 hover:text-or-sacre transition-colors mb-4 inline-block">
+        &larr; L&apos;Atelier
       </Link>
 
       <div className="flex items-center justify-between mb-6">

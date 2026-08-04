@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 // Labels français pour les catégories
 const CATEGORY_LABELS: Record<string, string> = {
@@ -14,6 +15,18 @@ const CATEGORY_LABELS: Record<string, string> = {
   MEDITATION: "Méditation",
   RITUAL: "Rituel",
 };
+
+// Les 7 catégories de la Bibliothèque — MIROIR EXACT du client (lib mes-modules).
+// Toujours affichées côté admin, même vides, pour offrir une porte d'entrée dans chacune.
+const LIBRARY_CATEGORIES = [
+  { key: "RESPIRATION", emoji: "🫁", label: "Breath" },
+  { key: "NUTRITION", emoji: "🥗", label: "Nutrition" },
+  { key: "SYSTEME_NERVEUX", emoji: "🧠", label: "Système nerveux" },
+  { key: "SLEEP", emoji: "😴", label: "Sleep" },
+  { key: "DETOX", emoji: "🌿", label: "Detox" },
+  { key: "MOUVEMENT", emoji: "🤸", label: "Mouvement" },
+  { key: "MINDSET", emoji: "✨", label: "Mindset" },
+] as const;
 
 // Labels français pour les types
 const TYPE_LABELS: Record<string, string> = {
@@ -254,6 +267,14 @@ export default function PracticesPage() {
     }
   }
 
+  // Ouvrir le formulaire pré-rempli sur une catégorie précise (bouton « + Ajouter »).
+  function addInCategory(cat: string) {
+    resetForm();
+    setCategory(cat);
+    setShowForm(true);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   // Grouper les pratiques par catégorie
   const grouped = practices.reduce<Record<string, Practice[]>>((acc, p) => {
     const cat = p.category;
@@ -272,11 +293,20 @@ export default function PracticesPage() {
 
   return (
     <div>
+      <Link href="/admin/atelier" className="text-[13px] font-ui text-brun-mid/50 hover:text-or-sacre transition-colors mb-4 inline-block">
+        &larr; L&apos;Atelier
+      </Link>
+
       {/* En-tête */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-3xl font-light text-brun-chaud">
-          Pratiques
-        </h1>
+        <div>
+          <h1 className="font-display text-3xl font-light text-brun-chaud">
+            Pratiques
+          </h1>
+          <p className="font-ui text-sm text-brun-mid/60 mt-1">
+            Les 7 catégories que voit le client. Ajoute une pratique dans une catégorie et elle apparaît côté client.
+          </p>
+        </div>
         <button
           onClick={() => {
             if (showForm) {
@@ -573,11 +603,33 @@ export default function PracticesPage() {
         </div>
       )}
 
+      {/* Les 7 catégories — TOUJOURS visibles (miroir exact du client), porte d'entrée dans chacune */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+        {LIBRARY_CATEGORIES.map((cat) => {
+          const count = grouped[cat.key]?.length ?? 0;
+          return (
+            <div key={cat.key} className="bg-cire-chaude border border-or-pale rounded-sm p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{cat.emoji}</span>
+                <span className="font-ui text-sm text-brun-chaud">{cat.label}</span>
+                <span className="font-ui text-xs text-brun-mid/50 ml-auto">{count}</span>
+              </div>
+              <button
+                onClick={() => addInCategory(cat.key)}
+                className="self-start text-xs font-caps uppercase tracking-wider text-or-sacre hover:text-ambre-vif transition-colors"
+              >
+                + Ajouter
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Liste groupée par catégorie */}
       {Object.keys(grouped).length === 0 ? (
         <div className="bg-cire-chaude border border-or-pale rounded-sm p-5">
           <p className="text-sm text-brun-mid/60 font-ui">
-            Aucune pratique pour le moment.
+            Aucune pratique créée pour l'instant. Choisis une catégorie ci-dessus et clique « + Ajouter ».
           </p>
         </div>
       ) : (
