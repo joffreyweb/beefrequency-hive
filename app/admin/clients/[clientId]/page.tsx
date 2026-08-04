@@ -290,6 +290,8 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
         produitsRecusAt={client.produitsRecusAt ? client.produitsRecusAt.toISOString() : null}
         detoxStartDate={client.detoxStartDate ? client.detoxStartDate.toISOString() : null}
         startDate={client.startDate.toISOString()}
+        parcoursType={client.parcoursType}
+        programTotalDays={client.programTotalDays}
       />
       )}
 

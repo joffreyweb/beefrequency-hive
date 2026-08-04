@@ -13,6 +13,8 @@ interface ParcoursStatusBannerProps {
   produitsRecusAt: string | null;
   detoxStartDate: string | null;
   startDate: string;
+  parcoursType?: string;
+  programTotalDays?: number | null;
 }
 
 type StageKey = "inscrit" | "colis" | "recus" | "detox" | "programme";
@@ -24,6 +26,8 @@ export default function ParcoursStatusBanner({
   produitsRecus,
   detoxStartDate,
   startDate,
+  parcoursType,
+  programTotalDays,
 }: ParcoursStatusBannerProps) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
@@ -41,21 +45,28 @@ export default function ParcoursStatusBanner({
     }
   }
 
-  // Jour programme = jour global depuis le début (détox incluse = J1), parcours canonique 103 j.
-  // Source de date unique : detoxStartDate. La phase "programme" démarre après les 10 jours de détox.
-  const programmeDay = detoxDay; // dayInProgram (1-indexé depuis detoxStartDate)
-  const programmeStarted = detoxStarted && detoxDay > 10;
-  // Parcours terminé = on a dépassé le dernier jour (J > 103)
-  const programmeFinished = detoxStarted && programmeDay > TOTAL_PROGRAM_DAYS;
-  const programmeEndDate = detoxStartDate
-    ? new Date(new Date(detoxStartDate).getTime() + (TOTAL_PROGRAM_DAYS - 1) * 86400000)
+  // Jour programme = jour global depuis le début (J1 = jour de départ).
+  // Source de date unique : detoxStartDate (= date de départ du parcours, détox ou non).
+  // Passage : la phase "programme" démarre après les 10 j de détox. Custom : dès J1.
+  const programmeDay = detoxDay; // dayInProgram (1-indexé depuis la date de départ)
+  // CUSTOM = parcours composé sur-mesure : PAS de détox fixe de 10 j, durée = programTotalDays.
+  const isCustom = parcoursType === "CUSTOM";
+  const total = isCustom ? (programTotalDays ?? 0) : TOTAL_PROGRAM_DAYS;
+  const totalLabel = total > 0 ? `/${total}` : "";
+  // CUSTOM : le programme court dès le jour 1 (pas de gate détox). Passage : après les 10 j de détox.
+  const programmeStarted = isCustom ? detoxStarted : (detoxStarted && detoxDay > 10);
+  // Parcours terminé = on a dépassé le dernier jour (J > total). Sans total connu (custom mal renseigné) → jamais fini.
+  const programmeFinished = detoxStarted && total > 0 && programmeDay > total;
+  const programmeEndDate = detoxStartDate && total > 0
+    ? new Date(new Date(detoxStartDate).getTime() + (total - 1) * 86400000)
     : null;
 
   // Determine active stage — séquence stricte : inscrit → colis → recus → detox → programme
   function getActiveStage(): StageKey {
     if (programmeFinished) return "programme";
-    if (programmeStarted && programmeDay <= TOTAL_PROGRAM_DAYS) return "programme";
-    if (detoxStarted && detoxDay >= 1 && detoxDay <= 10) return "detox";
+    if (programmeStarted && (total === 0 || programmeDay <= total)) return "programme";
+    // Détox : uniquement pour Le Passage (jamais pour un parcours custom sans détox).
+    if (!isCustom && detoxStarted && detoxDay >= 1 && detoxDay <= 10) return "detox";
     if (produitsRecus) return "recus";
     if (colisEnvoye) return "colis";
     return "inscrit";
@@ -67,11 +78,14 @@ export default function ParcoursStatusBanner({
     { key: "inscrit", label: "Inscrit" },
     { key: "colis", label: "Colis envoye" },
     { key: "recus", label: "Produits recus" },
-    { key: "detox", label: "Detox en cours", sublabel: detoxStarted ? `J${Math.min(detoxDay, 10)}/10` : detoxStartDate ? `Demarre le ${new Date(detoxStartDate).toLocaleDateString("fr-FR")}` : undefined },
-    { key: "programme", label: programmeFinished ? "Parcours termine" : "Programme en cours", sublabel: programmeFinished ? `Termine \u00b7 J${TOTAL_PROGRAM_DAYS}/${TOTAL_PROGRAM_DAYS}` : programmeStarted ? `J${programmeDay}/${TOTAL_PROGRAM_DAYS}` : undefined },
+    // \u00c9tape d\u00e9tox : masqu\u00e9e pour un parcours custom (pas de d\u00e9tox fixe de 10 j).
+    ...(!isCustom ? [{ key: "detox" as StageKey, label: "Detox en cours", sublabel: detoxStarted ? `J${Math.min(detoxDay, 10)}/10` : detoxStartDate ? `Demarre le ${new Date(detoxStartDate).toLocaleDateString("fr-FR")}` : undefined }] : []),
+    { key: "programme", label: programmeFinished ? "Parcours termine" : "Programme en cours", sublabel: programmeFinished ? `Termine \u00b7 J${total}${totalLabel}` : programmeStarted ? `J${programmeDay}${totalLabel}` : undefined },
   ];
 
-  const stageOrder: StageKey[] = ["inscrit", "colis", "recus", "detox", "programme"];
+  const stageOrder: StageKey[] = isCustom
+    ? ["inscrit", "colis", "recus", "programme"]
+    : ["inscrit", "colis", "recus", "detox", "programme"];
   const activeIdx = stageOrder.indexOf(activeStage);
 
   async function updateStage(field: string, value: boolean | string) {
@@ -110,12 +124,15 @@ export default function ParcoursStatusBanner({
         <h2 className="font-caps text-sm text-brun-mid uppercase tracking-wider">
           Parcours client
         </h2>
-        <button
-          onClick={() => setEditingDate(!editingDate)}
-          className="text-xs font-ui text-or-sacre hover:text-ambre-vif transition-colors"
-        >
-          {editingDate ? "Annuler" : "Modifier date depart"}
-        </button>
+        {/* Modifier la date recalcule les phases Le Passage (103 j) — interdit pour un parcours custom. */}
+        {!isCustom && (
+          <button
+            onClick={() => setEditingDate(!editingDate)}
+            className="text-xs font-ui text-or-sacre hover:text-ambre-vif transition-colors"
+          >
+            {editingDate ? "Annuler" : "Modifier date depart"}
+          </button>
+        )}
       </div>
 
       {/* Bandeau parcours terminé — visible seulement quand le parcours est achevé */}
@@ -123,7 +140,7 @@ export default function ParcoursStatusBanner({
         <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-foret/10 border border-foret/30 rounded-lg">
           <span className="w-2 h-2 rounded-full bg-foret shrink-0" />
           <span className="text-sm font-ui text-foret">
-            Parcours termine — J{TOTAL_PROGRAM_DAYS}/{TOTAL_PROGRAM_DAYS}
+            Parcours termine — J{total}/{total}
             {programmeEndDate ? ` (le ${programmeEndDate.toLocaleDateString("fr-FR")})` : ""}
           </span>
         </div>
